@@ -130,7 +130,7 @@ def PlotTemplate(nevents, lumi):
                 "yMin" : 0, 
                 "xMax" : None,
                 "xBins" : None,
-                "OutputDirectory" : "./Figures_Dilepton_EventStop100/", 
+                "OutputDirectory" : "./Figures_Dilepton/", 
                 "Style" : "ATLAS",
                 "ATLASLumi" : lumi,
                 "NEvents" : nevents
@@ -311,7 +311,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots["Title"] = "Reconstructed Hadronic Top Mass"
     Plots["xTitle"] = "Mass (GeV)"
     Plots["xBins"] = 200
-    Plots["xMin"] = 0
+    Plots["xMin"] = 150
     Plots["xMax"] = 200
     Plots["Filename"] = "RecoHadTopMass"
     Plots["Histograms"] = []
@@ -329,9 +329,24 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots["Title"] = "Reconstructed Leptonic Top Mass"
     Plots["xTitle"] = "Mass (GeV)"
     Plots["xBins"] = 200
-    Plots["xMin"] = 0
+    Plots["xMin"] = 150
     Plots["xMax"] = 200
     Plots["Filename"] = "RecoLepTopMass"
+    Plots["Histograms"] = []
+
+    for i in ReconstructedLepTopMass:
+        _Plots = {}
+        _Plots["Title"] = i
+        _Plots["xData"] = ReconstructedLepTopMass[i]
+        Plots["Histograms"].append(TH1F(**_Plots))
+    
+    X = CombineTH1F(**Plots)
+    X.SaveFigure()
+
+    Plots["xMin"] = 100
+    Plots["xMax"] = 500
+    Plots["Logarithmic"] = True
+    Plots["Filename"] = "RecoLepTopMass_log"
     Plots["Histograms"] = []
 
     for i in ReconstructedLepTopMass:
@@ -361,6 +376,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots = PlotTemplate(neventsFinal, lumi)
     Plots["Title"] = "Number of neutrino solutions"
     Plots["xTitle"] = "#"
+    Plots["xMin"] = -1
     Plots["xStep"] = 1
     Plots["xBinCentering"] = True
     Plots["Filename"] = "NumNeutrinoSolutions"
@@ -377,7 +393,7 @@ direc = "/eos/home-t/tnommens/Processed/Dilepton/ttH_tttt_m1000"
 Ana = Analysis()
 Ana.InputSample("bsm1000", direc)
 Ana.Event = Event
-Ana.EventStop = 100
+#Ana.EventStop = 100
 Ana.ProjectName = "Dilepton" + (f"_EventStop{Ana.EventStop}" if Ana.EventStop else "") 
 Ana.EventCache = True
 Ana.DumpPickle = True 
