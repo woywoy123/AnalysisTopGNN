@@ -1,5 +1,6 @@
 import torch 
-import LorentzVector as LV
+import PyC.Physics.Tensors.Polar as PT
+import PyC.Physics.Tensors.Cartesian as CT
 
 class Reconstruction:
 
@@ -41,8 +42,7 @@ class Reconstruction:
     def __SummingNodes(self, Sample, msk, edge_index, pt, eta, phi, e):
         
         device = edge_index.device
-        Pmu = torch.cat([Sample[pt], Sample[eta], Sample[phi], Sample[e]], dim = 1)
-        Pmu = LV.TensorToPxPyPzE(Pmu)        
+        Pmu = torch.cat([PT.PxPyPz(Sample[pt], Sample[eta], Sample[phi]), Sample[e]], dim = -1)
         
         # Get the prediction of the sample and extract from the topology the number of unique classes
         edge_index_r = edge_index[0][msk == True]
@@ -61,7 +61,7 @@ class Reconstruction:
         Pmu_n = (Pmu_n/1000).to(dtype = torch.long)
         Pmu_n = torch.unique(Pmu_n, dim = 0)
 
-        return LV.MassFromPxPyPzE(Pmu_n).view(-1)
+        return CT.Mass(Pmu_n).view(-1)
 
     def MassFromNodeFeature(self, Sample, pred, pt = "N_pT", eta = "N_eta", phi = "N_phi", e = "N_energy"):
         

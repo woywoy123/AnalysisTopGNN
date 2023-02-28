@@ -1,5 +1,5 @@
 import math
-import LorentzVector as LV
+import PyC.Transform.Floats as Tf
 
 # ================== Kinematics ================ #
 def delta_pT(a, b):
@@ -34,4 +34,4 @@ def Expected_Px(a, b):
     
     if a.Index != b.Index:
         return 
-    a.exp_Px += float(LV.ToPxPyPzE(b.pt, b.eta, b.phi, b.e, "cpu")[0])
+    a.exp_Px += Tf.Px(b.pt, b.phi)

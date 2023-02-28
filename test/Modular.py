@@ -99,12 +99,22 @@ def TestAnalysis(Files):
     AnaE.EventCache = True
     AnaE.Threads = 12
     AnaE.DumpPickle = True
-    #AnaE.Launch()
-
+    AnaE.Launch()
     
     it = 0
     for i in AnaE:
-        #print(i.Trees["nominal"].Tops)
         it += 1
-    print(it)
+    return True
+
+def TestLargeSample(File):
+    AnaE = Analysis()
+    AnaE.ProjectName = "Project"
+    AnaE.InputSample("l", File)
+    AnaE.Threads = 12
+    AnaE.chnk = 10
+    AnaE.EventStop = 1200
+    AnaE.Event = Event
+    AnaE.EventCache = True
+    AnaE.Launch()
+
     return True

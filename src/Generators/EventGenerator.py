@@ -29,7 +29,24 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
                 EC.Filename = F
             EC.EventIndex = indx
             return EC
-        
+
+        def function(inpt, _prgbar):
+            
+            out = []
+            lock, bar = _prgbar
+            r = inpt[0][0]
+            c = [i[1] for i in inpt]
+            All = [b.split("/")[-1] for b in r.Branches] + [l.split("/")[-1] for l in r.Leaves]
+            __iter = {Tree : r._Reader[Tree].iterate(All, library = "np", step_size = 1, entry_start = min(c), entry_stop = max(c)+1 ) for Tree in r.Trees}
+            for i in c:
+                _iter = {Tree : next(__iter[Tree]) for Tree in __iter}
+                out.append(PopulateEvent(_iter, i, r.ROOTFile))
+                if self.Caller == "ANALYSIS":
+                    out[-1].MakeEvent(True)
+                with lock:
+                    bar.update(1)
+            return out
+                 
         self.CheckSettings()
         self.CheckEventImplementation()
 
@@ -42,7 +59,7 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
         if self._dump:
             return self
 
-        self.Files = self.ListFilesInDir(self.InputDirectory, extension = ".root") 
+        self.Files = self.ListFilesInDir(self.InputDirectory, extension = ".root")
         self.CheckROOTFiles()  
         
         it = -1
@@ -52,34 +69,34 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
             F_i.Branches += obj.Branches
             F_i.Leaves += obj.Leaves 
             F_i.ValidateKeys()
-            indx = -1
-            for ev in F_i:
-                indx += 1
+            cmp = []
+            for indx in range(len(F_i)):
                 it += 1
                 if self.EventStart > it and self.EventStart != -1:
                     continue
                 if self.EventStop != None and self.EventStop < it:
                     break
-                event = PopulateEvent(ev, indx, F)
-                self.AddROOTFile(F, event)
+                cmp.append([F_i, indx]) 
+
+            th = Threading(cmp, function, self.Threads, self.chnk)
+            th.VerboseLevel = self.VerboseLevel
+            th.Title = "READING/COMPILING EVENT"
+            th.Start()
+            for i in th._lists:
+                self.AddROOTFile(F, i)
         self.CheckSpawnedEvents()
 
     def CompileEvent(self, ClearVal = True):
         
-        def function(inp):
+        def function(inp, _prgbar):
             out = []
             for k in inp:
                 k.MakeEvent(ClearVal)
                 out.append(k)
             return out
-        
         if self._dump:
             return self
-
-        TH = Threading(self.SampleContainer.list(), 
-                       function, 
-                       threads = self.Threads, 
-                       chnk_size = self.chnk)
+        TH = Threading(self.SampleContainer.list(), function, self.Threads,  self.chnk)
         TH.VerboseLevel = self.VerboseLevel
         TH.Start()
         for ev in TH._lists:

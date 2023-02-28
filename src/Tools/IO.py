@@ -79,6 +79,8 @@ class IO(String, IO_):
             os.makedirs(self.abs(directory))
         except FileExistsError:
             pass
+    def rm(self, directory):
+        os.remove(self.abs(directory))
 
     def cd(self, directory):
         os.chdir(directory)

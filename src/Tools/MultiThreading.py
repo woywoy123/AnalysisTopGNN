@@ -5,7 +5,7 @@ from torch.multiprocessing import Process, Pipe
 import math
 import gc
 from AnalysisTopGNN.Notification import MultiThreading
-
+from tqdm import tqdm
 
 class TemplateThreading:
 
@@ -14,9 +14,24 @@ class TemplateThreading:
         self._f = function
         self._i = index
         self.i = None
+        self.lock = None
+        self.started = False
     
     def Runner(self, q):
-        _r = self._f(self._v) 
+        _l = list(self._f.__code__.co_varnames)[:2]
+        _l_ = {_l[0] : self._v} 
+        if "_prgbar" in _l:
+            with self.lock:
+                bar = tqdm(
+                        desc = f'MultiThreading {self.i}', total = len(self._v), 
+                        position = self.i, leave = False, 
+                        colour = "GREEN", dynamic_ncols = True)
+            _l_["_prgbar"] = (self.lock, bar)
+        _r = self._f(**_l_)
+        if "_prgbar" in _l:
+            with self.lock:
+                bar.close()
+
         for i in self._v:
             del i
         try:
@@ -39,6 +54,7 @@ class Threading(MultiThreading):
         self._lists = lists
         self._function = Function
         self.Caller = "MULTITHREADING"
+        self.Title = "TOTAL JOB PROGRESS"
         self.VerboseLevel = 3
         
         self.AlertOnEmptyList()
@@ -59,46 +75,63 @@ class Threading(MultiThreading):
             return 
         it = 1
         tmp = 0
+        
+        lock = torch.multiprocessing.Manager().Lock()
+        with lock:
+            bar = tqdm(
+                    desc = self.Title, total = len(self._chnk), 
+                    position = 0, leave = None, 
+                    colour = "GREEN", dynamic_ncols = True)
+
         for i in range(len(self._chnk)):
             recv, send = Pipe(False)
-
             T = TemplateThreading(self._function, self._chnk[i], self._indx[i])
-            T.i = i
+            T.i = (i)%self._threads +1
+            T.lock = torch.multiprocessing.Manager().Lock()
             P = Process(target = T.Runner, args = (send, ))
             self._chnk[i] = [P, recv, T]
 
-            P.start()
-            self.StartingJobs(i)
-            
-            if i+1 == self._threads*it:
-                self.CheckJobs(tmp, i+1)
-                tmp = i+1
-                it+=1
-        
-        if i+1 < self._threads*it:
-            self.CheckJobs(tmp, i+1)
+        for i in range(len(self._chnk)):
+            self.CheckJobs(i, (lock, bar))
+
         gc.collect()
+        with lock:
+            bar.close()
 
-    def CheckJobs(self, start, end):
-        w = 1
-        for t in range(start, end):
-            i = self._chnk[t]
-            try:
-                out = i[1].recv()
-            except:
-                i[0].terminate()
-                out = False
-                self.RecoveredThread(w)
-            indx = i[2]._i
+    def CheckJobs(self, t, lks):
+        lock, bar = lks
 
-            if out == False:
-                out = i[2].MainThread()
-            for j, d in zip(range(indx[0], indx[1]), out):
-                self._lists[j] = d
+        for k in range(self._threads):
+            if k+t == len(self._chnk):
+                break
+            i = self._chnk[t+k]
+            if i == None:
+                t += 1
+                continue
+            if i[2].started == True:
+                continue
+            i[0].start()
+            i[2].started = True
 
-            del self._chnk[t][2]
-            del self._chnk[t][1]
-            del self._chnk[t][0]
-            self._chnk[t] = None
-            self.FinishedJobs(w)
-            w+=1
+        i = self._chnk[t]    
+        try:
+            out = i[1].recv()
+            self._chnk[t]
+        except:
+            i[0].terminate()
+            out = False
+            self.RecoveredThread(i[2].i)
+        indx = i[2]._i
+        
+        if out == False:
+            out = i[2].MainThread()
+        for j, d in zip(range(indx[0], indx[1]), out):
+            self._lists[j] = d
+
+        with lock:
+            bar.update(1)
+
+        del self._chnk[t][2]
+        del self._chnk[t][1]
+        del self._chnk[t][0]
+        self._chnk[t] = None

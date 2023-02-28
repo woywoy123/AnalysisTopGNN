@@ -26,7 +26,7 @@ class ParticleTemplate(VariableManager):
 
     @property
     def is_nu(self):
-        return self._istype([12, 14])
+        return self._istype([12, 14, 16])
 
     @property
     def is_b(self):

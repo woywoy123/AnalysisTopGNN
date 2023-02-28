@@ -51,10 +51,9 @@ class Functions(CommonFunctions):
 
 class TLine(Functions):
     
-    def __init__(self, **kargs):
+    def __init__(self, **kwargs):
         Functions.__init__(self)
-        
-        self.ApplyInput(kargs)
+        self.ApplyInput(kwargs)
         self.Caller = "TLINE"
  
     def Compile(self, Reset = True):

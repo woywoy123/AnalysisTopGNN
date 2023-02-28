@@ -1,5 +1,6 @@
 from AnalysisTopGNN.Notification import SampleContainer
 from .ROOTFile import ROOTFile
+import copy 
 
 class SampleContainer:
 
@@ -35,11 +36,13 @@ class SampleContainer:
         return list(self._Hashes.values())
 
     def ClearEvents(self):
-        for name in self.ROOTFiles:
-            self.ROOTFiles[name].ClearEvents()
-        self.list(True)
-        self.hash(True)
-        self._locked = True
+        tmp = copy.deepcopy(self)
+        for name in tmp.ROOTFiles:
+            tmp.ROOTFiles[name].ClearEvents()
+        tmp.list(True)
+        tmp.hash(True)
+        tmp._locked = True
+        return tmp
 
     def RestoreEvents(self, events):
         if isinstance(events, list):
@@ -97,5 +100,7 @@ class SampleContainer:
             return True
         if key in self._EventMap:
             return True
+        if key in self.ROOTFiles:
+            return True 
         return False
 

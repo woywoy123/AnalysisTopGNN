@@ -84,16 +84,17 @@ class HDF5(Settings, Tools, IO_):
             elif isinstance(Val, bool):
                 self.__AddToDataSet(objectaddress, Key, Val)
                 return 
-
             elif isinstance(Val, np.int64):
                 self.__AddToDataSet(objectaddress, Key, Val)
                 return
             elif isinstance(Val, np.bool_):
                 self.__AddToDataSet(objectaddress, Key, Val)
                 return 
+            elif isinstance(Val, np.ndarray):
+                self.__AddToDataSet(objectaddress, Key, Val)
+                return 
             elif isinstance(Val, type(None)):
                 return 
-
             print("NEED TO FIX THIS. COMING FROM HDF5", ObjPath, objectaddress, Key, Val, type(Val))
 
     def DumpObject(self, obj, Name = False):
@@ -167,14 +168,17 @@ class HDF5(Settings, Tools, IO_):
     def MultiThreadedDump(self, ObjectDict, OutputDirectory):
         OutputDirectory = self.RemoveTrailing(OutputDirectory, "/") 
         self.mkdir(OutputDirectory)
-        def function(inpt):
+        def function(inpt, _prgbar):
             out = []
+            lock, bar = _prgbar
             for i in inpt:
                 h = HDF5()
                 h.VerboseLevel = self.VerboseLevel
                 h.Filename = OutputDirectory + "/" + str(i[0])
                 h.DumpObject(i[1], str(i[0]))
                 out.append([h.Filename, str(i[0])]) 
+                with lock:
+                    bar.update
             return out
 
         if isinstance(ObjectDict, dict) == False:
@@ -231,7 +235,9 @@ class HDF5(Settings, Tools, IO_):
 
     def __iter__(self):
         if self.Directory:
-            self._names = [i.replace(self._ext, "").split("/")[-1] for i in self.DictToList(self.ListFilesInDir({self.Directory : ["*"]}, self._ext))]
+            if self.Directory.endswith("/"):
+                self.Directory = self.Directory[:-1]
+            self._names = [self.Directory + "/" + i.replace(self._ext, "").split("/")[-1] for i in self.DictToList(self.ListFilesInDir({self.Directory : ["*"]}, self._ext))]
             self.MultiThreadedReading(self._names)
         else:
             self.Start(False, "r")

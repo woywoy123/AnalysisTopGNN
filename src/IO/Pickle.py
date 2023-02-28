@@ -1,6 +1,7 @@
 from AnalysisTopGNN.Tools import Tools, Threading
 from AnalysisTopGNN.Generators.Settings import Settings
 import pickle 
+import sys
 
 class Pickle(Tools, Settings):
     def __init__(self):
@@ -35,28 +36,39 @@ class Pickle(Tools, Settings):
         f.close()
         return obj
 
-    def MultiThreadedDump(self, ObjectDict, OutputDirectory):
+    def MultiThreadedDump(self, ObjectDict, OutputDirectory, Name = None):
         def function(inpt):
             out = []
             for i in inpt:
                 self.PickleObject(i[1], i[0], OutputDirectory)
                 out.append(i[0])
             return out
-        
+         
         inpo = [[name, ObjectDict[name]] for name in ObjectDict]
         TH = Threading(inpo, function, self.Threads, self.chnk) 
         TH.VerboseLevel = self.VerboseLevel
+        TH.Title = "DUMPING PICKLES " 
+        TH.Title += "" if Name == None else "(" + Name + ")"
         TH.Start()
 
-    def MultiThreadedReading(self, InputFiles):
+    def MultiThreadedReading(self, InputFiles, Name = None):
         def function(inpt):
             out = []
             for i in inpt:
                 out.append([i.split("/")[-1].replace(self._ext, ""), self.UnpickleObject(i)])
             return out
-
+        
+        ClassDef = [i for i in range(len(InputFiles)) if "ClassDef" in InputFiles[i]]
+        if len(ClassDef) > 0:
+            for i in ClassDef:
+                defs = self.UnpickleObject(InputFiles[i])
+                for j in defs:
+                    sys.path.append("/".join(j.split("/")[:-1]))
+                InputFiles.pop(i)
         TH = Threading(InputFiles, function, self.Threads, self.chnk)
         TH.VerboseLevel = self.VerboseLevel
+        TH.Title = "READING PICKLES " 
+        TH.Title += "" if Name == None else "(" + Name + ")"
         TH.Start()
         return {i[0] : i[1] for i in TH._lists}
 

@@ -1,4 +1,5 @@
 from .Notification import Notification
+import time
 
 class Analysis(Notification):
 
@@ -42,6 +43,8 @@ class Analysis(Notification):
         string += "> TrainingSampleGenerator < :: " if self.TrainingSampleName else ""
         string += "> Optimization < :: " if self.Model != None else ""
         string += "> ModelEvaluator < :: " if len(self._ModelDirectories) != 0 or self.PlotNodeStatistics else ""
+        string += "> Selections < :: " if len(self._Selection) != 0 else ""
+        string += "> Merging Selections < :: " if len(self._MSelection) != 0 else ""
         
         l = len(string) if len(string1) < len(string) else len(string1)
         self.Success("="*l)
@@ -68,6 +71,10 @@ class Analysis(Notification):
         message = "EventGraph not defined (obj.EventGraph). See implementations (See src/Events/EventGraphs.py)"
         self.Failure("="*len(message))
     
+    def ReadingFileDirectory(self, f):
+        self.Success("!!Reading Files in Directory '" + f + "':")
+        return f
+
     def FoundFiles(self, Files):
         if len(Files) == 0:
             return 
@@ -119,9 +126,13 @@ class Analysis(Notification):
 
     def InvalidOrEmptyModelDirectory(self):
         self.Warning("Given model directory is empty or invalid. Skipping...")
+    
+    def AddedSelection(self, Name):
+        self.Success("Added Selection (" + Name +") to Analysis. The output will be within the project folder under 'Selections/" + Name + "'.")
 
     def __CheckSettings(self):
         inv = self.CheckSettings()
         if len(inv) == 0:
             return 
         self.Warning("Found the following invalid settings: " + "\n".join(inv))
+        time.sleep(5)

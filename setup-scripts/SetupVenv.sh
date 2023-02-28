@@ -8,6 +8,7 @@ python3 -m venv PythonGNN
 source ./PythonGNN/bin/activate
  
 # Packages to be installed.
+pip3 install --upgrade pip
 pip3 install matplotlib  
 pip3 install networkx[all]
 pip3 install uproot awkward
@@ -15,6 +16,7 @@ pip3 install h5py
 pip3 install mplhep
 pip3 install -U scikit-learn
 pip3 install Cython
+pip3 install vector
 
 pip3 install torch torchvision torchaudio 
 ver=$(python -c "import torch; print(torch.__version__)")
@@ -27,10 +29,9 @@ ver=$(echo "$ver" | cut -d'+' -f1)
 pip3 install torch-sparse torch-spline-conv -f https://pytorch-geometric.com/whl/torch-$ver+cpu.html
 
 cd ../
-pip3 install .
+pip install .
 
-cd PyTorchCustom
-pip3 install .
+cd torch-extensions
+pip install .
 
 echo "export PythonGNN=$PWD/setup-scripts/PythonGNN/bin/activate" >> ~/.bashrc
-

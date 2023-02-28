@@ -1,17 +1,23 @@
 from AnalysisTopGNN.Templates import EventGraphTemplate
 
-class EventGraphTruthTops(EventGraphTemplate):
+class EventGraphTops(EventGraphTemplate):
     def __init__(self, Event = None):
         EventGraphTemplate.__init__(self)
         self.Event = Event
         self.Particles += self.Event.Tops
 
-class EventGraphTruthTopChildren(EventGraphTemplate):
+class EventGraphChildren(EventGraphTemplate):
     def __init__(self, Event = None):
         EventGraphTemplate.__init__(self)
         self.Event = Event
         self.Particles += self.Event.TopChildren
-    
+
+class EventGraphChildrenNoNu(EventGraphTemplate):
+    def __init__(self, Event = None):
+        EventGraphTemplate.__init__(self)
+        self.Event = Event
+        self.Particles += [i for i in self.Event.TopChildren if abs(i.pdgid) not in [12, 14, 16]]
+
 class EventGraphTruthJetLepton(EventGraphTemplate):
     def __init__(self, Event = None):
         EventGraphTemplate.__init__(self)
