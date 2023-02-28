@@ -4,7 +4,6 @@ from AnalysisTopGNN.Particles import Particles
 from AnalysisTopGNN.IO import PickleObject, UnpickleObject
 from AnalysisTopGNN.Plotting import TH1F, CombineTH1F
 
-_charged_leptons = [11, 13, 15]
 _observable_leptons = [11, 13]
 
 def PlotTemplate(nevents, lumi):
@@ -79,6 +78,71 @@ def Selection(Ana):
     Plots["xStep"] = 1
     Plots["xBinCentering"] = True 
     Plots["Filename"] = "LeptonChannel"
+    F = TH1F(**Plots)
+    F.SaveFigure()
+
+def Selection_details(Ana):
+
+    numLeptons = {"0L": 0, "1e/$\mu$": 0, "1$\\tau$": 0, "2e/$\mu$ SS": 0, "2e/$\mu$ OS": 0, "e/$\mu$+$\\tau$ SS": 0, "e/$\mu$+$\\tau$ OS": 0, "2$\\tau$ SS": 0, "2$\\tau$ OS": 0, "3e/$\mu$": 0, "2e/$\mu$+$\\tau$": 0, "e/$\mu$+2$\\tau$": 0, "3$\\tau$": 0, "4L": 0}
+
+    nevents = 0
+    lumi = 0
+    for ev in Ana:
+        
+        event = ev.Trees["nominal"]
+        nevents += 1
+        lumi += event.Lumi
+
+        emu = []
+        taus = []
+    
+        for p in event.TopChildren:
+            if abs(p.pdgid) in _observable_leptons:
+                emu.append(p)
+            elif abs(p.pdgid) == 15:
+                taus.append(p)
+        
+        leptons = emu + taus
+
+        if len(leptons) == 0: 
+            numLeptons["0L"] += 1
+        elif len(leptons) == 1:
+            if len(emu) == 1:
+                numLeptons["1e/$\mu$"] += 1
+            else:
+                numLeptons["1$\\tau$"] += 1
+        elif len(leptons) == 2:
+            sign = "SS" if leptons[0].charge == leptons[1].charge else "OS"
+            if len(emu) == 2:
+                numLeptons[f"2e/$\mu$ {sign}"] += 1
+            elif len(emu) == 1 and len(taus) == 1:
+                numLeptons[f"e/$\mu$+$\\tau$ {sign}"] += 1
+            else:
+                numLeptons[f"2$\\tau$ {sign}"] += 1
+        elif len(leptons) == 3:
+            if len(emu) == 3:
+                numLeptons["3e/$\mu$"] += 1
+            elif len(emu) == 2 and len(taus) == 1:
+                numLeptons["2e/$\mu$+$\\tau$"] += 1
+            elif len(emu) == 1 and len(taus) == 2:
+                numLeptons["e/$\mu$+2$\\tau$"] += 1
+            else:
+                numLeptons["3$\\tau$"] += 1
+        else:
+            numLeptons["4L"] += 1
+
+    Plots = PlotTemplate(nevents, lumi)
+    Plots["Title"] = "Lepton multiplicity" 
+    Plots["xTitle"] = "Number of leptons"
+    Plots["xTickLabels"] = [channel + " ({:.2g}%)".format((mult/nevents)*100.) for channel, mult in numLeptons.items()]
+
+    Plots["xData"] = [i for i in range(len(numLeptons))]
+    Plots["xWeights"] = [mult for mult in numLeptons.values()]
+    Plots["xMin"] = 0
+    Plots["xStep"] = 1
+    Plots["xBinCentering"] = True 
+    Plots["xScaling"] = 3.5
+    Plots["Filename"] = "LeptonChannel_details"
     F = TH1F(**Plots)
     F.SaveFigure()
 
