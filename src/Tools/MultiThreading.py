@@ -40,6 +40,7 @@ class TemplateThreading:
                 del i 
         except:
             q.send(False)
+        q.close()
 
     def MainThread(self):
         r = self._f(self._v) 
@@ -63,6 +64,7 @@ class Threading(MultiThreading):
         else:
             _quant = self._threads
         
+        _quant = int(512/self._threads) if _quant >= 512 else _quant
         cpu_ev = math.ceil(len(self._lists) / _quant)
         if cpu_ev == 0:
             cpu_ev = 1
@@ -122,6 +124,8 @@ class Threading(MultiThreading):
             out = False
             self.RecoveredThread(i[2].i)
         indx = i[2]._i
+        i[1].close()
+        i[0].join()
         
         if out == False:
             out = i[2].MainThread()

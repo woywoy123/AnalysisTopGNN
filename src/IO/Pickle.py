@@ -64,7 +64,8 @@ class Pickle(Tools, Settings):
                 defs = self.UnpickleObject(InputFiles[i])
                 for j in defs:
                     sys.path.append("/".join(j.split("/")[:-1]))
-                InputFiles.pop(i)
+        InputFiles = [ InputFiles[i] for i in range(len(InputFiles)) if i not in ClassDef ]
+        
         TH = Threading(InputFiles, function, self.Threads, self.chnk)
         TH.VerboseLevel = self.VerboseLevel
         TH.Title = "READING PICKLES " 

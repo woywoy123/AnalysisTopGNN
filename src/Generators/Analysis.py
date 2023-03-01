@@ -266,12 +266,14 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         SampleContainer = UnpickleObject(tr)
         root = self.output + "/" + CacheType + "/" + Name 
         SampleDirectory = [root + "/" + i for i in self.ls(root)]
+        SampleDirectory = [i for i in SampleDirectory if i not in self.SampleContainer]
 
         _pkl = self.DictToList(self.ListFilesInDir({i : "*" for i in SampleDirectory}, ".pkl"))
         if len(_pkl) != 0:
             pkl = Pickle()
             pkl.Caller = self.Caller
             pkl.VerboseLevel = 0
+            pkl.Threads = self.Threads
             events = pkl.MultiThreadedReading(_pkl, Name)
 
             self.SampleContainer += SampleContainer

@@ -138,14 +138,22 @@ class Selection(Settings, Tools):
         self._Code = []
         out = self.CopyInstance(self)
         out.__init__()
-        for i in out.__dict__:
+        keys = set(list(out.__dict__) + list(other.__dict__))
+        for i in keys:
             if i == "_hash":
                 out._hash = [self._hash] if isinstance(self._hash, str) else self._hash
                 out._hash += [other._hash] if isinstance(other._hash, str) else other._hash
                 continue
-            if i in ["Trees", "_OutDir", "Tree", "Type"]:
+            if i in ["Trees", "_OutDir", "Tree", "Type", "Caller"]:
                 out.__dict__[i] = self.__dict__[i]
                 continue 
+            if i == "_CutFlow":
+                k_ = set(list(self.__dict__[i]) + list(other.__dict__[i]))
+                self.__dict__[i] |= {l : 0 for l in k_ if l not in self.__dict__[i]}
+                other.__dict__[i] |= {l : 0 for l in k_ if l not in other.__dict__[i]}
+            if i not in self.__dict__:
+                self.__dict__[i] == other.__dict__[i]
+                continue
             out.__dict__[i] = self.MergeData(self.__dict__[i], other.__dict__[i])
         return out
     
