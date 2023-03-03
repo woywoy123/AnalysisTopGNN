@@ -3,12 +3,14 @@ from AnalysisTopGNN.Vectors import IsIn
 
 class ROOTFile(Hashing):
     
-    def __init__(self, Filename):
+    def __init__(self, Filename, Threads = 1, chnk = 1):
         self.HashMap = {}
         self.Filename = Filename
         self.EventMap = {}
         self._lock = False
         self._len = -1
+        self._Threads = Threads
+        self._chnk = chnk
     
     def MakeHash(self):
         for i in self.EventMap:
@@ -56,11 +58,10 @@ class ROOTFile(Hashing):
 
     def __add__(self, other):
         hashes = self.hash() + other.hash() 
-        evnts = [ self.HashMap[_hash] for _hash in self.HashMap ] + [ other.HashMap[_hash] for _hash in other.HashMap ]
-        
-        self.HashMap = {}
+        evnts = list(self.HashMap.values()) + list(other.HashMap.values())
+        self.HashMap = {h : False for h in set(hashes)}
         for _hash, evnt in zip(hashes, evnts):
-            if IsIn([_hash], self.HashMap) == False: 
+            if self.HashMap[_hash] == False: 
                 self.HashMap[_hash] = evnt
                 continue
                 

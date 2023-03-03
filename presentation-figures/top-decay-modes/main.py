@@ -3,13 +3,90 @@ from AnalysisTopGNN.Events import Event
 from AnalysisTopGNN.Templates.Selection import Selection 
 from AnalysisTopGNN.IO import UnpickleObject
 from AnalysisTopGNN.Plotting import TH1F, CombineTH1F 
+from AnalysisTopGNN.Templates import ParticleTemplate
 import sys
+import math
 import vector
 import torch
 sys.path.append("../../truth-studies/NeutrinoReconstruction/")
 from neutrino_momentum_reconstruction import *
 import PyC.NuSol.CUDA as NuC
 import PyC.NuSol.Tensors as NuT
+
+
+class Neutrino(ParticleTemplate):
+    def __init__(self, px=None, py=None, pz=None):
+        self.Type = "nu"
+        ParticleTemplate.__init__(self)
+        self.px = px
+        self.py = py
+        self.pz = pz
+
+    @property
+    def phi(self):
+        return self._phi
+
+    @property
+    def eta(self):
+        return self._eta
+
+    @property
+    def pt(self):
+        return self._pt
+
+def MakeNu(sols):
+    nu1 = Neutrino()
+    nu1.px = sols[0]*1000
+    nu1.py = sols[1]*1000
+    nu1.pz = sols[2]*1000
+    return nu1
+
+
+def ParticleTensor(lst):
+    out = []
+    for p in lst:
+        out.append([p.pt/1000, p.eta, p.phi, p.e/1000])
+    t = torch.tensor(out, dtype=torch.float64, device = "cuda")
+    t_ = t.to("cpu")
+    return t, t_
+
+def ParticleVector(p):
+    return vector.obj(pt = p.pt/1000, eta = p.eta, phi = p.phi, E = p.e/1000)
+
+def GetParticle(t, lst, invert = False):
+    if invert:
+        return[c for c in t.Children if abs(c.pdgid) not in lst][-1]
+    return [c for c in t.Children if abs(c.pdgid) in lst][-1]
+
+def FitToTruth(t1, t2, nus):
+    fit = {}
+    for i, j in nus:
+        diff = 0
+        diff += math.log(abs(t1._px - i.px)/1000)
+        diff += math.log(abs(t2._px - j.px)/1000)
+
+        diff += math.log(abs(t1._py - i.py)/1000)
+        diff += math.log(abs(t2._py - j.py)/1000)
+
+        diff += math.log(abs(t1._pz - i.pz)/1000)
+        diff += math.log(abs(t2._pz - j.pz)/1000)
+        fit[diff] = [i, j]
+        
+        # Swap the order. We just want to know whether the solution pairs are present in truth.
+        diff = 0
+        diff += math.log(abs(t1._px - j.px)/1000)
+        diff += math.log(abs(t2._px - i.px)/1000)
+
+        diff += math.log(abs(t1._py - j.py)/1000)
+        diff += math.log(abs(t2._py - i.py)/1000)
+
+        diff += math.log(abs(t1._pz - j.pz)/1000)
+        diff += math.log(abs(t2._pz - i.pz)/1000)
+        fit[diff] = [j, i] 
+    
+    f = list(fit)
+    f.sort()
+    return fit[f[0]], f[0]
 
 class TopCounter(Selection):
 
@@ -162,88 +239,183 @@ class NuNu(Selection):
         Selection.__init__(self)
         self.Tops = TruthContainer.Tops
         self.Event = TruthContainer.Event
-    
-    def Orignal(self, q1, q2, l1, l2, met_x, met_y, mT, mW):
-        l1_v = vector.obj(pt = l1.pt/1000, eta = l1.eta, phi = l1.phi, E = l1.e/1000)
-        l2_v = vector.obj(pt = l2.pt/1000, eta = l2.eta, phi = l2.phi, E = l2.e/1000)
+        self.Neutrinos = TruthContainer.Neutrinos
+       
+        self.NsolChildren = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.Chi2Children = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.MassChildren = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : [], "TRUTH": []}
 
-        q1_v = vector.obj(pt = q1.pt/1000, eta = q1.eta, phi = q1.phi, E = q1.e/1000)
-        q2_v = vector.obj(pt = q2.pt/1000, eta = q2.eta, phi = q2.phi, E = q2.e/1000)
- 
+        self.NsolTruthJets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.Chi2TruthJets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.MassTruthJets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : [], "TRUTH": []}
+
+        self.NsolJets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.Chi2Jets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+        self.MassJets = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : [], "TRUTH": []}
+        self.Time = {"Original" : [], "CPU" : [], "Non-CUDA" : [], "CUDA" : []}
+   
+    def Orignal(self, q1, q2, l1, l2, met_x, met_y, mT, mW):
         try:
-            sol = doubleNeutrinoSolutions((q1_v, q2_v), (l1_v, l2_v), (met_x, met_y), mW**2, mT**2)
+            sol = doubleNeutrinoSolutions((q1, q2), (l1, l2), (met_x, met_y), mW**2, mT**2)
             sol = sol.nunu_s
         except:
             return 
-        
         return sol
 
+    def MakeOriginal(self, V1):
+        out_v = []
+        self._t1
+        for i in range(len(V1["mT"])):
+            out_v.append(self.Orignal(V1["b1"][i], V1["b2"][i], V1["l1"][i], V1["l2"][i], V1["metx"][i], V1["mety"][i], V1["mT"][i], V1["mW"][i]))
+        self._t2
+        self.Time["Original"].append(self._TimeStats[-1])
+        return self.MakeNu(out_v)
+ 
+    def MakeNu(self, sol1, sol2 = None, sol3 = None):
+        out = []
+        if sol2 == None:
+            for i in sol1:
+                if i == None:
+                    out.append(None)
+                    continue
+                out.append([[MakeNu(p), MakeNu(q)] for p, q in i])
+        else:
+            it = 0
+            for sk in sol1:
+                if sk == True:
+                    out.append(None)
+                    continue
+                n1, n2 = sol2[it], sol3[it]
+                it+=1 
+                out.append([[MakeNu(x.tolist()), MakeNu(y.tolist())] for x, y in zip(n1, n2) if x.sum(-1) != 0 and y.sum(-1) != 0])
+        return out
+
+    def CompareSols(self, output):
+        for i in output:
+            output[i] = [len(k) for k in self.Nus[i] if k != None] 
+
+    def BestNuNu(self, Truth, output):
+        for key in output:
+            for i in range(len(Truth["nu1"])):
+                if self.Nus[key][i] == None:
+                    continue
+                nu1, nu2 = Truth["nu1"][i], Truth["nu2"][i]
+                if len(self.Nus[key][i]) == 0:
+                    self.Nus[key][i] = None
+                    continue
+                else:
+                    nu, chi2 = FitToTruth(nu1, nu2, self.Nus[key][i]) 
+                self.Nus[key][i] = nu 
+                output[key].append(chi2)
+    
+    def Mass(self, Truth, output):
+        output["TRUTH"] =  [ (i+j+k).Mass for i, j, k in zip(Truth["nu1"], Truth["l1"], Truth["b1"]) ]
+        output["TRUTH"] += [ (i+j+k).Mass for i, j, k in zip(Truth["nu2"], Truth["l2"], Truth["b2"]) ]
+        
+        for i in self.Nus:
+            t1 = [(n[0]+l+b).Mass for n, l, b in zip(self.Nus[i], Truth["l1"], Truth["b1"]) if n != None]
+            t2 = [(n[1]+l+b).Mass for n, l, b in zip(self.Nus[i], Truth["l2"], Truth["b2"]) if n != None]           
+            output[i] += t1 + t2
+
+  
+    def MakeTensor(self, V1, key):
+        self._t1
+        if key == "CPU" or key == "Non-CUDA":
+            sol = NuT.NuNuPtEtaPhiE(V1["b1"], V1["b2"], V1["l1"], V1["l2"], V1["met"], V1["phi"], V1["mT"], V1["mW"], V1["mNu"], 1e-12)
+        if key == "CUDA":
+            sol = NuC.NuNuPtEtaPhiE(V1["b1"], V1["b2"], V1["l1"], V1["l2"], V1["met"], V1["phi"], V1["mT"], V1["mW"], V1["mNu"], 1e-12)
+        self._t2
+        self.Time[key].append(self._TimeStats[-1])
+        return self.MakeNu(sol[0], sol[1], sol[2]) 
+
+    def Prepare(self, lst):
+        Cv = {c : None for c in lst if c not in ["metP", "metC"]}
+        Ct = {c : None for c in lst if c not in ["metC", "metP"]}
+        Ct_ = {c : None for c in lst if c not in ["metC", "metP"]}
+        for i in Cv:
+            Cv[i] = [ParticleVector(k) for k in lst[i]]
+            Ct[i], Ct_[i] = ParticleTensor(lst[i])
+        mT = [(i + j + t).Mass for i, j, t in zip(lst["b1"], lst["nu1"], lst["l1"])]
+        mW = [(j + t).Mass for j, t in zip(lst["nu1"], lst["l1"])]
+
+        Ct["mT"] = torch.tensor(mT, dtype=torch.float64, device = "cuda").view(-1, 1)
+        Ct["mW"] = torch.tensor(mW, dtype=torch.float64, device = "cuda").view(-1, 1)
+        Ct["mNu"] = torch.tensor([0 for i in lst["metP"]], dtype=torch.float64, device = "cuda").view(-1, 1)
+        Ct["met"] = torch.tensor([i[0] for i in lst["metP"]], dtype=torch.float64, device = "cuda").view(-1, 1)
+        Ct["phi"] = torch.tensor([i[1] for i in lst["metP"]], dtype=torch.float64, device = "cuda").view(-1, 1)
+
+        Ct_["mT"] = torch.tensor(mT, dtype=torch.float64, device = "cpu").view(-1, 1)
+        Ct_["mW"] = torch.tensor(mW, dtype=torch.float64, device = "cpu").view(-1, 1)
+        Ct_["mNu"] = torch.tensor([0 for i in lst["metP"]], dtype=torch.float64, device = "cpu").view(-1, 1)
+        Ct_["met"] = torch.tensor([i[0] for i in lst["metP"]], dtype=torch.float64, device = "cpu").view(-1, 1)
+        Ct_["phi"] = torch.tensor([i[1] for i in lst["metP"]], dtype=torch.float64, device = "cpu").view(-1, 1)
+        
+        Cv["metx"] = [c[0] for c in lst["metC"]]
+        Cv["mety"] = [c[1] for c in lst["metC"]]
+        Cv["mT"] = mT
+        Cv["mW"] = mW
+
+        return Cv, Ct, Ct_
 
     def __call__(self):
-        b, b_ = [], []
-        l, l_ = [], []
-        met, mass = [], []
-        tsolO, tsolCpp, tsolCU = 0, 0, 0
-        for i, j, metx, mety, _met, _phi in zip(self.Tops["Lep1"], self.Tops["Lep2"], 
-                                                self.Event["METx"], self.Event["METy"], 
-                                                self.Event["MET"], self.Event["Phi"]):
-            _met = _met.tolist()[0]
-            _phi = _phi.tolist()[0]
-            l1 = [c for c in i.Children if abs(c.pdgid) in [11, 13, 15]][-1]
-            l2 = [c for c in j.Children if abs(c.pdgid) in [11, 13, 15]][-1]
+        Children = {"b1" : [], "b2" : [], "l1" : [], "l2" : [], "nu1" : [], "nu2" : [], "metC" : [], "metP" : []}
+        TruthJet = {"b1" : [], "b2" : [], "l1" : [], "l2" : [], "nu1" : [], "nu2" : [], "metC" : [], "metP" : []}
+        Jet = {"b1" : [], "b2" : [], "l1" : [], "l2" : [], "nu1" : [], "nu2" : [], "metC" : [], "metP" : []}
+        self.nEvents = {"Children" : 0, "TruthJets" : 0, "Jets" : 0}
+        for i, j, metx, mety, _met, _phi in zip(self.Tops["Lep1"], self.Tops["Lep2"], self.Event["METx"], self.Event["METy"], self.Event["MET"], self.Event["Phi"]):
+            _met, _phi = _met.tolist()[0]/1000, _phi.tolist()[0]
+            metx, mety = metx/1000, mety/1000
+
+            l1, l2 = GetParticle(i, [11, 13, 15]), GetParticle(j, [11, 13, 15])
+            nu1, nu2 = GetParticle(i, [12, 14, 16]), GetParticle(j, [12, 14, 16])
+            q1, q2 = GetParticle(i, [11, 12, 13, 14, 15, 16], True), GetParticle(j, [11, 12, 13, 14, 15, 16, 22], True)
             
-            nu1 = [c for c in i.Children if abs(c.pdgid) in [12, 14, 16]][-1]
-            nu2 = [c for c in j.Children if abs(c.pdgid) in [12, 14, 16]][-1]
+            for k, p in zip([q1, q2, l1, l2, nu1, nu2, [metx, mety], [_met, _phi]], ["b1", "b2", "l1", "l2", "nu1", "nu2", "metC", "metP"]):
+                Children[p].append(k)
+            self.nEvents["Children"] += 1
+            b1, b2 = [c for c in i.TruthJets if c.is_b_var == 5], [c for c in j.TruthJets if c.is_b_var == 5]
+            if len(b1) != 1 or len(b2) != 1:
+                continue
+            for k, p in zip([b1[-1], b2[-1], l1, l2, nu1, nu2, [metx, mety], [_met, _phi]], ["b1", "b2", "l1", "l2", "nu1", "nu2", "metC", "metP"]):
+                TruthJet[p].append(k)
+            self.nEvents["TruthJets"] += 1
+            b1, b2 = [c for c in i.Jets if c.btagged == 1], [c for c in j.Jets if c.btagged == 1]
+            if len(b1) != 1 or len(b2) != 1:
+                continue
+            for k, p in zip([b1[-1], b2[-1], l1, l2, nu1, nu2, [metx, mety], [_met, _phi]], ["b1", "b2", "l1", "l2", "nu1", "nu2", "metC", "metP"]):
+                Jet[p].append(k)
+            self.nEvents["Jets"] += 1
+
+        Cv, Ct, Ct_ = self.Prepare(Children) 
+        self.Nus = {}
+        self.Nus["Original"] = self.MakeOriginal(Cv)
+        self.Nus["CPU"] = self.MakeTensor(Ct_, "CPU")
+        self.Nus["Non-CUDA"] = self.MakeTensor(Ct, "Non-CUDA")       
+        self.Nus["CUDA"] = self.MakeTensor(Ct, "CUDA")    
+        self.CompareSols(self.NsolChildren)
+        self.BestNuNu(Children, self.Chi2Children)
+        self.Mass(Children, self.MassChildren)
+
+        Cv, Ct, Ct_ = self.Prepare(TruthJet) 
+        self.Nus = {}
+        self.Nus["Original"] = self.MakeOriginal(Cv)
+        self.Nus["CPU"] = self.MakeTensor(Ct_, "CPU")
+        self.Nus["Non-CUDA"] = self.MakeTensor(Ct, "Non-CUDA")       
+        self.Nus["CUDA"] = self.MakeTensor(Ct, "CUDA")    
+        self.CompareSols(self.NsolTruthJets)
+        self.BestNuNu(TruthJet, self.Chi2TruthJets)
+        self.Mass(TruthJet, self.MassTruthJets)
+
+        Cv, Ct, Ct_ = self.Prepare(Jet) 
+        self.Nus = {}
+        self.Nus["Original"] = self.MakeOriginal(Cv)
+        self.Nus["CPU"] = self.MakeTensor(Ct_, "CPU")
+        self.Nus["Non-CUDA"] = self.MakeTensor(Ct, "Non-CUDA")       
+        self.Nus["CUDA"] = self.MakeTensor(Ct, "CUDA")    
+        self.CompareSols(self.NsolJets)
+        self.BestNuNu(Jet, self.Chi2Jets)
+        self.Mass(Jet, self.MassJets)
  
-            q1 = [c for c in i.Children if abs(c.pdgid) not in [11, 12, 13, 14, 15, 16, 22]][-1]
-            q2 = [c for c in j.Children if abs(c.pdgid) not in [11, 12, 13, 14, 15, 16, 22]][-1]
-           
-            tMass = i.Mass
-            WMass = (l1 + nu1).Mass
-            self._t1
-            solO = self.Orignal(q1, q2, l1, l2, metx, mety, tMass, WMass)
-            self._t2
-            tsolO += self._TimeStats.pop()
-            if solO != None:
-                pass
-            
-            b.append([q1.pt/1000, q1.eta, q1.phi, q1.e/1000])
-            b_.append([q2.pt/1000, q2.eta, q2.phi, q2.e/1000])
-
-            l.append([l1.pt/1000, l1.eta, l1.phi, l1.e/1000])
-            l_.append([l2.pt/1000, l2.eta, l2.phi, l2.e/1000])
-            
-            met.append([_met, _phi])
-            mass.append([tMass, WMass, 0])
-       
-        b = torch.tensor(b, dtype = torch.float64, device = "cuda")
-        b_ = torch.tensor(b_, dtype = torch.float64, device = "cuda")
-        l = torch.tensor(l, dtype = torch.float64, device = "cuda")
-        l_ = torch.tensor(l_, dtype = torch.float64, device = "cuda")
-
-        met_ = torch.tensor([[i[0]] for i in met], dtype = torch.float64, device = "cuda")
-        phi_ = torch.tensor([[i[1]] for i in met], dtype = torch.float64, device = "cuda")
-
-        mT_ = torch.tensor([[i[0]] for i in mass], dtype = torch.float64, device = "cuda")
-        mW_ = torch.tensor([[i[1]] for i in mass], dtype = torch.float64, device = "cuda")
-        mNu_ = torch.tensor([[i[2]] for i in mass], dtype = torch.float64, device = "cuda")
-
-        self._t1
-        solC = NuC.NuNuPtEtaPhiE(b, b_, l, l_, met_, phi_, mT_, mW_, mNu_, 1e-12)
-        self._t2
-        tsolCU = self._TimeStats.pop()
-
-        self._t1
-        solC = NuT.NuNuPtEtaPhiE(b, b_, l, l_, met_, phi_, mT_, mW_, mNu_, 1e-12)
-        self._t2
-        tsolCpp = self._TimeStats.pop()
-            
-        print("SPEED BOOST FACTOR (CPP vs ORIGINAL): ", tsolO/tsolCpp)
-        print("SPEED BOOST FACTOR (CUDA vs ORIGINAL): ", tsolO/tsolCU)
-        print("SPEED BOOST FACTOR (CPP vs CUDA): ", tsolCpp/tsolCU)
-
-
-
 def PlotTemplate():
     plt = {}
     plt["xMin"] = 100
@@ -253,29 +425,134 @@ def PlotTemplate():
     plt["yTitle"] = "Entries (arb.)"
     return plt
 
-#Ana = Analysis()
+Ana = Analysis()
 #Ana.InputSample("bsm-1000", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root")
-#Ana.InputSample("bsm-1000-all", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000")
-#Ana.AddSelection("top-count", TopCounter)
-#Ana.AddSelection("truth", Truth)
-#Ana.MergeSelection("top-count")
-#Ana.MergeSelection("truth")
-#Ana.Event = Event 
-#Ana.EventCache = True 
-#Ana.DumpPickle = True 
-#Ana.Launch()
+Ana.InputSample("bsm-1000-all", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000")
+Ana.AddSelection("top-count", TopCounter)
+Ana.AddSelection("truth", Truth)
+Ana.MergeSelection("top-count")
+Ana.MergeSelection("truth")
+Ana.Event = Event 
+Ana.EventCache = True 
+Ana.DumpPickle = True 
+Ana.Launch()
 
+exit()
 x = UnpickleObject("./UNTITLED/Selections/Merged/truth.pkl")
 
 nn = NuNu(x)
 nn()
 
+its = {
+    "Children" : [nn.NsolChildren, nn.Chi2Children, nn.MassChildren], 
+    "TruthJets" : [nn.NsolTruthJets, nn.Chi2TruthJets, nn.MassTruthJets], 
+    "Reco-Jets" : [nn.NsolJets, nn.Chi2Jets, nn.MassJets]
+}
 
-exit()
+
+i = 0 
+print("Orignal ", nn.Time["Original"][i], " CPU ", nn.Time["CPU"][i], " Non-CUDA ",  nn.Time["Non-CUDA"][i], " CUDA ", nn.Time["CUDA"][i], " Events ", nn.nEvents["Children"])
+print("(Children) SPEED (Original/CPU): " + str(nn.Time["Original"][i]/nn.Time["CPU"][i]))
+print("(Children) SPEED (Original/Non-CUDA): " + str(nn.Time["Original"][i]/nn.Time["Non-CUDA"][i]))
+print("(Children) SPEED (Original/CUDA): " + str(nn.Time["Original"][i]/nn.Time["CUDA"][i]))
+print("(Children) SPEED (CPU/CUDA): " + str(nn.Time["CPU"][i]/nn.Time["CUDA"][i]))
+print("(Children) SPEED (Non-CUDA/CUDA): " + str(nn.Time["Non-CUDA"][i]/nn.Time["CUDA"][i]))
+
+print("")
+i = 1
+print("Orignal ", nn.Time["Original"][i], " CPU ", nn.Time["CPU"][i], " Non-CUDA ",  nn.Time["Non-CUDA"][i], " CUDA ", nn.Time["CUDA"][i], " Events ", nn.nEvents["TruthJets"])
+print("(TruthJets) SPEED (Original/CPU): " + str(nn.Time["Original"][i]/nn.Time["CPU"][i]))
+print("(TruthJets) SPEED (Original/Non-CUDA): " + str(nn.Time["Original"][i]/nn.Time["Non-CUDA"][i]))
+print("(TruthJets) SPEED (Original/CUDA): " + str(nn.Time["Original"][i]/nn.Time["CUDA"][i]))
+print("(TruthJets) SPEED (CPU/CUDA): " + str(nn.Time["CPU"][i]/nn.Time["CUDA"][i]))
+print("(TruthJets) SPEED (Non-CUDA/CUDA): " + str(nn.Time["Non-CUDA"][i]/nn.Time["CUDA"][i]))
+
+print("")
+i = 2
+print("Orignal ", nn.Time["Original"][i], " CPU ", nn.Time["CPU"][i], " Non-CUDA ",  nn.Time["Non-CUDA"][i], " CUDA ", nn.Time["CUDA"][i], " Events ", nn.nEvents["Jets"])
+print("(Jets) SPEED (Original/CPU): " + str(nn.Time["Original"][i]/nn.Time["CPU"][i]))
+print("(Jets) SPEED (Original/Non-CUDA): " + str(nn.Time["Original"][i]/nn.Time["Non-CUDA"][i]))
+print("(Jets) SPEED (Original/CUDA): " + str(nn.Time["Original"][i]/nn.Time["CUDA"][i]))
+print("(Jets) SPEED (CPU/CUDA): " + str(nn.Time["CPU"][i]/nn.Time["CUDA"][i]))
+print("(Jets) SPEED (Non-CUDA/CUDA): " + str(nn.Time["Non-CUDA"][i]/nn.Time["CUDA"][i]))
 
 
+for key in its:
+    hst = []
+    p = PlotTemplate()
+    p["xData"] = its[key][2]["Original"]
+    p["Title"] = "Reconstructed"
+    hst.append(TH1F(**p))
+
+    p = PlotTemplate()
+    p["xData"] = its[key][2]["TRUTH"]
+    p["Title"] = "Truth"
+    hst.append(TH1F(**p))
+
+    p = PlotTemplate()
+    p["Histograms"] = hst
+    p["Title"] = "Reconstructed Invariant Top Mass From Reconstructed Neutrinos - " + key
+    p["xStep"] = 10
+    y = CombineTH1F(**p)
+    y.Filename = "Mass" + key + "NuNu_OriginalOnly"
+    y.SaveFigure()
 
 
+for i in its:
+    hst = []
+    for key in its[i][0]:
+        p = PlotTemplate()
+        p["xData"] = its[i][0][key]
+        p["Title"] = key
+        hst.append(TH1F(**p))
+    
+    p = PlotTemplate()
+    p["Histograms"] = hst
+    p["Title"] = "Number of Obtained Solutions for Different Algorithm Implementations - " + i
+    p["xStep"] = 1
+    p["xMin"] = 0
+    p["xMax"] = 6
+    p["xTitle"] = "Number of Solutions"
+    p["xBinCentering"] = True
+    y = CombineTH1F(**p)
+    y.Filename = i + "_nSols"
+    y.SaveFigure()
+    
+    hst = []
+    for key in its[i][1]:
+        p = PlotTemplate()
+        p["xData"] = its[i][1][key]
+        p["Title"] = key
+        hst.append(TH1F(**p))
+    
+    p = PlotTemplate()
+    p["Histograms"] = hst
+    p["xTitle"] = "log(Chi)"
+    p["Title"] = "Error Between True Neutrino Pairs and Reconstructed Neutrinos - " + i
+    p["xStep"] = 5
+    p["xMin"] = 0
+    p["xMax"] = None
+    y = CombineTH1F(**p)
+    y.Filename = i + "_LogChi"
+    y.SaveFigure()
+    
+    hst = []
+    for key in its[i][2]:
+        p = PlotTemplate()
+        p["xData"] = its[i][2][key]
+        p["Title"] = key
+        hst.append(TH1F(**p))
+    
+    p = PlotTemplate()
+    p["Histograms"] = hst
+    p["Title"] = "Reconstructed Invariant Top Mass From Neutrinos - " + i
+    p["xStep"] = 10
+    p["xMin"] = 100
+    p["xMax"] = 250
+    y = CombineTH1F(**p)
+    y.Filename = "Mass" + i + "NuNu"
+    y.SaveFigure()
+    
 hsts = []
 for i in x.MassTopsTC:
     p = PlotTemplate()
