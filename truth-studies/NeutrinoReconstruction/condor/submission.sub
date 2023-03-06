@@ -1,0 +1,12 @@
+cwd = /eos/user/e/elebouli/BSM4tops/FourTopsAnalysis/models_save/NeutrinoReconstruction
+executable = $(cwd)/condor/execute_job.sh
+arguments = /eos/home-t/tnommens/Processed/Dilepton/ttH_tttt_m1000/DAOD_TOPQ1.21955751._000011.root
+output = $(cwd)/condor/output/DAOD_TOPQ1.21955751._000011.root.out
+error = $(cwd)/condor/error/DAOD_TOPQ1.21955751._000011.root.err
+log = $(cwd)/condor/log/DAOD_TOPQ1.21955751._000011.root.log
+initialdir = $(cwd)
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+transfer_output_remaps = "mtt_data.pkl = condor/mtt_data/DAOD_TOPQ1.21955751._000011.root.pkl"
++JobFlavour = "tomorrow"
+queue
