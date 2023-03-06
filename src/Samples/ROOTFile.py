@@ -1,5 +1,7 @@
 from .Hashing import Hashing 
 from AnalysisTopGNN.Vectors import IsIn
+from AnalysisTopGNN.Tools import Threading
+
 
 class ROOTFile(Hashing):
     
@@ -9,14 +11,20 @@ class ROOTFile(Hashing):
         self.EventMap = {}
         self._lock = False
         self._len = -1
-        self._Threads = Threads
-        self._chnk = chnk
+        self.Threads = Threads
+        self.chnk = chnk
     
     def MakeHash(self):
-        for i in self.EventMap:
-            _hash = self.MD5(self.Filename + "/" + str(self.EventMap[i].EventIndex))
+        def function(inpt):
+            return [self.MD5(indx[0] + "/" + str(indx[1])) for indx in inpt]
+        
+        th = Threading([[self.Filename, self.EventMap[i].EventIndex] for i in self.EventMap], function, self.Threads, self.chnk)
+        th.VerboseLevel = 0
+        th.Start() 
+        for i, _hash in zip(self.EventMap, th._lists):
             self.EventMap[i].Filename = _hash
             self.HashMap[_hash] = self.EventMap[i]
+        self._len = len(self.HashMap)
 
     def AddEvent(self, Event):
         self.EventMap[Event.EventIndex] = Event

@@ -100,9 +100,6 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         self.output = "." 
 
     def __GenerateEvents(self, InptMap, name):
-        if self.DumpHDF5 or self.DumpPickle:
-            self.ResetSampleContainer()  
-        
         ec = self.__SearchAssets("EventCache", name)
         dc = self.__SearchAssets("DataCache", name)
         
@@ -157,10 +154,8 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         ev.InputDirectory = {"/".join(filedir[:-1]) : filedir[-1]}
         ev.SpawnEvents()
         self.GetCode(ev)
-        #self += ev 
         if self.EventCache == False:
             return 
-
         self.__DumpCache(ev, name, filedir[-1], False)
             
     def __GraphGenerator(self, name, filedir):
@@ -173,7 +168,6 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         gr.RestoreSettings(self.DumpSettings())
         gr.CompileEventGraph()
         self.GetCode(gr)
-        #self += gr 
         if self.DataCache == False:
             return 
         self.__DumpCache(gr, name, filedir[-1], True)
@@ -182,11 +176,11 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         def QuickExportEvent(inpt, _prgbar):
             lock, bar = _prgbar
             out = []
-            for i, ev in inpt:
+            for i in inpt:
                 if i not in self:
-                    out.append([i, ev])
+                    out.append([i, True])
                 elif self[i] != "":
-                    out.append([i, ev])
+                    out.append([i, True])
                 else:
                     out.append([i, False])
                 with lock:
@@ -199,8 +193,8 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             for i, ev in inpt:
                 if i in self and self[i].Compiled:
                     out.append([i, False])
-                elif i not in self and ev.Compiled: 
-                    out.append([i, ev])  
+                elif i not in self and ev: 
+                    out.append([i, True])  
                 else:
                     out.append([i, False])
                 with lock:
@@ -210,14 +204,21 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         if self.DumpHDF5 == False and self.DumpPickle == False:
             return 
         if Compiled == False:
-            th = Threading([[ev.Filename, ev] for ev in instance], QuickExportEvent, self.Threads, self.chnk)
+            th = Threading([ev.Filename for ev in instance], QuickExportEvent, self.Threads, self.chnk)
             th.Title = "QUICKSEARCHEVENT"
         else:
-            th = Threading([[ev.Filename, ev] for ev in instance], QuickExportGraph, self.Threads, self.chnk)
-            th.Title = "QUICKSEARCHGRAPH"       
+            th = Threading([[ev.Filename, ev.Compiled] for ev in instance], QuickExportGraph, self.Threads, self.chnk)
+            th.Title = "QUICKSEARCHGRAPH" 
         th.VerboseLevel = 0
         th.Start()
-        export = {hsh : ev for hsh, ev in th._lists if ev}
+        export = {hsh : instance.SampleContainer._Hashes[hsh] for hsh, ev in th._lists if ev}
+        del th
+
+        out = self.output + "/Tracers/"
+        out += "DataCache/" if Compiled else "EventCache/"
+        out += name + "/" + fdir
+        PickleObject(instance.SampleContainer.ClearEvents(), out) 
+        del instance
 
         out = self.output + "/"
         out += "DataCache/" if Compiled else "EventCache/"
@@ -233,11 +234,8 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             pkl.RestoreSettings(self.DumpSettings())
             pkl.PickleObject([ i._File for i in self._Code ], "ClassDef", out)
             pkl.MultiThreadedDump(export, out)
+        del export
 
-        out = self.output + "/Tracers/"
-        out += "DataCache/" if Compiled else "EventCache/"
-        out += name + "/" + fdir
-        PickleObject(instance.SampleContainer.ClearEvents(), out) 
 
     def __GenerateTrainingSample(self):
         def MarkSample(smpl, status):
@@ -247,7 +245,13 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
        
         if not self.TrainingSampleName:
             return 
-        
+       
+        search = False
+        search = "EventCache" if self.EventCache else search
+        search = "DataCache" if self.DataCache else search
+        if search == False and self.TrainingSampleName: 
+            self.CantGenerateTrainingSample()
+
         self.EmptySampleList()
         if self.Training == False:
             self.CheckPercentage()
@@ -336,7 +340,7 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             pkl.VerboseLevel = 0
             pkl.Threads = self.Threads
             events = pkl.MultiThreadedReading(_pkl, Name)
-            self.SampleContainer.RestoreEvents(events)
+            self.SampleContainer.RestoreEvents(events, self.Threads, self.chnk)
             return True
 
         _hdf = self.DictToList(self.ListFilesInDir({i : "*" for i in SampleDirectory}, ".hdf5"))
@@ -346,7 +350,7 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             hdf.VerboseLevel = 0
             hdf.MultiThreadedReading(_hdf)
             events = {_hash : ev for _hash, ev in hdf._names}
-            self.SampleContainer.RestoreEvents(events)
+            self.SampleContainer.RestoreEvents(events, self.Threads, self.chnk)
             return True 
         else:
             self.NoCache(root)
@@ -363,19 +367,24 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             return out 
         
         def _rebuild(inpt):
-            out = []
+            out = None
             for k in inpt:
                 t = pkl.UnpickleObject(k)
-                out.append(Selection().RestoreSettings(t))
                 self.rm(k)
-            inpt = sum(out)
-            inpt = inpt if isinstance(inpt, list) else [inpt]
-            out = [""]*(len(out)-len(inpt)) + inpt
-            return out
+                
+                t = Selection().RestoreSettings(t)
+                out = t if out == None else out + t
+            return [out]
         
-        if not self.__SwitchTable():
-            return  
 
+
+        if len(self._Selection) > 0:
+            pass 
+        elif len(self._MSelection) > 0:
+            pass
+        else:
+            return 
+        
         pkl = Pickle()
         pkl.Caller = self.Caller
         pkl.VerboseLevel = 0
@@ -394,22 +403,8 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             th.Title = "MERGING SELECTION (" + i + ")"
             th.VerboseLevel = self.VerboseLevel
             th.Start()
-            th._lists = [k for k in th._lists if isinstance(k, str) == False]
             pkl.PickleObject(sum(th._lists), i, self.output + "/Selections/Merged/")
    
-    def __SwitchTable(self):
-        if self.TrainingSampleName:
-            return True 
-        if self.Event == None and self.EventGraph == None:
-            return True 
-        if self.FeatureTest: 
-            return True 
-        if len(self._Selection) > 0:
-            return True 
-        if len(self._MSelection) > 0:
-            return True 
-        return False
-
     def Launch(self):
         self.__CheckSettings()
         self._launch = True 
@@ -426,8 +421,6 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         self.StartingAnalysis()
         self.__BuildRootStructure()
         
-        self.SampleContainer._Threads = self.Threads
-        self.SampleContainer._chnk = self.chnk
         self.Training = False
         if self.TrainingSampleName:
             fDir = self.output + "/Tracers/TrainingSample/" + self.TrainingSampleName + ".pkl" 
@@ -443,13 +436,8 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         for i in self._SampleMap:
             self.NoSamples(self._SampleMap[i], i)
             self.__GenerateEvents(self._SampleMap[i], i)
-            if self.__SwitchTable():
-                search = "EventCache" if self.EventCache else False
-                search = "DataCache" if self.DataCache else search
-                if search == False and self.TrainingSampleName: 
-                    self.CantGenerateTrainingSample()
-                self.__SearchAssets(search, i)
-                continue
+ 
+
         self.__GenerateTrainingSample()
         self.__Optimization() 
         self.__ModelEvaluator()

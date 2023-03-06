@@ -427,7 +427,8 @@ def PlotTemplate():
 
 Ana = Analysis()
 #Ana.InputSample("bsm-1000", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root")
-Ana.InputSample("bsm-1000-all", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000")
+#Ana.InputSample("bsm-1000-all", "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000/")
+Ana.InputSample("sm", "/home/tnom6927/Downloads/LISA/LisaSamples/user.esitniko/user.esitniko.32411527._000001.output.root")
 Ana.AddSelection("top-count", TopCounter)
 Ana.AddSelection("truth", Truth)
 Ana.MergeSelection("top-count")

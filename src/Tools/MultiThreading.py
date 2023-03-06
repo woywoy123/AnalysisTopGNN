@@ -9,54 +9,66 @@ from tqdm import tqdm
 
 class TemplateThreading:
 
-    def __init__(self, function, val, index):
-        self._v = val
+    def __init__(self, function):
         self._f = function
-        self._i = index
+        self._i = None
         self.i = None
         self.lock = None
         self.started = False
+        self._q = None
+        self._dct = {}
     
-    def Runner(self, q):
+    def _Prg(self):
         _l = list(self._f.__code__.co_varnames)[:2]
-        _l_ = {_l[0] : self._v} 
-        if "_prgbar" in _l:
-            with self.lock:
-                bar = tqdm(
-                        desc = f'MultiThreading {self.i}', total = len(self._v), 
-                        position = self.i, leave = False, 
-                        colour = "GREEN", dynamic_ncols = True)
-            _l_["_prgbar"] = (self.lock, bar)
-        _r = self._f(**_l_)
-        if "_prgbar" in _l:
-            with self.lock:
-                bar.close()
+        if "_prgbar" not in _l:
+            return {_l[0] : None}
+        self._dct["desc"] = f'MultiThreading {self.i}'
+        self._dct["position"] = self.i
+        self._dct["leave"] = False
+        self._dct["colour"] = "GREEN"
+        self._dct["dynamic_ncols"] = True
+        with self.lock:
+            bar = tqdm(**self._dct)
+        return {_l[0] : None, "_prgbar" : (self.lock, bar)} 
 
-        for i in self._v:
-            del i
-        try:
-            q.send(_r)
-            for i in _r:
-                del i 
-        except:
-            q.send(False)
-        q.close()
+    def _Prc(self, _v):
+        self._dct["total"] = len(_v)
+        _l = self._Prg()
+        _l[list(_l)[0]] = _v
 
+        _r = self._f(**_l)
+        
+        if "_prgbar" not in _l:
+            return _r
+        lock, bar = _l["_prgbar"]
+        with lock:
+            bar.close()
+        return _r
+
+    def Exec(self, q):
+        while True:
+            _v = q.recv()
+            if _v == True:
+                return 
+            try:
+                _v = self._Prc(_v)
+                q.send(_v)
+            except:
+                q.send(False)
+    
     def MainThread(self):
-        r = self._f(self._v) 
-        for i in self._v:
-            del i
-        return r
+        return self._Prc(self._i[1])
 
 
 class Threading(MultiThreading):
     def __init__(self, lists, Function, threads = 12, chnk_size = None):
         self._threads = threads
-        self._lists = lists
+        self.__lists = lists
         self._function = Function
         self.Caller = "MULTITHREADING"
         self.Title = "TOTAL JOB PROGRESS"
         self.VerboseLevel = 3
+        self._dct = {}
         
         self.AlertOnEmptyList()
         if chnk_size != None:
@@ -65,77 +77,106 @@ class Threading(MultiThreading):
             _quant = self._threads
         
         _quant = int(512/self._threads) if _quant >= 512 else _quant
-        cpu_ev = math.ceil(len(self._lists) / _quant)
+        cpu_ev = math.ceil(len(self.__lists) / _quant)
         if cpu_ev == 0:
             cpu_ev = 1
-        self._chnk = [self._lists[i : i+cpu_ev] for i in range(0, len(self._lists), cpu_ev)]
-        self._indx = [[i, i + cpu_ev] for i in range(0, len(self._lists), cpu_ev)]
-        self._lists = [i for i in range(len(self._lists))]
-    
+        self._chnk = [self.__lists[i : i+cpu_ev] for i in range(0, len(self.__lists), cpu_ev)]
+        self._indx = [[i, i + cpu_ev] for i in range(0, len(self.__lists), cpu_ev)]
+        self.__lists = {i : None for i in range(len(self.__lists))}
+
     def Start(self):
-        if self._lock:
+        if len(self.__lists) == 0:
+            return self._lists
+        self._Progress
+
+        self._exc = {}
+        for i in range(self._threads):
+            T = TemplateThreading(self._function)
+            T.i = i+1
+            T.lock = torch.multiprocessing.Manager().Lock()
+
+            recv, send = Pipe(True)
+            P = Process(target = T.Exec, args = (send, ))
+            self._exc[T.i] = [P, recv, T] 
+            P.start()
+ 
+        out = []
+        f = list(self._exc)[0]
+        while True:
+            if self._exc[f][2].started == False and len(self._chnk) > 0: 
+                v = self._chnk.pop(0)
+                self._exc[f][1].send(v)
+                self._exc[f][2].started = True
+                self._exc[f][2]._i = [self._indx.pop(), v]
+                running = [ i for i in self._exc if i != f ] if len(out) == 0 else [i for i in running if i != f]
+                running += [f]
+                it = iter(running)
+                continue
+            
+            it = iter(running) if running[-1] == f else it
+            f = next(it)
+            
+            if not self._exc[f][1].poll():
+                continue
+            _v = self._exc[f][1].recv()
+            _v = _v if _v != False else [self.RecoveredThread(f), self._exc[f][2].MainThread()][-1]
+            indx = self._exc[f][2]._i[0]
+            out.append([indx, _v])
+
+            self._Update
+            
+            self._exc[f][2].started = False
+            self._exc[f][2]._i[-1].clear()
+            del self._exc[f][2]._i[-1][:]
+            self._exc[f][2]._i = None 
+            tmp = [f] if len(self._chnk) > 0 else []
+            running = tmp + [r for r in running if r != f]
+            if len(running) == 0:
+                break
+            it = iter(running)
+            f = next(it)
+
+        for f in self._exc:
+            self._exc[f][1].send(True)
+            self._exc[f][0].join()
+        del self._exc
+        self.__lists = { i : j for o in out for i, j in zip(range(o[0][0], o[0][1]), o[1]) }
+       
+        self._Close
+        return self._lists
+
+    @property
+    def _lists(self):
+        return self.__lists if isinstance(self.__lists, list) else list(self.__lists.values())
+
+    @property
+    def _Progress(self):
+        if self.VerboseLevel == 0:
             return 
-        it = 1
-        tmp = 0
-        
+        self._dct["desc"] = self.Title
+        self._dct["position"] = 0
+        self._dct["leave"] = None
+        self._dct["colour"] = "GREEN"
+        self._dct["dynamic_ncols"] = True
+        self._dct["total"] = len(self._chnk)
         lock = torch.multiprocessing.Manager().Lock()
         with lock:
-            bar = tqdm(
-                    desc = self.Title, total = len(self._chnk), 
-                    position = 0, leave = None, 
-                    colour = "GREEN", dynamic_ncols = True)
+            bar = tqdm(**self._dct)
 
-        for i in range(len(self._chnk)):
-            recv, send = Pipe(False)
-            T = TemplateThreading(self._function, self._chnk[i], self._indx[i])
-            T.i = (i)%self._threads +1
-            T.lock = torch.multiprocessing.Manager().Lock()
-            P = Process(target = T.Runner, args = (send, ))
-            self._chnk[i] = [P, recv, T]
-
-        for i in range(len(self._chnk)):
-            self.CheckJobs(i, (lock, bar))
-
-        gc.collect()
-        with lock:
-            bar.close()
-
-    def CheckJobs(self, t, lks):
-        lock, bar = lks
-
-        for k in range(self._threads):
-            if k+t == len(self._chnk):
-                break
-            i = self._chnk[t+k]
-            if i == None:
-                t += 1
-                continue
-            if i[2].started == True:
-                continue
-            i[0].start()
-            i[2].started = True
-
-        i = self._chnk[t]    
-        try:
-            out = i[1].recv()
-            self._chnk[t]
-        except:
-            i[0].terminate()
-            out = False
-            self.RecoveredThread(i[2].i)
-        indx = i[2]._i
-        i[1].close()
-        i[0].join()
-        
-        if out == False:
-            out = i[2].MainThread()
-        for j, d in zip(range(indx[0], indx[1]), out):
-            self._lists[j] = d
-
+        self._dct["obj"] = (lock, bar)
+    
+    @property
+    def _Update(self):
+        if len(self._dct) == 0:
+            return 
+        lock, bar = self._dct["obj"]
         with lock:
             bar.update(1)
 
-        del self._chnk[t][2]
-        del self._chnk[t][1]
-        del self._chnk[t][0]
-        self._chnk[t] = None
+    @property
+    def _Close(self):
+        if len(self._dct) == 0:
+            return 
+        lock, bar = self._dct["obj"] 
+        with lock:
+            bar.close()

@@ -10,12 +10,12 @@ class SampleContainer:
         self._Hashes = {}
         self._EventMap = {}
         self._locked = False
-        self._Threads = 1
-        self._chnk = 1
+        self.Threads = 1
+        self.chnk = 1
     
     def AddEvent(self, Name, Event):
         if Name not in self.ROOTFiles:
-            self.ROOTFiles[Name] = ROOTFile(Name, self._Threads, self._chnk)
+            self.ROOTFiles[Name] = ROOTFile(Name, self.Threads, self.chnk)
         self.ROOTFiles[Name].AddEvent(Event) 
     
     def HashToROOT(self, _hash):

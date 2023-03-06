@@ -4,7 +4,42 @@ from AnalysisTopGNN.Samples.Managers import SampleTracer
 
 from AnalysisTopGNN.Notification import EventGenerator_
 from AnalysisTopGNN.Tools import Threading, Tools
-from .Settings import Settings
+from .Settings import Settings, _Code
+
+def _MakeEvents(inpt, _prgbar):
+     
+    out = []
+    lock, bar = _prgbar
+    r = inpt[0][0]
+    c = [i[1] for i in inpt]
+    All = [b.split("/")[-1] for b in r.Branches] + [l.split("/")[-1] for l in r.Leaves]
+    __iter = {Tree : r._Reader[Tree].iterate(All, library = "np", step_size = len(c), entry_start = min(c), entry_stop = max(c)+1 ) for Tree in r.Trees}
+    __iter = {Tree : next(__iter[Tree]) for Tree in __iter}
+    __iter = {Tree : {k : __iter[Tree][k].tolist() for k in __iter[Tree]} for Tree in __iter}
+    smpl = SampleTracer()
+    for i in c:
+        _iter = {Tree : {k : __iter[Tree][k].pop(0) for k in __iter[Tree]} for Tree in __iter}
+        o = EventContainer()
+        for tr in _iter: 
+            o.Trees[tr] = _Code().CopyInstance(inpt[0][2])
+            o.Trees[tr]._Store = _iter[tr]
+            o.Trees[tr].Tree = tr
+            o.Trees[tr]._SampleIndex = i
+            o.Filename = r.ROOTFile
+        o.EventIndex = i
+        o.MakeEvent(True)
+        with lock:
+            bar.update(1)
+        smpl.AddROOTFile(r.ROOTFile, o)
+    return [smpl]
+
+def _Compiler(inp, _prgbar):
+    out = []
+    for k in inp:
+        k.MakeEvent(ClearVal)
+        out.append(k)
+    return out
+
 
 class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
     def __init__(self, InputDir = False, EventStart = 0, EventStop = None):
@@ -19,33 +54,6 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
             self.InputDirectory = InputDir
 
     def SpawnEvents(self):
-        def PopulateEvent(eventDict, indx, F):
-            EC = EventContainer()
-            for tr in eventDict: 
-                EC.Trees[tr] = self.CopyInstance(self.Event)
-                EC.Trees[tr]._Store = eventDict[tr]
-                EC.Trees[tr].Tree = tr
-                EC.Trees[tr]._SampleIndex = indx
-                EC.Filename = F
-            EC.EventIndex = indx
-            return EC
-
-        def function(inpt, _prgbar):
-            
-            out = []
-            lock, bar = _prgbar
-            r = inpt[0][0]
-            c = [i[1] for i in inpt]
-            All = [b.split("/")[-1] for b in r.Branches] + [l.split("/")[-1] for l in r.Leaves]
-            __iter = {Tree : r._Reader[Tree].iterate(All, library = "np", step_size = 1, entry_start = min(c), entry_stop = max(c)+1 ) for Tree in r.Trees}
-            for i in c:
-                _iter = {Tree : next(__iter[Tree]) for Tree in __iter}
-                out.append(PopulateEvent(_iter, i, r.ROOTFile))
-                if self.Caller == "ANALYSIS":
-                    out[-1].MakeEvent(True)
-                with lock:
-                    bar.update(1)
-            return out
                  
         self.CheckSettings()
         self.CheckEventImplementation()
@@ -76,28 +84,14 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
                     continue
                 if self.EventStop != None and self.EventStop < it:
                     break
-                cmp.append([F_i, indx]) 
+                cmp.append([F_i, indx, obj]) 
 
-            th = Threading(cmp, function, self.Threads, self.chnk)
+            th = Threading(cmp, _MakeEvents, self.Threads, self.chnk)
             th.VerboseLevel = self.VerboseLevel
             th.Title = "READING/COMPILING EVENT"
             th.Start()
             for i in th._lists:
-                self.AddROOTFile(F, i)
+                self += i
+            del th
         self.CheckSpawnedEvents()
 
-    def CompileEvent(self, ClearVal = True):
-        
-        def function(inp, _prgbar):
-            out = []
-            for k in inp:
-                k.MakeEvent(ClearVal)
-                out.append(k)
-            return out
-        if self._dump:
-            return self
-        TH = Threading(self.SampleContainer.list(), function, self.Threads,  self.chnk)
-        TH.VerboseLevel = self.VerboseLevel
-        TH.Start()
-        for ev in TH._lists:
-            self.SampleContainer[ev.Filename] = ev
