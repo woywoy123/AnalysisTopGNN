@@ -6,6 +6,33 @@ from ExampleModel.BasicBaseLine import BasicBaseLineRecursion
 from ExampleModel.CheatModel import CheatModel
 
 
+def TestSequence():
+    x = {
+            'tSel': ['t'], 
+            'ttbarSel': ['ttbar'], 
+            'ttttSel': ['tttt'], 
+            't': [], 
+            'tttt': [], 
+            'ttbar': [], 
+            'Merged': ['tSel', 'ttbarSel', 'ttttSel']
+        }
+    def Recursion(inpt, key = None, start = None):
+        if key == None and start == None:
+            out = {}
+            for i in inpt:
+                out[i] = [k for k in Recursion(inpt[i], i, inpt).split("<-") if k != i]
+            return out
+        if len(inpt) == 0:
+            return key
+        for i in inpt:
+            key += "<-" + Recursion(start[i], i, start)
+        return key 
+
+    Recursion(x)
+    
+    return True
+
+
 def TestAnalysis(GeneralDir):
 
     def Test(ev):
@@ -187,3 +214,87 @@ def TestCondorDumping(GeneralDir):
 
     return True
 
+def TestSelectionDumping(GeneralDir):
+    nfs = GeneralDir
+    out = "/home/tnom6927/Dokumente/Project/Analysis/bsm4tops-gnn-analysis/AnalysisTopGNN/test"
+
+    T = Condor()
+    T.EventCache = True
+    T.DataCache = True
+    T.OutputDirectory = out
+    T.Tree = "nominal"
+    T.CondaEnv = "GNN"
+    T.ProjectName = "TopEvaluation"
+
+    # Job for creating samples
+    A1 = Analysis()
+    A1.Threads = 4
+    A1.chnk = 100
+    A1.EventCache = True
+    A1.DumpPickle = True
+    A1.Event = Event
+    A1.InputSample("ttbar", nfs + "ttbar")
+
+    A3 = Analysis()
+    A3.Threads = 4
+    A3.chnk = 100
+    A3.EventCache = True
+    A3.DumpPickle = True
+    A3.Event = Event
+    A3.InputSample("t", nfs + "t")
+    
+    A4 = Analysis()
+    A4.Threads = 4
+    A4.chnk = 100
+    A4.EventCache = True
+    A4.DumpPickle = True
+    A4.Event = Event
+    A4.InputSample("tttt", nfs + "tttt")
+    
+    from ExampleSelection import Example2, Example
+
+    D1 = Analysis()
+    D1.Threads = 4
+    D1.chnk = 100
+    D1.Event = Event
+    D1.InputSample("t")
+    D1.AddSelection("Example", Example)
+
+    D2 = Analysis()
+    D2.Threads = 4
+    D2.chnk = 100
+    D2.Event = Event
+    D2.InputSample("ttbar")
+    D2.AddSelection("Example", Example)
+
+    D3 = Analysis()
+    D3.Threads = 4
+    D3.chnk = 100
+    D3.Event = Event
+    D3.InputSample("tttt")
+    D3.AddSelection("Example", Example)
+
+    M1 = Analysis()
+    M1.Threads = 4
+    M1.chnk = 100
+    M1.MergeSelection("Example")
+
+
+    T.AddJob("tSel", D1, "10GB", "1h", ["t"])
+    T.AddJob("ttbarSel", D2, "10GB", "1h", ["ttbar"])
+    T.AddJob("ttttSel", D3, "10GB", "1h", ["tttt"])
+    
+    T.AddJob("Merged", M1, "10GB", "1h", ["tSel", "ttbarSel", "ttttSel"])
+
+    T.AddJob("t", A3, "10GB", "1h")
+    T.AddJob("tttt", A4, "10GB", "1h", ["ttbar"])
+    T.AddJob("ttbar", A1, "10GB", "1h")
+ 
+    T.DumpCondorJobs() 
+    #T.LocalDryRun()
+
+    from AnalysisTopGNN.IO import UnpickleObject
+    x = UnpickleObject("./TopEvaluation/Selections/Merged/Example.pkl")
+    if x == None:
+        return False
+    return True 

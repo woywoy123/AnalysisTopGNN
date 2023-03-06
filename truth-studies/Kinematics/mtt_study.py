@@ -11,12 +11,12 @@ t_mass = 172.76
 w_mass = 80.379
 
 def get_b_truthjet_idx(event, pt_cut=15000):
-    result = [i for i, truthjet in enumerate(event.TruthJets) if truthjet.is_b == 5 and len(truthjet.Tops) != 0 and is_good_truthjet(truthjet, pt_cut)]
+    result = [i for i, truthjet in enumerate(event.TruthJets) if truthjet.is_b and len(truthjet.Tops) != 0 and is_good_truthjet(truthjet, pt_cut)]
     return result
 
 def is_one_b_per_top(event, pt_cut=15000):
     for top in event.Tops:
-        if sum([1 for truthjet in top.TruthJets if truthjet.is_b == 5 and is_good_truthjet(truthjet, pt_cut)]) != 1:
+        if sum([1 for truthjet in top.TruthJets if truthjet.is_b and is_good_truthjet(truthjet, pt_cut)]) != 1:
             return False
     return True
 
@@ -119,7 +119,10 @@ def get_nu_assignment_truth(event, nu_idx):
 
 
 def make_4vector(particle):
-    return v.obj(e=particle.e, pt=particle.pt, eta=particle.eta, phi=particle.phi)
+    # print(particle.e, particle.pt, particle.eta, particle.phi)
+    result = v.obj(e=particle.e/1000, pt=particle.pt/1000, eta=particle.eta, phi=particle.phi)
+    # print(result.e, result.pt, result.eta, result.phi)
+    return result
 
 def select_resonance_pt(tops, lep_tops):
     res_indices = []
@@ -155,10 +158,11 @@ def find_diff(v1, v2):
 
 def make_particle(v):
     result = Children()
-    result.pt = (v.x**2 + v.y**2)**0.5
-    result.e = v.t
+    result.pt = (v.x**2 + v.y**2)**0.5*1000
+    result.e = v.t*1000
     result.eta = v.eta
     result.phi = v.phi
+    result.pdgid = 12
     return result
 
 def make_vector(obj):
@@ -176,12 +180,18 @@ def select_result_using_nu_truth(nu_truth, result):
         c21 = find_diff(tv2, rv1)
         c12 = find_diff(tv1, rv2)
         answer[f'{j} same'] = c11 + c22
+        # print(c11 + c22)
     choice = min(answer, key=answer.get)
     number_reco = int(choice.split(' ')[0])
     nu1 = make_vector(result[number_reco][0])
     nu2 = make_vector(result[number_reco][1])
-    if 'opposite' in choice:
-        nu1, nu2 = nu2, nu1
+    # if 'opposite' in choice:
+    #     nu1, nu2 = nu2, nu1
+    # print('selected')
+    # print(nu1)
+    # print(nu2)
+    # print(nu_truth[0].x, nu_truth[0].y, nu_truth[0].z, nu_truth[0].m)
+    # print(nu_truth[1].x, nu_truth[1].y, nu_truth[1].z, nu_truth[1].m)
     return make_particle(nu1), make_particle(nu2)
 
 def get_dR(v1, v2):
@@ -220,6 +230,10 @@ def select_result_using_loss(bs, leps, result, alpha=1, beta=1, gamma=1):
             losses[loss] = (assignment, nus)
     min_loss = min(losses.keys())
     assignment, nus = losses[min_loss]
+    # vec = make_4vector(nus[assignment[0]])
+    # print(vec.x, vec.y, vec.z, vec.m)
+    # vec = make_4vector(nus[assignment[1]])
+    # print(vec.x, vec.y, vec.z, vec.m)
     return nus[assignment[0]], nus[assignment[1]]
 
 def get_lep_assignments(b_idx):
@@ -248,7 +262,7 @@ def get_truthjet_assignments(event, had_tops):
     result = []
     checked_perms = set()
     # notbjets = [idx for idx, truthjet in enumerate(event.TruthJets) if not truthjet.is_b and is_good_truthjet(truthjet)]
-    good_jets = [ijet for ijet, truthjet in enumerate(event.TruthJets) if not truthjet.is_b == 5 and is_good_truthjet(truthjet)]
+    good_jets = [ijet for ijet, truthjet in enumerate(event.TruthJets) if not truthjet.is_b and is_good_truthjet(truthjet)]
     count_not_ok = 0
     mass_to_perm = {}
     for i in had_tops:
@@ -384,8 +398,15 @@ def get_truthjet_assignments_smart(event, good_jets):
 
 def reconstruct_mtt_truthjets(event, case=0, alpha=1, beta=1, gamma=1):
     pt_cut = get_pt_cut_truthjet(event)
+    # print(pt_cut)
     b_idx = get_b_truthjet_idx(event, pt_cut)
     jet_idx = [idx for idx in range(len(event.TruthJets)) if idx not in b_idx and is_good_truthjet(event.TruthJets[idx], pt_cut)]
+    # print('b jets')
+    # for idx in b_idx:
+    #     print(event.TruthJets[idx])
+    # print('add jets')
+    # for idx in jet_idx:
+    #     print(event.TruthJets[idx])
     lep_idx = get_lep_child_idx(event)
     lep_tops = [event.TopChildren[idx].TopIndex for idx in lep_idx]
 
@@ -414,19 +435,19 @@ def reconstruct_mtt_truthjets(event, case=0, alpha=1, beta=1, gamma=1):
                 # print('lep wrong')
                 continue
         blep_idx = [idx for idx in b_idx if event.TruthJets[idx].TopIndex[0] in lep_assignment]
-        if len(blep_idx) < 2:
+        if case not in [0, 1, 4, 7] and len(blep_idx) < 2:
             # print('not 2 blep')
             continue
 
         if case in [2, 3, 5, 6, 8, 9]:
             try:
-                print('HEE')
+                # print('HEE')
                 bs = [make_4vector(event.TruthJets[idx]) for idx in blep_idx]
                 leps = [make_4vector(event.TopChildren[idx]) for idx in lep_idx]
                 nu_idx = get_nu_child_idx(event)
                 nus = [make_4vector(event.TopChildren[idx]) for idx in nu_idx]
-                nu_solutions = doubleNeutrinoSolutions(bs[0], bs[1], leps[0], leps[1], event.met*np.cos(event.met_phi), event.met*np.sin(event.met_phi))
-                print(len(nu_solutions.nunu_s))
+                nu_solutions = doubleNeutrinoSolutions((bs[0], bs[1]), (leps[0], leps[1]), (event.met/1000*np.cos(event.met_phi), event.met/1000*np.sin(event.met_phi)))
+                print((nu_solutions.nunu_s))
                 if case in [2, 5, 8]:
                     nu_res = select_result_using_nu_truth(nus, nu_solutions.nunu_s)
                 else:
@@ -464,6 +485,8 @@ def reconstruct_mtt_truthjets(event, case=0, alpha=1, beta=1, gamma=1):
             for itop, ijet in zip(jet_assignment, jet_idx):
                 if itop != -1:
                     tops[itop].append(event.TruthJets[ijet])
+            # for itop in tops:
+            #     print([obj.TopIndex for obj in tops[itop]])
             if case == 0:
                 res_indices = select_resonance_truth(tops, event)
             else:
@@ -472,10 +495,12 @@ def reconstruct_mtt_truthjets(event, case=0, alpha=1, beta=1, gamma=1):
             #     print(itop)
             #     for item in tops[itop]:
             #         print(item.pt)
+            # print(res_indices)
             res_products = []
             for itop in res_indices:
                 for item in tops[itop]:
                     res_products.append(item)
+                    # print(item)
             # print(res_products)
             # res_products = [item for item in tops[itop] for itop in res_indices]
             lep_ok = 1
@@ -518,7 +543,7 @@ def reconstruct_mtt_truthjets(event, case=0, alpha=1, beta=1, gamma=1):
                     if len(tops[itop]) == 0:
                         b = None
                         w = []
-                    elif type(tops[itop][0]) == type(TruthJet()) and tops[itop][0].is_b == 5:
+                    elif type(tops[itop][0]) == type(TruthJet()) and tops[itop][0].is_b:
                         b = tops[itop][0]
                         w = tops[itop][1:]
                     else:
@@ -687,18 +712,32 @@ def reconstruct_mtt_children(event, case=0, alpha=1, beta=1, gamma=1):
 
     for lep_assignment in lep_assignments:
         blep_idx = [idx for idx in b_idx if event.TopChildren[idx].TopIndex in lep_assignment]
+        # print(lep_assignment)
         if len(blep_idx) < 2:
             continue
 
 
         if case in [2, 3, 5, 6, 8, 9]:
             try:
+                # for idx in blep_idx + lep_idx:
+                #     print(event.TopChildren[idx])
                 bs = [make_4vector(event.TopChildren[idx]) for idx in blep_idx]
                 leps = [make_4vector(event.TopChildren[idx]) for idx in lep_idx]
                 nu_idx = get_nu_child_idx(event)
                 nus = [make_4vector(event.TopChildren[idx]) for idx in nu_idx]
-                nu_solutions = doubleNeutrinoSolutions(bs[0], bs[1], leps[0], leps[1], event.met*np.cos(event.met_phi), event.met*np.sin(event.met_phi))
-                print(len(nu_solutions.nunu_s))
+                print(bs)
+                print(leps)
+                print(event.met, event.met_phi)
+                nu_solutions = doubleNeutrinoSolutions((bs[0], bs[1]), (leps[0], leps[1]), (event.met/1000*np.cos(event.met_phi), event.met/1000*np.sin(event.met_phi)))
+                print(event.met)
+                for sol_pair in nu_solutions.nunu_s:
+                    print(sol_pair)
+                for nu in bs:
+                    print(nu.e, nu.pt, nu.phi, nu.eta)
+                for idx in blep_idx:
+                    print(event.TopChildren[idx].e, event.TopChildren[idx].pt, event.TopChildren[idx].phi, event.TopChildren[idx].eta)
+                # print(event.met, event.met_phi)
+                # print(len(nu_solutions.nunu_s))
                 if case in [2, 5, 8]:
                     nu_res = select_result_using_nu_truth(nus, nu_solutions.nunu_s)
                 else:
@@ -714,6 +753,7 @@ def reconstruct_mtt_children(event, case=0, alpha=1, beta=1, gamma=1):
 
         if case in [0, 1, 2, 3, 4, 5, 6]:
             jet_assignments = [get_jet_child_assignment_truth(event, jet_idx)]
+            # print(jet_assignments)
         else:
             had_tops = [itop for itop in range(len(event.Tops)) if itop not in lep_assignment]
             jet_assignments = get_jet_child_assignments(event, had_tops)
@@ -738,6 +778,7 @@ def reconstruct_mtt_children(event, case=0, alpha=1, beta=1, gamma=1):
             for itop in res_indices:
                 for item in tops[itop]:
                     res_products.append(item)
+                    # print(item)
             lep_ok = 1
             had_ok = 1
             for itop in res_indices:
@@ -751,13 +792,16 @@ def reconstruct_mtt_children(event, case=0, alpha=1, beta=1, gamma=1):
             if case in [0, 1, 2, 3]:
                 if len(res_products) == 0:
                     return None
+                # print('------------------------------')
+                # for res_product in res_products:
+                #     print(res_product)
                 return sum(res_products).CalculateMass(), f'{lep_ok}lep{had_ok}had_right'
             else:
                 if len(res_products) == 0:
                     continue
                 loss = 0
                 for itop in tops:
-                    if type(tops[itop][0]) == type(TruthJet()) and tops[itop][0].is_b == 5:
+                    if type(tops[itop][0]) == type(TruthJet()) and tops[itop][0].is_b:
                         b = tops[itop][0]
                         w = tops[itop][1:]
                     else:
@@ -991,7 +1035,7 @@ def reconstruct_mtt_jets(event, case=0, alpha=1, beta=1, gamma=1):
                 leps = [make_4vector(event.TopChildren[idx]) for idx in lep_idx]
                 nu_idx = get_nu_child_idx(event)
                 nus = [make_4vector(event.TopChildren[idx]) for idx in nu_idx]
-                nu_solutions = doubleNeutrinoSolutions(bs[0], bs[1], leps[0], leps[1], event.met*np.cos(event.met_phi), event.met*np.sin(event.met_phi))
+                nu_solutions = doubleNeutrinoSolutions((bs[0], bs[1]), (leps[0], leps[1]), (event.met*np.cos(event.met_phi), event.met*np.sin(event.met_phi)))
                 if case in [2, 5, 8]:
                     nu_res = select_result_using_nu_truth(nus, nu_solutions.nunu_s)
                 else:

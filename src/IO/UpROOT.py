@@ -62,8 +62,13 @@ class File(UpROOT, Settings):
         self.Trees = self._CheckKeys(self.Trees, "TREE")
         self.Branches = self._GetBranches()
         self.Leaves = self._GetLeaves() 
+    
+    def __len__(self):
+        self.ReadingFile(self.ROOTFile)
+        return self._Reader[self.Trees[-1]].num_entries
 
     def __iter__(self):
+        self.ReadingFile(self.ROOTFile)
         All = [b.split("/")[-1] for b in self.Branches] + [l.split("/")[-1] for l in self.Leaves]
         self._iter = {Tree : self._Reader[Tree].iterate(All, library = "np", step_size = self.StepSize) for Tree in self.Trees}
         self.Iter = {Tree : {key : [] for key in All} for Tree in self.Trees}

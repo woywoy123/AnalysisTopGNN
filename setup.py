@@ -1,5 +1,7 @@
 from setuptools import Extension, setup
 import Cython.Build
+import subprocess
+import sys
 
 setup(
         name = "AnalysisTopGNN", 
@@ -54,12 +56,11 @@ setup(
         },
 
         ext_modules = [
-                Extension("AnalysisTopGNN.Vectors", 
-                sources = ["src/Vectors/Lorentz.pyx"]),
-                ],
+                Extension("AnalysisTopGNN.Vectors", sources = ["src/Vectors/Lorentz.pyx"]),
+        ],
 
-        cmdclass = {"build_ext" : Cython.Build.build_ext}, 
+        cmdclass = {
+                "build_ext" : Cython.Build.build_ext, 
+        }, 
         long_description = open("README.md").read(), 
     )
-
-

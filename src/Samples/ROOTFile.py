@@ -1,20 +1,30 @@
 from .Hashing import Hashing 
 from AnalysisTopGNN.Vectors import IsIn
+from AnalysisTopGNN.Tools import Threading
+
 
 class ROOTFile(Hashing):
     
-    def __init__(self, Filename):
+    def __init__(self, Filename, Threads = 1, chnk = 1):
         self.HashMap = {}
         self.Filename = Filename
         self.EventMap = {}
         self._lock = False
         self._len = -1
+        self.Threads = Threads
+        self.chnk = chnk
     
     def MakeHash(self):
-        for i in self.EventMap:
-            _hash = self.MD5(self.Filename + "/" + str(self.EventMap[i].EventIndex))
+        def function(inpt):
+            return [self.MD5(indx[0] + "/" + str(indx[1])) for indx in inpt]
+        
+        th = Threading([[self.Filename, self.EventMap[i].EventIndex] for i in self.EventMap], function, self.Threads, self.chnk)
+        th.VerboseLevel = 0
+        th.Start() 
+        for i, _hash in zip(self.EventMap, th._lists):
             self.EventMap[i].Filename = _hash
             self.HashMap[_hash] = self.EventMap[i]
+        self._len = len(self.HashMap)
 
     def AddEvent(self, Event):
         self.EventMap[Event.EventIndex] = Event
@@ -56,11 +66,10 @@ class ROOTFile(Hashing):
 
     def __add__(self, other):
         hashes = self.hash() + other.hash() 
-        evnts = [ self.HashMap[_hash] for _hash in self.HashMap ] + [ other.HashMap[_hash] for _hash in other.HashMap ]
-        
-        self.HashMap = {}
+        evnts = list(self.HashMap.values()) + list(other.HashMap.values())
+        self.HashMap = {h : False for h in set(hashes)}
         for _hash, evnt in zip(hashes, evnts):
-            if IsIn([_hash], self.HashMap) == False: 
+            if self.HashMap[_hash] == False: 
                 self.HashMap[_hash] = evnt
                 continue
                 

@@ -2,7 +2,9 @@ import torch
 from torch_geometric.nn import MessagePassing
 from torch.nn import Sequential as Seq, Linear, ReLU, Sigmoid, Tanh
 import torch.nn.functional as F
-from LorentzVector import *
+import PyC.Transform.CUDA as Cu
+import PyC.Physics.CUDA.Polar as PcP
+import PyC.Physics.CUDA.Cartesian as PcC
 from torch_geometric.utils import to_dense_adj, add_remaining_self_loops, dense_to_sparse
 
 torch.set_printoptions(4, profile = "full", linewidth = 100000)
@@ -15,21 +17,28 @@ class BasicBaseLineRecursion(MessagePassing):
         self.L_edge = "CEL"
         self.C_edge = True
 
+        self.O_res = None 
+        self.L_res = "CEL"
+        self.C_res = True
+
         end = 64
         self._isEdge = Seq(Linear(end*4, end), ReLU(), Linear(end, 256), Sigmoid(), Linear(256, 128), ReLU(), Linear(128, 2))
         self._isMass = Seq(Linear(1, end), Linear(end, end))
+        
+        self._isResEdge = Seq(Linear(end*4, end), ReLU(), Linear(end, 256), Sigmoid(), Linear(256, 128), ReLU(), Linear(128, 2))
         self._it = 0
 
     def forward(self, i, edge_index, N_pT, N_eta, N_phi, N_energy, N_mass):
         if self._it == 0:
             self.device = N_pT.device
             self.edge_mlp = torch.zeros((edge_index.shape[1], 2), device = self.device)
+            self.res_mlp = torch.zeros((edge_index.shape[1], 2), device = self.device)
             self.node_count = torch.ones((N_pT.shape[0], 1), device = self.device)
             self.index_map = to_dense_adj(edge_index)[0] 
             self.index_map[self.index_map != 0] = torch.arange(self.index_map.sum(), device = self.device)
             self.index_map = self.index_map.to(dtype = torch.long)
         Pmu = torch.cat([N_pT, N_eta, N_phi, N_energy], dim = 1)
-        Pmc = TensorToPxPyPzE(Pmu)
+        Pmc = torch.cat([Cu.PxPyPz(N_pT, N_eta, N_phi), N_energy], -1)
         
         edge_index_new, Pmu, N_mass = self.propagate(edge_index, Pmc = Pmc, Pmu = Pmu, Mass = N_mass)
         if torch.sum(self.index_map[edge_index_new]) != torch.sum(self.index_map[edge_index]):
@@ -37,21 +46,34 @@ class BasicBaseLineRecursion(MessagePassing):
             return self.forward(i, edge_index_new, Pmu[:, 0:1], Pmu[:, 1:2], Pmu[:, 2:3], Pmu[:, 3:4], N_mass)
         self._it = 0
         self.O_edge = self.edge_mlp
+        self.O_res = self.res_mlp
         return self.O_edge
 
     def message(self, edge_index, Pmc_i, Pmc_j, Pmu_i, Pmu_j, Mass_i, Mass_j):
-        e_dr = TensorDeltaR(Pmu_i, Pmu_j)
-        e_mass = MassFromPxPyPzE(Pmc_i + Pmc_j)
+        eta_i, eta_j = Pmu_i[:, 1], Pmu_j[:, 1]
+        phi_i, phi_j = Pmu_i[:, 2], Pmu_j[:, 2]
+
+        e_dr = PcP.DeltaR(eta_i, eta_j, phi_i, phi_j)
+        e_mass = PcC.Mass(Pmc_i + Pmc_j)
 
         e_mass_mlp = self._isMass(e_mass/1000)
         ni_mass = self._isMass(Mass_i/1000)
         nj_mass = self._isMass(Mass_j/1000)
 
-        mlp = self._isEdge(torch.cat([e_mass_mlp, torch.abs(ni_mass-nj_mass), torch.abs(e_mass_mlp - ni_mass - nj_mass), e_mass_mlp + ni_mass + nj_mass], dim = 1))
-        return edge_index[1], mlp, Pmc_j
+        mlp = self._isEdge(torch.cat([
+                        e_mass_mlp, torch.abs(ni_mass-nj_mass), 
+                        torch.abs(e_mass_mlp - ni_mass - nj_mass), 
+                        e_mass_mlp + ni_mass + nj_mass], dim = 1))
+        
+        res = self._isResEdge(torch.cat([
+                        e_mass_mlp, torch.abs(ni_mass-nj_mass), 
+                        torch.abs(e_mass_mlp - ni_mass - nj_mass), 
+                        e_mass_mlp + ni_mass + nj_mass], dim = 1))
+
+        return edge_index[1], mlp, Pmc_j, res
 
     def aggregate(self, message, index, Pmc, Pmu, Mass):
-        edge_index, mlp_mass, Pmc_j = message
+        edge_index, mlp_mass, Pmc_j, res = message
         edge = mlp_mass.max(dim = 1)[1]
         
         max_c = (edge == 1).nonzero().view(-1)
@@ -71,6 +93,9 @@ class BasicBaseLineRecursion(MessagePassing):
         self.node_count[edge_index[max_c]] = 0
         
         self.edge_mlp[idx_all] += mlp_mass
+        self.res_mlp[idx_all] += res
+
         edge_index = torch.cat([index[edge == 0].view(1, -1), edge_index[edge == 0].view(1, -1)], dim = 0)
         edge_index = add_remaining_self_loops(edge_index, num_nodes = Pmu.shape[0])[0]
-        return edge_index, TensorToPtEtaPhiE(Pmc_i), MassFromPxPyPzE(Pmc_i)
+        px, py, pz, e = Pmc_i[:, 0], Pmc_i[:, 1], Pmc_i[:, 2], Pmc_i[:, 3].view(-1, 1)
+        return edge_index, torch.cat([Cu.PtEtaPhi(px, py, pz), e], dim = -1), PcC.Mass(Pmc_i)

@@ -11,6 +11,10 @@ class SampleTracer:
     def AddROOTFile(self, Name, Event):
         if self.SampleContainer == None:
             self.SampleContainer = SampleContainer()
+        if "Threads" in self.__dict__:
+            self.SampleContainer.Threads = self.Threads
+        if "chnk" in self.__dict__:
+            self.SampleContainer.chnk = self.chnk
         self.SampleContainer.AddEvent(Name, Event) 
     
     def HashToROOT(self, _hash):

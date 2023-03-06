@@ -1,5 +1,5 @@
 from AnalysisTopGNN import Analysis
-from Event import Event
+from ObjectDefinitions.Event import Event
 from AnalysisTopGNN.Plotting import TH1F
 
 # // ======================== Running the Event Compiler ============================= //

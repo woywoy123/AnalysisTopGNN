@@ -33,7 +33,6 @@ def TruthTopChildren():
     import AnalysisTopGNN.Features.TruthTopChildren.NodeFeature as tc_nf
     import AnalysisTopGNN.Features.TruthTopChildren.EdgeFeature as tc_ef
 
-    # Node: Generic Particle Properties
     NF = {
             "eta"    : tc_nf.eta, 
             "energy" : tc_nf.energy, 
@@ -41,14 +40,10 @@ def TruthTopChildren():
             "phi"    : tc_nf.phi, 
             "mass"   : tc_nf.mass, 
             "charge" : tc_nf.charge, 
-            "islep"  : tc_nf.islepton, 
-            "isNu"   : tc_nf.isneutrino, 
     }
     
     GF = {
-            "ntop"    : tc_gf.nTops, 
-            "nlep"    : tc_gf.nLeptons, 
-            "nNu"     : tc_gf.nNeutrinos, 
+ 
             "met"     : tc_gf.MET, 
             "met_phi" : tc_gf.MET_Phi
         }
@@ -56,12 +51,16 @@ def TruthTopChildren():
     
     GT = {
             "signal"  : tc_gf.Signal, 
-            "ntops"   : tc_gf.nTops, 
+            "ntops"   : tc_gf.nTops,
+            "nlep"    : tc_gf.nLeptons, 
+            "nNu"     : tc_gf.nNeutrinos,
         }
 
     NT = {
             "res" : tc_nf.FromRes, 
-            "top" : tc_nf.FromTop
+            "top" : tc_nf.FromTop, 
+            "islep"  : tc_nf.islepton, 
+            "isNu"   : tc_nf.isneutrino, 
         }
     
     ET = {
@@ -126,8 +125,6 @@ def TruthJets():
     Features |= AddFeature("GF", GF)
     Features |= AddFeature("GT", GT)
     return Features
-
-
 
 def ApplyFeatures(A, Level):
     if Level == "TruthTops":

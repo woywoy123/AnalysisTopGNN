@@ -2,7 +2,9 @@ import torch
 from torch_geometric.nn import MessagePassing
 from torch.nn import Sequential as Seq, Linear, ReLU, Sigmoid, Tanh
 import torch.nn.functional as F
-from LorentzVector import *
+import PyC.Transform.Tensors as Tt
+import PyC.Physics.Tensors.Polar as PtP
+import PyC.Physics.Tensors.Cartesian as PtC
 from torch_geometric.utils import to_dense_adj, add_remaining_self_loops, dense_to_sparse
 
 torch.set_printoptions(4, profile = "full", linewidth = 100000)
@@ -22,14 +24,14 @@ class CheatModel(MessagePassing):
 
     def forward(self, i, edge_index, N_pT, N_eta, N_phi, N_energy, N_mass, E_T_edge):
         Pmu = torch.cat([N_pT, N_eta, N_phi, N_energy], dim = 1)
-        Pmc = TensorToPxPyPzE(Pmu)
+        Pmc = torch.cat([Tt.PxPyPz(N_pT, N_eta, N_phi), N_energy], dim = -1)
         
         self.O_edge = self.propagate(edge_index, Pmc = Pmc, Pmu = Pmu, Mass = N_mass, E_T_edge = E_T_edge)
         return self.O_edge
 
     def message(self, edge_index, Pmc_i, Pmc_j, Pmu_i, Pmu_j, Mass_i, Mass_j, E_T_edge):
-        e_dr = TensorDeltaR(Pmu_i, Pmu_j)
-        e_mass = MassFromPxPyPzE(Pmc_i + Pmc_j)
+        e_dr = PtP.DeltaR(Pmu_i[:, 1], Pmu_j[:, 1], Pmu_i[:, 2], Pmu_j[:, 2])
+        e_mass = PtC.Mass(Pmc_i + Pmc_j)
 
         e_mass_mlp = self._isMass(e_mass/1000)
         ni_mass = self._isMass(Mass_i/1000)

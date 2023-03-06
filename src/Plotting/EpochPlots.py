@@ -71,19 +71,22 @@ class EpochPlots:
         T.SaveFigure()
     
     def CompileROC(self, Names, ModelOutputs):
-        Plots = {
-                    "yTitle" : "True Positive Rate", 
-                    "xTitle" : "False Positive Rate", 
-                    "xMin" : 0, "xMax" : 1, 
-                    "yMin" : 0, "yMax" : 1,
-                    "Marker" : ".",
-                }
+        def MakePlot():
+            Plots = {
+                        "yTitle" : "True Positive Rate", 
+                        "xTitle" : "False Positive Rate", 
+                        "xMin" : 0, "xMax" : 1, 
+                        "yMin" : 0, "yMax" : 1,
+                        "Marker" : ".",
+                    }
+            return Plots
         
         for feat in [i[2:] for i in ModelOutputs]:
             line = []
             for name in Names:
                 ROC = getattr(self, "ROC_" + name)
                 ROC[feat] = Metrics().MakeROC(ROC[feat]["truth"], ROC[feat]["p_score"])
+                Plots = MakePlot()
                 Plots["yData"] = ROC[feat]["tpr"]
                 Plots["xData"] = ROC[feat]["fpr"]
                 Plots["Title"] = name
@@ -91,6 +94,7 @@ class EpochPlots:
                 L.Compile()
                 line.append(L)
             
+            Plots = MakePlot()
             Plots["OutputDirectory"] = self.OutDir + "/Epoch-" + str(self.Epoch) + "/ROC"
             Plots["Title"] = "Receiver and Operator Curve: " + feat
             Plots["Lines"] = line
@@ -101,16 +105,17 @@ class EpochPlots:
     def AccuracyHistograms(self, ModelOutputs):
         for feat in [i[2:] for i in ModelOutputs]:
             Outdir = self.OutDir + "/Epoch-"+ str(self.Epoch) + "/DebugPlots"
-            Plots = self.TemplateHistograms("Accuracy (%)", 100, Outdir)
-            Plots["xMax"] = 100
             
             Hists = []
             for names in self.names:
+                Plots = self.TemplateHistograms("Accuracy (%)", 100, Outdir)
                 Acc = getattr(self, "Accuracy_" + names)[feat]
                 Plots["Title"] = names
                 Plots["xData"] = [k for k in Acc]
                 Hists.append(TH1F(**Plots))    
             
+            Plots = self.TemplateHistograms("Accuracy (%)", 100, Outdir)
+            Plots["xMax"] = 100
             Plots["Filename"] = feat + "_Accuracy"
             Plots["Title"] = "Accuracy Distribution for Different Samples Feature: " + feat
             Plots["Histograms"] = Hists
@@ -120,33 +125,34 @@ class EpochPlots:
     def LossHistograms(self, ModelOutputs):
         for feat in [i[2:] for i in ModelOutputs]:
             Outdir = self.OutDir + "/Epoch-"+ str(self.Epoch) + "/DebugPlots"
-            Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)
             
             Hists = []
             for names in self.names:
+                Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)
                 Loss = getattr(self, "Loss_" + names)[feat]
                 Plots["Title"] = names
                 Plots["xData"] = Loss
                 Hists.append(TH1F(**Plots))
-            
+                
+            Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)           
             Plots["Title"] = "Loss Distribution for Different Samples Feature: " + feat
             Plots["Histograms"] = Hists
             Plots["Filename"] = feat + "_Loss"
             
             CH = CombineTH1F(**Plots)
             CH.SaveFigure()
-
-
-        Outdir = self.OutDir + "/Epoch-"+ str(self.Epoch) + "/DebugPlots"
-        Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)
         
         Hists = []
+        Outdir = self.OutDir + "/Epoch-"+ str(self.Epoch) + "/DebugPlots"
         for names in self.names:
             Loss = getattr(self, "TotalLoss_" + names)
+
+            Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)
             Plots["Title"] = names
             Plots["xData"] = Loss
             Hists.append(TH1F(**Plots))    
         
+        Plots = self.TemplateHistograms("Loss of Prediction", 100, Outdir)
         Plots["Title"] = "Total Loss Distribution for Different Samples Feature"
         Plots["Filename"] = "TotalLoss"
         Plots["Histograms"] = Hists

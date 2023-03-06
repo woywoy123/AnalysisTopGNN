@@ -8,6 +8,7 @@ class _Code(Tools):
         self.Module = None 
         self.Path = None 
         self.Code = None 
+        self._File = None
 
     def DumpCode(self, Instance):
         try:
@@ -20,6 +21,7 @@ class _Code(Tools):
         self.Module = Instance.__module__
         self.Path = self.Module + "." + self.Name
         self.Code = self.GetSourceFile(Instance)
+        self._File = self.GetSourceFileDirectory(Instance)
     
     def CopyInstance(self, Instance):
         if callable(Instance):
@@ -141,11 +143,15 @@ class _Analysis:
         _Optimization.__init__(self)
         _ModelEvaluator.__init__(self)
         self._SampleMap = {}
+        self._Selection = {}
+        self._MSelection = {}
         self._InputValues = []
+        self._lst = []
         
         self.EventCache = False
         self.DataCache = False
         self._launch = False
+        self._tmp = False
 
         self.DumpHDF5 = False
         self.DumpPickle = False
@@ -195,13 +201,24 @@ class _File:
     def __init__(self):
         self.StepSize = 5000
         self.VerboseLevel = 3
-        
+
+class _Selection:
+
+    def __init__(self):
+        self.Tree = None
+        self._OutDir = False
+        self._hash = None
+        self._Residual = []
+        self._CutFlow = {}
+        self._TimeStats = []
+ 
 class Settings(_General):
     
     def __init__(self):
         if self.Caller == "CONDOR":
             _Condor.__init__(self)
             return 
+
         if self.Caller == "FILE":
             _File.__init__(self)
             return
@@ -216,6 +233,10 @@ class Settings(_General):
         
         if self.Caller == "PICKLER":
             _Pickle.__init__(self)
+            return 
+        
+        if self.Caller == "SELECTION":
+            _Selection.__init__(self)
             return 
 
         _General.__init__(self)
@@ -238,7 +259,7 @@ class Settings(_General):
             _Analysis.__init__(self)
         
     def DumpSettings(self):
-        return {i : self.__dict__[i] for i in self.__dict__}
+        return self.__dict__ 
     
     def ExportAnalysisScript(self):
         def Hash(obj):
@@ -266,7 +287,10 @@ class Settings(_General):
                     for k in self._InputValues:
                         if "INPUTSAMPLE" in k:
                             continue
-                        k["EVALUATEMODEL"]["ModelInstance"] = Hash(k["EVALUATEMODEL"]["ModelInstance"])
+                        elif "EVALUATEMODEL" in k:
+                            k["EVALUATEMODEL"]["ModelInstance"] = Hash(k["EVALUATEMODEL"]["ModelInstance"])
+                        elif "ADDSELECTION" in k:
+                            k["ADDSELECTION"]["inpt"] = Hash(k["ADDSELECTION"]["inpt"])
                 else: 
                     dic[i] = {k : Hash(dic[i][k]) for k in dic[i]} if isinstance(dic[i], dict) else Hash(dic[i])
 

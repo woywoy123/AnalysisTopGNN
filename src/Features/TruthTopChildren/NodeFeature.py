@@ -17,17 +17,7 @@ def charge(a):
     return float(a.charge)
 
 def mass(a):
-    return float(a.CalculateMass())
-
-def pdgid(a):
-    return float(a.pdgid)
-
-def islepton(a):
-    return 1 if abs(a.pdgid) in [11, 13, 15] else 0
-
-def isneutrino(a):
-    return 1 if abs(a.pdgid) in [12, 14, 16] else 0
-
+    return float(a.Mass)
 
 # ---- Truth ---- #
 def FromRes(a):
@@ -37,5 +27,14 @@ def FromRes(a):
 
 def FromTop(a):
     return 1 if len(a.Parent) > 0 else 1
+
+def pdgid(a):
+    return float(a.pdgid)
+
+def islepton(a):
+    return 1 if abs(a.pdgid) in [11, 13, 15] else 0
+
+def isneutrino(a):
+    return 1 if abs(a.pdgid) in [12, 14, 16] else 0
 
 

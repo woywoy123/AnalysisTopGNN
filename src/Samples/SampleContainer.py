@@ -1,5 +1,7 @@
 from AnalysisTopGNN.Notification import SampleContainer
+from AnalysisTopGNN.Tools import Threading
 from .ROOTFile import ROOTFile
+import copy 
 
 class SampleContainer:
 
@@ -8,16 +10,19 @@ class SampleContainer:
         self._Hashes = {}
         self._EventMap = {}
         self._locked = False
+        self.Threads = 1
+        self.chnk = 1
     
     def AddEvent(self, Name, Event):
         if Name not in self.ROOTFiles:
-            self.ROOTFiles[Name] = ROOTFile(Name)
+            self.ROOTFiles[Name] = ROOTFile(Name, self.Threads, self.chnk)
         self.ROOTFiles[Name].AddEvent(Event) 
     
     def HashToROOT(self, _hash):
         for name in self.ROOTFiles:
             if _hash in self.ROOTFiles[name]:
                 return name
+        return False 
 
     def list(self, force = False):
         if len(self._EventMap) != len(self) or force:
@@ -32,31 +37,46 @@ class SampleContainer:
     def hash(self, force = False):
         if len(self._Hashes) != len(self) or force:
             self._Hashes = {_hash : self.ROOTFiles[name][_hash] for name in self.ROOTFiles for _hash in self.ROOTFiles[name].hash()}
-        return list(self._Hashes.values())
+        return list(self._Hashes.keys())
 
     def ClearEvents(self):
-        for name in self.ROOTFiles:
-            self.ROOTFiles[name].ClearEvents()
-        self.list(True)
-        self.hash(True)
-        self._locked = True
+        tmp = copy.deepcopy(self)
+        for name in tmp.ROOTFiles:
+            tmp.ROOTFiles[name].ClearEvents()
+        tmp.list(True)
+        tmp.hash(True)
+        tmp._locked = True
+        return tmp
 
-    def RestoreEvents(self, events):
-        if isinstance(events, list):
-            events = {i.Filename : i for i in events}
-        rest = {}
-        for i in events:
-            name = self.HashToROOT(i)
-            if name not in rest:
-                rest[name] = []
-            rest[name].append(events[i])
-        
+    def RestoreEvents(self, events, threads = 12, chnk = 100):
+        def function(inpt):
+            out = []
+            for ev in inpt:
+                name = self.HashToROOT(ev.Filename)
+                if name == False:
+                    out.append([ev, False])
+                else:
+                    out.append([ev.Filename, ev, name])
+            return out
+        if isinstance(events, dict):
+            events = list(events.values())
+
+        th = Threading(events, function, threads, chnk)
+        th.VerboseLevel = 0
+        th.Title = "RESTORE"
+        th.Start()
+        events = {i[0] : i[1] for i in th._lists if i[1]}
+        rest = {i[2] : [] for i in th._lists if i[1]}
+        for k in th._lists:
+            if not k[1]:
+                continue
+            rest[k[2]].append(k[1])
         for name in rest:
             self.ROOTFiles[name].RestoreEvents(rest[name])
         self.list(True)
         self.hash(True)
         self._locked = False
-    
+
     def __len__(self):
         return sum([len(self.ROOTFiles[name]) for name in self.ROOTFiles])  
 
@@ -97,5 +117,7 @@ class SampleContainer:
             return True
         if key in self._EventMap:
             return True
+        if key in self.ROOTFiles:
+            return True 
         return False
 

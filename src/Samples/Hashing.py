@@ -7,4 +7,3 @@ class Hashing:
     
     def MD5(self, inpt):
         return str(hashlib.md5(inpt.encode("utf-8")).hexdigest())
-

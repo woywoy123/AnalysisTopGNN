@@ -10,7 +10,9 @@ class EventGenerator(Notification):
             ex = "Or do: from AnalysisTopGNN.Events import Event"
             self.Failure("="*len(ex))
             self.Failure("No Event Implementation Provided.")
-            self.Failure("See src/EventTemplates/Event.py")
+            self.Failure("var = " + self.Caller.capitalize() + "()")
+            self.Failure("var.Event")
+            self.Failure("See src/EventTemplates/Event.py or 'tutorial'")
             self.FailureExit(ex)
       
     def CheckROOTFiles(self):
@@ -38,3 +40,9 @@ class EventGenerator(Notification):
             ex = "The Event implementation has an empy self.Trees variable!"
             self.Failure("="*len(ex))
             self.FailureExit(ex)
+
+    def FoundFiles(self, Files, i = None):
+        if self.Caller == "ANALYSIS":
+            return 
+        for i in Files:
+            self.Success("!!Files Found in Directory: " + i + "\n -> " + "\n -> ".join(Files[i]))

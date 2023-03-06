@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import sys, os
 
 def StringToObject(module, name):
     modul = importlib.import_module(module)
@@ -31,3 +32,7 @@ def GetSourceFile(obj):
         return "".join(open(inspect.getfile(obj.__class__), "r").readlines())
     except: 
         return inspect.getsource(obj)
+
+def GetSourceFileDirectory(obj):
+    return os.path.abspath(sys.modules[obj.__module__].__file__)
+

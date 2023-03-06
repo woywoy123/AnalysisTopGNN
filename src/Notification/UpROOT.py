@@ -10,4 +10,5 @@ class UpROOT(Notification):
             self.Warning("SKIPPED: " + Type + "::" + i)
     
     def ReadingFile(self, Name):
-        self.Success("Reading: " + Name)
+        self.Success("!!!(Reading) -> " + Name.split("/")[-1] + 
+                     " (" + ", ".join([t + " - " + str(self._Reader[t].num_entries) for t in self.Trees]) + ")")
