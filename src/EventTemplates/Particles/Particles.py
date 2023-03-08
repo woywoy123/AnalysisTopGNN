@@ -22,7 +22,7 @@ class Top(Particle):
         self.status = self.Type + "_status"
         self.TruthJets = []
         self.Jets = []
-    
+
 class Children(Particle):
 
     def __init__(self):
@@ -154,19 +154,3 @@ class Neutrino(ParticleTemplate):
         self.px = px
         self.py = py
         self.pz = pz
-
-    @property
-    def phi(self):
-        return self._phi
-
-    @property
-    def eta(self):
-        return self._eta
-
-    @property
-    def pt(self):
-        return self._pt
-
-    @property
-    def e(self):
-        return self._e

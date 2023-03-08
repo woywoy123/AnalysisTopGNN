@@ -14,8 +14,7 @@ def energy(a):
     return float(a.e)
 
 def mass(a):
-    a.CalculateMass()
-    return float(a.Mass_GeV)
+    return float(a.Mass)
 
 def islepton(a):
     if a.Type == "el" or a.Type == "mu":
@@ -39,7 +38,6 @@ def FromRes(a):
 
 def FromTop(a):
     return 1
-
 
 def ExpPx(a):
     return float(a.exp_Px)

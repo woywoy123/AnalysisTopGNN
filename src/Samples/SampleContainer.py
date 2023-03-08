@@ -29,7 +29,7 @@ class SampleContainer:
             lst = [ev for name in self.ROOTFiles for ev in self.ROOTFiles[name].list()]
             self._EventMap = {i : ev for i, ev in zip(range(len(lst)), lst)}
         return list(self._EventMap.values())
-
+    
     def dict(self):
         self.hash(True)
         return self._Hashes
@@ -60,7 +60,7 @@ class SampleContainer:
             return out
         if isinstance(events, dict):
             events = list(events.values())
-
+        
         th = Threading(events, function, threads, chnk)
         th.VerboseLevel = 0
         th.Title = "RESTORE"
@@ -83,7 +83,11 @@ class SampleContainer:
     def __getitem__(self, key):
         self.hash()
         self.list()
-        if key in self._Hashes and isinstance(key, str):
+        if isinstance(key, str) == False:
+            return False
+        if key in self.ROOTFiles:
+            return self.ROOTFiles[key]
+        if key in self._Hashes:
             return self._Hashes[key]
         if key in self._EventMap:
             return self._EventMap[key]
@@ -107,17 +111,22 @@ class SampleContainer:
             if name not in self.ROOTFiles:
                 self.ROOTFiles[name] = sample
                 continue
+            if self.ROOTFiles[name]._lock:
+                self.ROOTFiles[name] = sample
+                continue
             self.ROOTFiles[name] += sample
         self.hash()
         self.list()
         return self
    
     def __contains__(self, key):
+        
+        if key in self.ROOTFiles:
+            return True 
         if key in self._Hashes:
             return True
         if key in self._EventMap:
             return True
-        if key in self.ROOTFiles:
-            return True 
+
         return False
 

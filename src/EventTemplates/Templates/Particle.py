@@ -1,5 +1,5 @@
 from .Manager import VariableManager
-from AnalysisTopGNN.Vectors import * 
+from AnalysisTopGNN.Vectors import *
 
 class ParticleTemplate(VariableManager):
     def __init__(self):
@@ -7,13 +7,81 @@ class ParticleTemplate(VariableManager):
         VariableManager.__init__(self)
         self.Parent = []
         self.Children = []
+        for property in ['phi', 'eta', 'pt', 'e', 'px', 'py', 'pz']:
+            self.__dict__['_' + property] = None
+
+    @property
+    def px(self):
+        self._px = Px(self._pt, self._phi) if IsIn(["_pt", "_phi"], self.__dict__) and self._pt is not None and self._phi is not None else self._px
+        return self._px
+
+    @property
+    def py(self):
+        self._py = Py(self._pt, self._phi) if IsIn(["_pt", "_phi"], self.__dict__) and self._pt is not None and self._phi is not None else self._py
+        return self._py
+
+    @property
+    def pz(self):
+        self._pz = Pz(self._pt, self._eta) if IsIn(["_pt", "_eta"], self.__dict__) and self._pt is not None and self._eta is not None else self._pz
+        return self._pz
+
+    @property
+    def eta(self):
+        self._eta = Eta(self._px, self._py, self._pz) if IsIn(["_px", "_py", "_pz"], self.__dict__) and self._px is not None and self._py is not None and self._pz is not None else self._eta
+        return self._eta
+
+    @property
+    def phi(self):
+        self._phi = Phi(self._px, self._py) if IsIn(["_px", "_py"], self.__dict__) and self._px is not None and self._py is not None else self._phi
+        return self._phi
+
+    @property
+    def pt(self):
+        self._pt = PT(self._px, self._py) if IsIn(["_px", "_py"], self.__dict__) and self._px is not None and self._py is not None else self._pt
+        return self._pt
+
+    @property
+    def e(self):
+        if IsIn(["_e"], self.__dict__) and self._e is not None:
+            return self._e
+        m = self.m if IsIn(["m"], self.__dict__) else 0
+        self._e = energy(m, self.px, self.py, self.pz)
+        return self._e
+
+    @phi.setter
+    def phi(self, value):
+        self._phi = value
+
+    @eta.setter
+    def eta(self, value):
+        self._eta = value
+
+    @pt.setter
+    def pt(self, value):
+        self._pt = value
+
+    @e.setter
+    def e(self, value):
+        self._e = value
+
+    @px.setter
+    def px(self, value):
+        self._px = value
+
+    @py.setter
+    def py(self, value):
+        self._py = value
+
+    @pz.setter
+    def pz(self, value):
+        self._pz = value
 
     def DeltaR(self, P):
         return deltaR(P.eta, self.eta, P.phi, self.phi)
-    
+
     @property
     def Mass(self):
-        return PxPyPzEMass(self._px, self._py, self._pz, self._e)
+        return PxPyPzEMass(self.px, self.py, self.pz, self.e)
 
     def _istype(self, lst):
         if IsIn(["pdgid"], self.__dict__):
@@ -36,44 +104,7 @@ class ParticleTemplate(VariableManager):
     def is_add(self):
         return not (self.is_lep or self.is_nu or self.is_b)
 
-    @property
-    def _px(self):
-        self.px = Px(self.pt, self.phi) if IsIn(["pt", "phi"], self.__dict__) else self.px
-        return self.px
 
-    @property
-    def _py(self):
-        self.py = Py(self.pt, self.phi) if IsIn(["pt", "phi"], self.__dict__) else self.py
-        return self.py
-
-    @property
-    def _pz(self):
-        self.pz = Pz(self.pt, self.eta) if IsIn(["pt", "eta"], self.__dict__) else self.pz
-        return self.pz
-
-    @property
-    def _eta(self):
-        self.eta = Eta(self.px, self.py, self.pz) if IsIn(["px", "py", "pz"], self.__dict__) else self.eta
-        return self.eta
-    
-    @property
-    def _phi(self):
-        self.phi = Phi(self.px, self.py) if IsIn(["px", "py"], self.__dict__) else self.phi   
-        return self.phi
-
-    @property
-    def _pt(self):
-        self.pt = PT(self.px, self.py) if IsIn(["px", "py"], self.__dict__) else self.pt   
-        return self.pt
-    
-    @property 
-    def _e(self):
-        if IsIn(["e"], self.__dict__):
-            return self.e
-        m = self.m if IsIn(["m"], self.__dict__) else 0
-        self.e = energy(m, self._px, self._py, self._pz)
-        return self.e
-    
     @property
     def LeptonicDecay(self):
         return sum([1 for k in self.Children if abs(k.pdgid) in [11, 12, 13, 14, 15, 16]]) > 0
@@ -86,29 +117,29 @@ class ParticleTemplate(VariableManager):
     def __radd__(self, other):
         if other == 0:
             p = ParticleTemplate()
-            p.__dict__["px"] = self._px
-            p.__dict__["py"] = self._py
-            p.__dict__["pz"] = self._pz
-            p.__dict__["e"] = self._e
-            p._eta, p._pt, p._phi, p._e 
+            p.px = self.px
+            p.py = self.py
+            p.pz = self.pz
+            p.e = self.e
+            # p.eta, p.pt, p.phi, p.e
             return p
         else:
             return self.__add__(other)
 
     def __add__(self, other):
         particle = ParticleTemplate()
-        particle.__dict__["px"] = self._px + other._px
-        particle.__dict__["py"] = self._py + other._py
-        particle.__dict__["pz"] = self._pz + other._pz 
-        particle.__dict__["e"] = self._e + other._e 
+        particle.px = self.px + other.px
+        particle.py = self.py + other.py
+        particle.pz = self.pz + other.pz
+        particle.e = self.e + other.e
 
-        particle._eta, particle._pt, particle._phi, particle._e 
+        # particle.eta, particle.pt, particle.phi, particle.e
 
         particle.Children += self.Children
         particle.Children += [p for p in other.Children if p not in particle.Children]
 
         return particle
-    
+
     def __str__(self, caller = False):
         PDGID = {
                   1 : "d"           ,  2 : "u"             ,  3 : "s",
@@ -132,4 +163,3 @@ class ParticleTemplate(VariableManager):
         for i in self.Children:
             string += " -> " + i.__str__(caller = True)
         return string
-

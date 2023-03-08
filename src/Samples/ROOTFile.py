@@ -9,21 +9,17 @@ class ROOTFile(Hashing):
         self.HashMap = {}
         self.Filename = Filename
         self.EventMap = {}
+        self.EventCompiled = {}
         self._lock = False
-        self._len = -1
+        self._len = 0
+        self._lenC = 0
         self.Threads = Threads
         self.chnk = chnk
+        self._iter = None
     
     def MakeHash(self):
-        def function(inpt):
-            return [self.MD5(indx[0] + "/" + str(indx[1])) for indx in inpt]
-        
-        th = Threading([[self.Filename, self.EventMap[i].EventIndex] for i in self.EventMap], function, self.Threads, self.chnk)
-        th.VerboseLevel = 0
-        th.Start() 
-        for i, _hash in zip(self.EventMap, th._lists):
-            self.EventMap[i].Filename = _hash
-            self.HashMap[_hash] = self.EventMap[i]
+        for i in self.EventMap.values():
+            self.HashMap[i.Filename] = i
         self._len = len(self.HashMap)
 
     def AddEvent(self, Event):
@@ -34,13 +30,28 @@ class ROOTFile(Hashing):
         return self._len
 
     def list(self):
-        return list(self.EventMap.values())
+        _o = list(self.EventMap)
+        _o.sort()
+        return [ self.EventMap[i] for i in _o ]
     
+    def Compiled(self):
+        if len(self.EventCompiled) != self._lenC or self._lenC == 0:
+            self.EventCompiled = {i : self.EventMap[i] for i in self.EventMap if self.EventMap[i].Compiled}
+        self._lenC = len(self.EventCompiled)
+        return self._lenC 
+
     def hash(self):
         if len(self) != len(self.HashMap) and self._lock == False:
             self.MakeHash()
         return list(self.HashMap)
+
+    def __iter__(self):
+        self._iter = iter(self.HashMap.values())
+        return self
     
+    def __next__(self):
+        return next(self._iter)
+
     def __getitem__(self, key):
         if IsIn([key], self.HashMap):
             return self.HashMap[key]
@@ -67,15 +78,19 @@ class ROOTFile(Hashing):
     def __add__(self, other):
         hashes = self.hash() + other.hash() 
         evnts = list(self.HashMap.values()) + list(other.HashMap.values())
-        self.HashMap = {h : False for h in set(hashes)}
+        self.HashMap = {h : False for h in hashes}
         for _hash, evnt in zip(hashes, evnts):
-            if self.HashMap[_hash] == False: 
-                self.HashMap[_hash] = evnt
-                continue
-                
             if isinstance(evnt, str):
                 continue
-            self.HashMap[_hash] = evnt
+
+            self.EventMap[evnt.EventIndex] = evnt
+            if self.HashMap[_hash] == False: 
+                self.HashMap[_hash] = evnt
+            
+            self.HashMap[_hash] = evnt if isinstance(self.HashMap[_hash], str) else self.HashMap[_hash]
+            if evnt.Compiled and self.HashMap[_hash].Compiled == False:
+                self.HashMap[_hash] = evnt
+                self.EventCompiled[_hash] = evnt
 
         self.EventMap = self.EventMap if self._lock else {i : "" if isinstance(ev, str) else ev.UpdateIndex(i) for i, ev in zip(range(len(self.HashMap)), self.HashMap.values())}
         self._len = len(self.EventMap)

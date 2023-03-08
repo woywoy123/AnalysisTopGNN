@@ -28,10 +28,10 @@ def mu_actual(ev):
     return float(ev.mu_actual)
 
 def nTops(ev):
-    return float(len(ev.TruthTops))
+    return float(len(ev.Tops))
 
 def SignalSample(ev):
-    if len(ev.TruthTops) == 4:
+    if len(ev.Tops) == 4:
         return 1
     else:
         return 0

@@ -74,5 +74,6 @@ class BasicBaseLineRecursion(MessagePassing):
         self.edge_mlp[idx_all] += mlp_mass
         edge_index = torch.cat([index[edge == 0].view(1, -1), edge_index[edge == 0].view(1, -1)], dim = 0)
         edge_index = add_remaining_self_loops(edge_index, num_nodes = Pmu.shape[0])[0]
-
-        return edge_index, torch.cat([Tt.PtEtaPhi(Pmc_i), Pmc_i[:3]], dim = -1), PtC.Mass(Pmc_i)
+        
+        Pmu = Tt.PtEtaPhi(Pmc_i[:, 0].view(-1, 1), Pmc_i[:, 1].view(-1, 1), Pmc_i[:, 2].view(-1, 1))
+        return edge_index, torch.cat([Pmu, Pmc_i[:, 3].view(-1, 1)], dim = -1), PtC.Mass(Pmc_i)

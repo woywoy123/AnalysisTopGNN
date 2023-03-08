@@ -1,5 +1,5 @@
 from AnalysisTopGNN.Generators import EventGenerator, GraphGenerator
-from AnalysisTopGNN.Events import Event, EventGraphTruthTopChildren
+from AnalysisTopGNN.Events import Event, EventGraphChildren
 from AnalysisTopGNN.IO import PickleObject, UnpickleObject
 from AnalysisTopGNN.Tools import Tools
 
@@ -13,11 +13,10 @@ def TestEventGraph(Files):
     Ev.EventStop = 100
     Ev.Event = Event
     Ev.SpawnEvents()
-    Ev.CompileEvent()
 
     Gr = GraphGenerator()
     Gr += Ev
-    Gr.EventGraph = EventGraphTruthTopChildren
+    Gr.EventGraph = EventGraphChildren
     Gr.AddGraphFeature(Test)
     Gr.TestFeatures(10)
     Gr.EventStart = 1
