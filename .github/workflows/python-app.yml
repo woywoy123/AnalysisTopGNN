@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "CI-CD-testing" ]
   pull_request:
     branches: [ "master" ]
 
@@ -29,6 +29,7 @@ jobs:
         pip install flake8 pytest
         cd setup-scripts
         source SetupVenv.sh
+        echo 'Some text'
 #    - name: Lint with flake8
 #      run: |
 #        # stop the build if there are Python syntax errors or undefined names
