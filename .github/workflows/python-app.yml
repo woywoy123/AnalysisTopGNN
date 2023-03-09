@@ -28,8 +28,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         cd setup-scripts
-        source SetupVenv.sh
-        echo 'Some text'
+        source SetupCICD.sh
 #    - name: Lint with flake8
 #      run: |
 #        # stop the build if there are Python syntax errors or undefined names
