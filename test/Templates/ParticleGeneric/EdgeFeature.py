@@ -24,7 +24,7 @@ def mass(a, b):
 
 # ================== Truth ================ #
 def Index(a, b):
-    if a.Index == b.Index:
+    if a.index == b.index:
         return float(1)
     return float(0)
 
@@ -32,6 +32,6 @@ def Expected_Px(a, b):
     if hasattr(a, "exp_Px") == False:
         a.exp_Px = 0
     
-    if a.Index != b.Index:
+    if a.index != b.index:
         return 
     a.exp_Px += Tf.Px(b.pt, b.phi)

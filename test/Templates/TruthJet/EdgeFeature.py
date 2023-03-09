@@ -4,13 +4,13 @@
 
 # ============= Truth =================== #
 def Index(a, b):
-    ta = [i.Index for i in a.Children]
-    tb = [i.Index for i in b.Children]
+    ta = [i.index for i in a.Children]
+    tb = [i.index for i in b.Children]
     
     if a.Type == "el" or a.Type == "mu":
-        ta.append(a.Index)
+        ta.append(a.index)
     if b.Type == "el" or b.Type == "mu":
-        tb.append(b.Index)
+        tb.append(b.index)
 
     if len(ta) == 0:
         return 0

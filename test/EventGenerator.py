@@ -9,7 +9,6 @@ def TestEventGenerator(Files):
     EvtGen.EventStart = 1
     EvtGen.Event = Event
     EvtGen.SpawnEvents()
-    EvtGen.CompileEvent()
    
     it = 0
     for event in EvtGen:

@@ -8,41 +8,38 @@ from .Settings import Settings, _Code
 
 def _MakeEvents(inpt, _prgbar):
      
-    out = []
     lock, bar = _prgbar
+    _e = inpt[0][2]
     r = inpt[0][0]
-    c = [i[1] for i in inpt]
+    inpt = [i[1] for i in inpt] 
+    
     All = [b.split("/")[-1] for b in r.Branches] + [l.split("/")[-1] for l in r.Leaves]
-    __iter = {Tree : r._Reader[Tree].iterate(All, library = "np", step_size = len(c), entry_start = min(c), entry_stop = max(c)+1 ) for Tree in r.Trees}
+    __iter = {Tree : r._Reader[Tree].iterate(All, library = "np", step_size = len(inpt), entry_start = min(inpt), entry_stop = max(inpt)+1 ) for Tree in r.Trees}
     __iter = {Tree : next(__iter[Tree]) for Tree in __iter}
-    __iter = {Tree : {k : __iter[Tree][k].tolist() for k in __iter[Tree]} for Tree in __iter}
-    smpl = SampleTracer()
-    for i in c:
-        _iter = {Tree : {k : __iter[Tree][k].pop(0) for k in __iter[Tree]} for Tree in __iter}
+    root = r.ROOTFile
+    
+    it = 0
+    out = []
+    for i in inpt:
         o = EventContainer()
-        for tr in _iter: 
-            o.Trees[tr] = _Code().CopyInstance(inpt[0][2])
-            o.Trees[tr]._Store = _iter[tr]
+        o.EventIndex = i
+        for tr in r.Trees: 
+            o.Trees[tr] = _Code().CopyInstance(_e)
+            o.Trees[tr]._Store = {k : __iter[tr][k][it].tolist() for k in __iter[tr]} 
             o.Trees[tr].Tree = tr
             o.Trees[tr]._SampleIndex = i
-            o.Filename = r.ROOTFile
-        o.EventIndex = i
+            o.Filename = root
         o.MakeEvent(True)
         with lock:
             bar.update(1)
-        smpl.AddROOTFile(r.ROOTFile, o)
-    return [smpl]
+        out.append([root, o])
+        it += 1
 
-def _Compiler(inp, _prgbar):
-    out = []
-    for k in inp:
-        k.MakeEvent(ClearVal)
-        out.append(k)
+    __iter = None 
     return out
 
-
 class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
-    def __init__(self, InputDir = False, EventStart = 0, EventStop = None):
+    def __init__(self, InputDir = False, EventStart = -1, EventStop = None):
 
         self.Caller = "EVENTGENERATOR"
         Settings.__init__(self)
@@ -52,9 +49,11 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
             self.InputDirectory |= InputDir
         else:
             self.InputDirectory = InputDir
+        self.EventStart = EventStart
+        self.EventStop = EventStop
 
     def SpawnEvents(self):
-                 
+        
         self.CheckSettings()
         self.CheckEventImplementation()
 
@@ -85,13 +84,14 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
                 if self.EventStop != None and self.EventStop < it:
                     break
                 cmp.append([F_i, indx, obj]) 
-
+            
             th = Threading(cmp, _MakeEvents, self.Threads, self.chnk)
             th.VerboseLevel = self.VerboseLevel
             th.Title = "READING/COMPILING EVENT"
+            cmp = None
             th.Start()
             for i in th._lists:
-                self += i
+                self.AddROOTFile(i[0], i[1])
             del th
         self.CheckSpawnedEvents()
 

@@ -1,6 +1,6 @@
 from AnalysisTopGNN.Generators import EventGenerator, GraphGenerator
 from AnalysisTopGNN.IO import UnpickleObject, PickleObject
-from AnalysisTopGNN.Events import Event, EventGraphTruthTopChildren
+from AnalysisTopGNN.Events import Event, EventGraphChildren
 from AnalysisTopGNN.Samples import SampleTracer
 from AnalysisTopGNN.IO import HDF5
 
@@ -10,22 +10,25 @@ def TestEventGenerator(Files):
 
     Ev = EventGenerator(File1) 
     Ev.Event = Event
+    Ev.chnk = 1000
+    Ev.Threads = 1
     Ev.SpawnEvents()
-    Ev.CompileEvent()
     PickleObject(Ev, "TMP1")
 
     T = EventGenerator(File2) 
     T.Event = Event
+    T.chnk = 1000
+    T.Threads = 12
     T.SpawnEvents()
-    T.CompileEvent()
     PickleObject(T, "TMP2")
 
     T = EventGenerator(Files) 
     T.Event = Event
+    T.chnk = 1000
+    T.Threads = 12
     T.SpawnEvents()
-    T.CompileEvent()
     PickleObject(T, "TMP3")
-
+        
     ev1 = UnpickleObject("TMP1")
     ev2 = UnpickleObject("TMP2")
     ev3 = UnpickleObject("TMP3")
@@ -59,7 +62,7 @@ def TestEventGenerator(Files):
     for i, j in zip(p, z):
         assert i.EventIndex == j.EventIndex
     print("PASSED: CONSISTENT INDEX")
-
+    
     for i, j in zip(p, z):
         assert i.Filename == j.Filename
     print("PASSED: SAME FILENAMES")
@@ -71,12 +74,12 @@ def TestEventGenerator(Files):
     return True 
 
 
+def Test(a):
+    return a.eta
+
 def TestGraphGenerator(Files):
     from AnalysisTopGNN.Generators import GraphGenerator
-    from AnalysisTopGNN.Events import EventGraphTruthTopChildren
-
-    def Test(a):
-        return a.eta
+    from AnalysisTopGNN.Events import EventGraphChildren
 
     File1 = Files[0]
     File2 = Files[1] 
@@ -84,36 +87,33 @@ def TestGraphGenerator(Files):
     Ev = EventGenerator(File1) 
     Ev.Event = Event
     Ev.SpawnEvents()
-    Ev.CompileEvent()
     
     Gr = GraphGenerator()
     Gr += Ev 
-    Gr.AddNodeFeature(Test)
-    Gr.EventGraph = EventGraphTruthTopChildren
+    Gr.AddNodeFeature(Test, "TEST")
+    Gr.EventGraph = EventGraphChildren
     Gr.CompileEventGraph()
     PickleObject(Gr, "TMP1")
 
     T = EventGenerator(File2) 
     T.Event = Event
     T.SpawnEvents()
-    T.CompileEvent()
 
     Gr = GraphGenerator()
     Gr += T 
-    Gr.AddNodeFeature(Test)
-    Gr.EventGraph = EventGraphTruthTopChildren
+    Gr.AddNodeFeature(Test, "TEST")
+    Gr.EventGraph = EventGraphChildren
     Gr.CompileEventGraph()
     PickleObject(Gr, "TMP2")
 
     T = EventGenerator(Files) 
     T.Event = Event
     T.SpawnEvents()
-    T.CompileEvent()
 
     Gr = GraphGenerator()
     Gr += T
-    Gr.AddNodeFeature(Test)
-    Gr.EventGraph = EventGraphTruthTopChildren
+    Gr.AddNodeFeature(Test, "TEST")
+    Gr.EventGraph = EventGraphChildren
     Gr.CompileEventGraph()
     PickleObject(Gr, "TMP3")
 
@@ -170,7 +170,6 @@ def TestEventGeneratorDumper(Files):
     Ev = EventGenerator(File1) 
     Ev.Event = Event
     Ev.SpawnEvents()
-    Ev.CompileEvent()
     
     Objects = {}
     it = 0
@@ -182,8 +181,9 @@ def TestEventGeneratorDumper(Files):
 
     hdf = HDF5()
     hdf.Threads = 12
-    hdf.Directory = "_Pickle/"
-    hdf.MultiThreadedDump(Objects, "_Pickle/")
+    hdf.VerboseLevel = 0
+    hdf.Directory = "./_Pickle/"
+    hdf.MultiThreadedDump(Objects, "./_Pickle/")
     for name, obj in hdf:
         print(name, obj.Trees["nominal"].Tops, obj)
         print(len(Objects[name].Trees["nominal"].DetectorObjects) == len(obj.Trees["nominal"].DetectorObjects))
@@ -204,22 +204,18 @@ def TestEventGeneratorDumper(Files):
 
 def TestGraphGeneratorDumper(Files):
     from AnalysisTopGNN.Generators import GraphGenerator
-    from AnalysisTopGNN.Events import EventGraphTruthTopChildren
-
-    def Test(a):
-        return a.eta
-
+    from AnalysisTopGNN.Events import EventGraphChildren
+    
     File1 = Files[0]
 
     Ev = EventGenerator(File1) 
     Ev.Event = Event
     Ev.SpawnEvents()
-    Ev.CompileEvent()
     
     Gr = GraphGenerator()
     Gr += Ev
     Gr.AddNodeFeature(Test)
-    Gr.EventGraph = EventGraphTruthTopChildren
+    Gr.EventGraph = EventGraphChildren
     Gr.CompileEventGraph()
 
     hdf = HDF5()

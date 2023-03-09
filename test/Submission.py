@@ -1,4 +1,4 @@
-from AnalysisTopGNN.Events import EventGraphTruthTopChildren, Event
+from AnalysisTopGNN.Events import EventGraphChildren, Event
 from AnalysisTopGNN.Generators import Analysis
 from AnalysisTopGNN.Submission import Condor
 from Templates.EventFeatureTemplate import ApplyFeatures
@@ -32,11 +32,10 @@ def TestSequence():
     
     return True
 
+def Test(ev):
+    return int(len(ev.Tops) == 4)
 
 def TestAnalysis(GeneralDir):
-
-    def Test(ev):
-        return int(len(ev.TruthTops) == 4)
 
     def EventGen(Dir, Name):
         Ana = Analysis()
@@ -56,7 +55,7 @@ def TestAnalysis(GeneralDir):
         Ana.ProjectName = "TMPProject"
         Ana.InputSample(Name)
         Ana.DataCache = True
-        Ana.EventGraph = EventGraphTruthTopChildren
+        Ana.EventGraph = EventGraphChildren
         Ana.AddGraphFeature(Test)
         Ana.Threads = 10
         Ana.EventStop = None
@@ -69,11 +68,10 @@ def TestAnalysis(GeneralDir):
     ev += EventGen(GeneralDir + "/ttbar", "ttbar")
     ev += EventGen(GeneralDir + "/tttt", "Signal")
     ev += EventGen([GeneralDir + "/t", GeneralDir + "/ttbar"], "Combined")
-    
+   
     gr = DataGen("SingleTop")
     gr += DataGen("ttbar")
     gr += DataGen("Signal")
-        
     Objects0 = {}
     for i in ev:
         Objects0[i.Filename] = i
@@ -146,7 +144,7 @@ def TestCondorDumping(GeneralDir):
     D1.DumpHDF5 = True
     D1.Threads = 4
     D1.chnk = 100
-    D1.EventGraph = EventGraphTruthTopChildren
+    D1.EventGraph = EventGraphChildren
     D1.InputSample("t")
     ApplyFeatures(D1, "TruthChildren")
 
@@ -155,7 +153,7 @@ def TestCondorDumping(GeneralDir):
     D2.DumpHDF5 = True
     D2.Threads = 4
     D2.chnk = 100
-    D2.EventGraph = EventGraphTruthTopChildren
+    D2.EventGraph = EventGraphChildren
     D2.InputSample("zmumu")
     ApplyFeatures(D2, "TruthChildren")
 
@@ -290,8 +288,8 @@ def TestSelectionDumping(GeneralDir):
     T.AddJob("tttt", A4, "10GB", "1h", ["ttbar"])
     T.AddJob("ttbar", A1, "10GB", "1h")
  
-    T.DumpCondorJobs() 
-    #T.LocalDryRun()
+    #T.DumpCondorJobs() 
+    T.LocalDryRun()
 
     from AnalysisTopGNN.IO import UnpickleObject
     x = UnpickleObject("./TopEvaluation/Selections/Merged/Example.pkl")

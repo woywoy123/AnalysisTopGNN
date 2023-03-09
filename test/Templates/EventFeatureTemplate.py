@@ -26,9 +26,9 @@ def TruthJets():
             "mu" : gf.mu, 
             "met" : gf.met, 
             "met_phi" : gf.met_phi, 
-            "pileup" : gf.pileup, 
+            #"pileup" : gf.pileup, 
             "njets" : gf.nTruthJets, 
-            "nlep" : gf.nLeptons,
+            #"nlep" : gf.nLeptons,
     }
     
     # Truth Edge: Truth Jet Properties
@@ -49,7 +49,7 @@ def TruthJets():
     
     # Truth Graph: Generic Paritcle Properties
     GenPartTGF = {
-            "mu_actual" : gf.mu_actual,
+            #"mu_actual" : gf.mu_actual,
             "nTops" : gf.nTops, 
             "signal_sample" : gf.SignalSample
     }

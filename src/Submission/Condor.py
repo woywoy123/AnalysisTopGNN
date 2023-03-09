@@ -221,10 +221,11 @@ class Condor(AnalysisTopGNN.Tools.General.Tools, Condor_, Settings):
 
     def LocalDryRun(self):
         self.__Sequencer()
-        for i in self._sequence:
-            jb = [i] if len(self._sequence[i]) == 0 else self._sequence[i]
-            jb = [i for i in jb if self._Complete[i] == False]
-            for j in jb:
+        self._sequence = { j : [j] + self._sequence[j] for j in self._sequence }
+        for t in self._sequence:
+            for j in reversed(self._sequence[t]):
+                if self._Complete[j]:
+                    continue
                 self._Jobs[j].EventCache = self.EventCache
                 self._Jobs[j].DataCache = self.DataCache 
                 self.RunningJob(j)

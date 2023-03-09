@@ -1,5 +1,5 @@
 from AnalysisTopGNN.Generators import Analysis, ModelEvaluator, Optimization
-from AnalysisTopGNN.Events import Event, EventGraphTruthTopChildren, EventGraphTruthJetLepton
+from AnalysisTopGNN.Events import Event, EventGraphChildren, EventGraphTruthJetLepton
 
 from Templates.EventFeatureTemplate import ApplyFeatures
 from ExampleModel.BasicBaseLine import BasicBaseLineRecursion
@@ -17,7 +17,7 @@ def TestOptimizer(Files):
     Ana.EventStop = 1000
     Ana.VerboseLevel = 1
     Ana.Event = Event
-    Ana.EventGraph = EventGraphTruthTopChildren
+    Ana.EventGraph = EventGraphChildren
     ApplyFeatures(Ana, "TruthChildren")
     Ana.Launch()
     

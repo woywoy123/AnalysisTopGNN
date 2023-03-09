@@ -12,7 +12,7 @@ class EventContainer(Hashing):
     def MakeEvent(self, ClearVal):
         for i in self.Trees:
             self.Trees[i]._Compile(ClearVal)
-            self.Filename = self.MD5(self.Filename + "/" + str(self.Trees[i]._SampleIndex))
+            self.Filename = self.MD5(self.Filename + "/" + str(self.EventIndex))
     
     def MakeGraph(self):
         if self.Compiled: 
@@ -36,7 +36,7 @@ class EventContainer(Hashing):
             return self
         
         if other.Compiled and self.Compiled == False:
-            self.Trees |= other.Trees
+            self.Trees = self.Trees | other.Trees
             self.Compiled = True
         else:
             self.Trees = {tr : other.Trees[tr] if tr in other.Trees else self.Trees[tr] for tr in other.Trees}

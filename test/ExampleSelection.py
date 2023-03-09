@@ -8,7 +8,7 @@ class Example(Selection):
         self.Top = {"Truth" : []}
         self.Children = {"Truth" : []}
 
-    def Selection(self, event):
+    def Strategy(self, event):
         self.Top["Truth"] += [t.Mass for t in event.Tops]
         self.Children["Truth"] += [c.Mass for c in event.TopChildren]
         
@@ -21,7 +21,7 @@ class Example2(Selection):
         self.Top = {"Truth" : []}
         self.Children = {"Truth" : []}
 
-    def Selection(self, event):
+    def Strategy(self, event):
         self.Top["Truth"] += [t.Mass for t in event.Tops]
         self.Children["Truth"] += [c.Mass for c in event.TopChildren]
         self.Children["Test"] = {}

@@ -15,14 +15,12 @@ def TestEventGenerator(Files):
     ev0.EventStart = 0
     ev0.EventStop = End
     ev0.SpawnEvents()
-    ev0.CompileEvent()
     
     ev1 = EventGenerator(File1)
     ev1.Event = Event
     ev1.EventStart = 0
     ev1.EventStop = End
     ev1.SpawnEvents()
-    ev1.CompileEvent()
    
     combined = ev0 + ev1
     Object0 = {}
@@ -98,12 +96,15 @@ def TestAnalysis(Files):
     AnaE.Event = Event
     AnaE.EventCache = True
     AnaE.Threads = 12
+    AnaE.EventStop = 100
     AnaE.DumpPickle = True
     AnaE.Launch()
     
     it = 0
     for i in AnaE:
         it += 1
+    if it == 0:
+        return False
     return True
 
 def TestLargeSample(File):
@@ -111,8 +112,6 @@ def TestLargeSample(File):
     AnaE.ProjectName = "Project"
     AnaE.InputSample("l", File)
     AnaE.Threads = 12
-    AnaE.chnk = 10
-    AnaE.EventStop = 1200
     AnaE.Event = Event
     AnaE.EventCache = True
     AnaE.Launch()

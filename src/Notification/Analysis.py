@@ -78,28 +78,23 @@ class Analysis(Notification):
     def FoundFiles(self, Files):
         if len(Files) == 0:
             return 
-        trig = True 
+        
+        trig = True
         for i in Files:
-            root = False
-            for k in Files[i]:
-                if k.endswith(".root"):
-                    root = True 
-                    break 
-            
+            root = True if len([l for l in Files[i] if l.endswith(".root")]) > 0 else False
             string = ""
+            
             if root and trig:
                 string = "!!--- ADDING TO SAMPLE COLLECTION ---"
-            if "DataCache" in i and trig:
-                string = "!!--- FOUND DATA CACHE ---"
-            if "EventCache" in i and trig:
-                string = "!!--- FOUND EVENT CACHE ---"
-
-            if trig:
                 self.Success("!!" + "-"*len(string))
                 self.Success(string)
                 self.Success("!!" + "-"*len(string))
+                self.Success("!! -> " + i + " (" + str(len(Files[i])) + ")")
                 trig = False
-            self.Success("!!-> " + i + " (" + str(len(Files[i])) + ")")
+            
+            if "DataCache" or "EventCache" in i:
+                string = "DataCache" if "DataCache" in i else "EventCache"
+                self.Success("!! (" + string + "): " + i)
     
     def CantGenerateTrainingSample(self):
         string = "Can't generate training sample, please choose either 'EventCache' or 'DataCache'"

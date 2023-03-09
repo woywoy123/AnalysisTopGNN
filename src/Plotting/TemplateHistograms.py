@@ -213,6 +213,10 @@ class CombineTH1F(Functions):
             Sum = self.Histogram.NPHisto[0].sum()
 
         if self.Histogram != None:
+            try:
+                self.Histograms.NPHisto
+            except AttributeError:
+                self.Histogram.Compile()
             self.Histogram.NPHisto = (self.Histogram.NPHisto[0] / Sum, self.Histogram.NPHisto[1])
             self.Histogram.ApplyFormat()
             Labels.append(self.Histogram.Title)
