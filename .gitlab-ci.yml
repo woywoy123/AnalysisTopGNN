@@ -1,5 +1,6 @@
 build-job:
   stage: build
+  image: python:3.9-slim-buster
   script:
     - cd setup-scripts
     - source SetupCICD.sh
