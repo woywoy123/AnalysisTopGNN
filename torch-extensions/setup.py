@@ -1,9 +1,9 @@
 from setuptools import setup 
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
+from torch.utils.cpp_extension import BuildExtension, CppExtension
 import torch
 import os 
-os.environ["CC"] = "gcc-11"
-os.environ["CXX"] = "gcc-11"
+#os.environ["CC"] = "gcc-11"
+#os.environ["CXX"] = "gcc-11"
 
 Transform_H  = "src/Transform/Headers/"
 Transform_C  = "src/Transform/CXX/"
@@ -207,19 +207,19 @@ PkgC = {
 }
 
 Pkg = [
-        "PyC.Transform.Floats", "PyC.Transform.Tensors", "PyC.Transform.CUDA", 
-        "PyC.Operators.Tensors", "PyC.Operators.CUDA", 
-        "PyC.Physics.Tensors.Cartesian", "PyC.Physics.CUDA.Cartesian", 
-        "PyC.Physics.Tensors.Polar", "PyC.Physics.CUDA.Polar", 
-        "PyC.NuSol.Tensors", "PyC.NuSol.CUDA"
+        "PyC.Transform.Floats", #"PyC.Transform.Tensors", "PyC.Transform.CUDA", 
+        "PyC.Operators.Tensors", #"PyC.Operators.CUDA", 
+        "PyC.Physics.Tensors.Cartesian", #"PyC.Physics.CUDA.Cartesian", 
+        "PyC.Physics.Tensors.Polar", #"PyC.Physics.CUDA.Polar", 
+        "PyC.NuSol.Tensors", #"PyC.NuSol.CUDA"
         ]
-if torch.cuda.is_available() == False:
+if True:
     Pkg = [i for i in Pkg if i.endswith("CUDA") == False]
 setup(
         name = "AnalysisTopGNN-Extensions", 
         version = "1.0", 
         package_data = { i : PkgH[i] for i in Pkg }, 
-        ext_modules = [ CUDAExtension(i, PkgC[i]) if i.endswith("CUDA") else CppExtension(i, PkgC[i]) for i in Pkg ], 
+        ext_modules = [ CppExtension(i, PkgC[i]) for i in Pkg ], 
         cmdclass = {"build_ext" : BuildExtension}, 
 )
 
