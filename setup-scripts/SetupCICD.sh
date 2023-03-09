@@ -20,7 +20,7 @@ pip3 install vector
 pip3 install pytest
 
 pip3 install torch torchvision torchaudio 
-ver=$(python -c "import torch; print(torch.__version__)")
+ver=$(python3 -c "import torch; print(torch.__version__)")
 pip3 install torch-scatter -f https://pytorch-geometric.com/whl/torch-$ver.html
 pip3 install torch-cluster -f https://pytorch-geometric.com/whl/torch-$ver.html
 pip3 install torch-geometric
