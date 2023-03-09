@@ -11,7 +11,7 @@ test-job 1/1:
   script:
     - echo "Testing..."
     - pwd #source setup-scripts/PythonGNN/bin/activate
-    - ls
+    - ls setup-scripts
     - cd test
     - pytest
 
