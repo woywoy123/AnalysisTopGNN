@@ -6,10 +6,11 @@ build-job:
     - cd setup-scripts
     - source SetupCICD.sh
 
-test-job1:
+test-job 1/1:
   stage: test
   script:
     - echo "Testing..."
+    - source setup-scripts/PythonGNN/bin/activate
     - cd test
     - pytest
 

@@ -4,8 +4,8 @@
 #source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
 #lsetup "gcc gcc620_x86_64_slc6"
 #lsetup "python 3.9.14-x86_64-centos7"
-#python3 -m venv PythonGNN
-#source ./PythonGNN/bin/activate
+python3 -m venv PythonGNN
+source ./PythonGNN/bin/activate
  
 # Packages to be installed.
 pip3 install --upgrade pip
