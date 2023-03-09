@@ -10,7 +10,7 @@ test-job 1/1:
   stage: test
   script:
     - echo "Testing..."
-    - source setup-scripts/PythonGNN/bin/activate
+    - pwd #source setup-scripts/PythonGNN/bin/activate
     - cd test
     - pytest
 
