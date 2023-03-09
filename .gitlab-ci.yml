@@ -1,0 +1,11 @@
+build-job:
+  stage: build
+  script:
+    - cd setup-scripts
+    - source SetupCICD.sh
+
+test-job1:
+  stage: test
+  script:
+    - echo "Testing..."
+
