@@ -2,7 +2,7 @@ build-job:
   stage: build
   image: ubuntu:latest
   script:
-    - apt update && apt install -y gcc python3
+    - apt update && apt install -y gcc python3 python3-pip
     - cd setup-scripts
     - source SetupCICD.sh
 
@@ -10,4 +10,6 @@ test-job1:
   stage: test
   script:
     - echo "Testing..."
+    - cd test
+    - pytest
 

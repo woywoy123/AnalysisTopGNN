@@ -17,6 +17,7 @@ pip3 install mplhep
 pip3 install -U scikit-learn
 pip3 install Cython
 pip3 install vector
+pip3 install pytest
 
 pip3 install torch torchvision torchaudio 
 ver=$(python -c "import torch; print(torch.__version__)")
