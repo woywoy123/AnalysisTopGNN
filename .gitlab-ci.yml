@@ -2,6 +2,7 @@ build-job:
   stage: build
   image: ubuntu:latest
   script:
+    - apt update && apt install gcc python3
     - cd setup-scripts
     - source SetupCICD.sh
 
