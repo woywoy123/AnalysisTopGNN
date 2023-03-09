@@ -33,5 +33,6 @@ pip install .
 
 cd torch-extensions
 pip install .
+cd ../
 
 #echo "export PythonGNN=$PWD/setup-scripts/PythonGNN/bin/activate" >> ~/.bashrc
