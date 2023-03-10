@@ -1,4 +1,4 @@
-from AnalysisTopGNN.Templates import Selection 
+from AnalysisTopGNN.Templates import Selection
 
 class Common(Selection):
 
@@ -7,10 +7,15 @@ class Common(Selection):
 
     def Selection(self, event):
         #< here we define what events are allowed to pass >
-        #< Need to return True if the event passes our selection >
-        # e.g. 
-        lep = [ 11, 13, 15 ] # < Electrons, Muons, Taus (we can remove taus)
-        return len([c for c in event.TopChildren if abs(c.pdgid) in lep ]) == 2
+        # Basic selection, should be true anyway
+        num_lep = len([1 for child in event.TopChildren if child.is_lep])
+        num_lep_res = len([1 for child in event.TopChildren if child.is_lep and child.Parent[0].FromRes])
+        num_tops = len(event.Tops)
+        num_tau = len([1 for child in event.TopChildren if abs(child.pdgid) == 15])
+        num_gluon = len([1 for child in event.TopChildren if abs(child.pdgid) == 21])
+        num_gamma = len([1 for child in event.TopChildren if abs(child.pdgid) == 22])
+        return num_tops == 4 and num_lep == 2 and num_lep_res == 1 and num_tau == 0 and num_gluon == 0 and num_gamma == 0
+
 
     def Strategy(self, event):
         #< here we can write out 'grouping' routine. >
