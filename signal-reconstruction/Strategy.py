@@ -1,9 +1,13 @@
 from AnalysisTopGNN.Templates import Selection
+from mtt_reconstruction import MttReconstructor
 
 class Common(Selection):
 
     def __init__(self):
         Selection.__init__(self)
+        self.object_types = ['Children', 'TruthJet', 'Jet']
+        self.cases = [i for i in range(10)]
+        self.masses = {object_type : {case_num : [] for case_num in self.cases} for object_type in self.object_types}
 
     def Selection(self, event):
         #< here we define what events are allowed to pass >
@@ -20,5 +24,8 @@ class Common(Selection):
     def Strategy(self, event):
         #< here we can write out 'grouping' routine. >
         #< To Collect statistics on events, just return a string containing '->' >
-
+        for object_type in self.object_types:
+            for case_num in self.cases:
+                mass = MttReconstructor(event, case_num, object_type).mtt
+                self.masses[object_type][case_num].append(mass)
         return "Success->SomeString"
