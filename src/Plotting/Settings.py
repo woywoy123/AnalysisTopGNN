@@ -71,7 +71,8 @@ class Settings_:
             "legend.fontsize" : self.LegendSize, 
             "figure.titlesize" : self.TitleSize
             })
-        self.PLT.rcParams["text.usetex"] = True
+        #self.PLT.rcParams["text.usetex"] = True
+        self.PLT.rcParams["text.usetex"] = False
     
     def ResetPLT(self):
         plt.close("all")
