@@ -25,7 +25,12 @@ class LossFunctions:
         return {"loss" : torch.nn.CrossEntropyLoss(), "func" : lossfunction, "accuracy" : accuracyfunction}
     
     def MeanSquareErrorLoss(self, pred = None, truth = None):
-        return torch.nn.MSELoss()
+        def lossfunction(truth, pred):
+            return truth.view(-1).to(dtype = torch.float), pred.view(-1)
+        
+        def accuracyfunction(truth, pred):
+            return truth.view(-1) - pred.view(-1)
+        return {"loss" : torch.nn.MSELoss(), "func" : lossfunction, "accuracy" : accuracyfunction}
 
     def HingeEmbeddingLoss(self, pred = None, truth = None):
         return torch.nn.HingeEmbeddingLoss()

@@ -81,7 +81,8 @@ class GraphGenerator(GraphGenerator_, SampleTracer, Settings, GraphFeatures):
         evobj = self.CopyInstance(self.EventGraph)
 
         if self._Test == False:
-            self.TestFeatures(10)
+            smpl = len(self.SampleContainer.list())
+            self.TestFeatures( 10 if smpl > 10 else smpl )
             self._Test = True
         try:
             ev = evobj(event)
@@ -99,12 +100,8 @@ class GraphGenerator(GraphGenerator_, SampleTracer, Settings, GraphFeatures):
         return ev
 
     def AddSamples(self, Events, Tree):
+        
         for ev in Events:
-            if ev.EventIndex < self.EventStart:
-                continue
-            elif self.EventStop != None and ev.EventIndex > self.EventStop:
-                break
-            
             if Tree == None:
                 ev.Trees |= {tr : self.__MakeGraph(ev.Trees[tr], ev.EventIndex) for tr in ev.Trees}
             else:
@@ -122,7 +119,7 @@ class GraphGenerator(GraphGenerator_, SampleTracer, Settings, GraphFeatures):
 
         self.SetDevice()
         self.CheckSettings()
-        self.AddSamples(self.SampleContainer.list(), self.Tree)
+        self.AddSamples(self.SampleContainer.list()[self.EventStart : self.EventStop], self.Tree)
         def function(inpt):
             return [i.MakeGraph() if i != None else True for i in inpt]
 

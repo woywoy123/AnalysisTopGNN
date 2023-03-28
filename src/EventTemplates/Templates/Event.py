@@ -10,9 +10,10 @@ class EventTemplate(VariableManager):
         self.Leaves = []
         self._Store = None
         self._SampleIndex = -1
-        self.Lumi = 0
+        self.Lumi = 1
         self._Deprecated = False
         self._CommitHash = False
+        self.eventNumber = "eventNumber"
 
     def DefineObjects(self):
         for name in self.Objects:

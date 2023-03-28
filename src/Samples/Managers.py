@@ -1,4 +1,5 @@
 from .SampleContainer import SampleContainer
+import copy 
 
 class SampleTracer:
 
@@ -26,7 +27,7 @@ class SampleTracer:
         return self.SampleContainer.dict()
 
     def __len__(self):
-        self.__iter__()
+        self._lst = list(set(self.dict()))
         return len(self._lst)
     
     def __contains__(self, key):
@@ -50,10 +51,16 @@ class SampleTracer:
     
     def __getitem__(self, key):
         return self.SampleContainer[key]
+    
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        self.__add__(other)
 
     def __add__(self, other):
-        self.SampleContainer += other.SampleContainer
-        return self
+        smpl = copy.deepcopy(self)
+        smpl.SampleContainer += other.SampleContainer
+        return smpl
         
     def __radd__(self, other):
         if other == 0:

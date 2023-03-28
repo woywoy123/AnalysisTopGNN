@@ -3,7 +3,12 @@ from AnalysisTopGNN.Templates import ParticleTemplate
 from AnalysisTopGNN.Generators import Settings
 from AnalysisTopGNN.Tools import Tools
 from AnalysisTopGNN.IO import PickleObject
-from PyC.NuSol.Tensors import NuDoublePtEtaPhiE, NuNuDoublePtEtaPhiE
+import statistics
+
+try:
+    from PyC.NuSol.Tensors import NuDoublePtEtaPhiE, NuNuDoublePtEtaPhiE
+except: 
+    pass
 
 class Neutrino(ParticleTemplate):
     
@@ -26,6 +31,23 @@ class Selection(Settings, Tools):
     @property 
     def _t2(self):
         self._TimeStats.append(time() - self.__t1)
+    
+    @property
+    def AverageTime(self):
+        return statistics.mean(self._TimeStats)
+    
+    @property
+    def StdevTime(self):
+        return statistics.stdev(self._TimeStats)
+    
+    @property
+    def Luminosity(self):
+        return ((sum(self._EventWeights))**2) / sum([i**2 for i in self._EventWeights])
+    
+    @property
+    def NEvents(self):
+        return len(self._EventWeights)
+
 
     def Selection(self, event):
         return True
@@ -90,16 +112,23 @@ class Selection(Settings, Tools):
             self._hash = event.Filename
         
         if self.Selection(event.Trees[self.Tree]) == False:
-            return  
+            if "Rejected::Selection" not in self._CutFlow:
+                self._CutFlow["Rejected::Selection"] = 0
+            self._CutFlow["Rejected::Selection"] += 1
+            return 
+        
         self._t1
         o = self.Strategy(event.Trees[self.Tree])
         self._t2
+        
         if isinstance(o, str) and "->" in o:
             if o not in self._CutFlow:
                 self._CutFlow[o] = 0
             self._CutFlow[o] += 1
         else:
             self._Residual += [o] if o != None else []
+        self._EventWeights += [event.Trees[self.Tree].Lumi] 
+
         if self._OutDir:
             o = self._OutDir
             PickleObject(self.__dict__, self._OutDir + "/" + self._hash)

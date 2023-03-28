@@ -1,235 +1,215 @@
-from setuptools import setup 
-#from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension
-from torch.utils.cpp_extension import BuildExtension, CppExtension
 import torch
-import os 
-#os.environ["CC"] = "gcc-11"
-#os.environ["CXX"] = "gcc-11"
+from torch.utils.cpp_extension import BuildExtension
+from setuptools import setup
+import os
 
-Transform_H  = "src/Transform/Headers/"
-Transform_C  = "src/Transform/CXX/"
-Transform_S  = "src/Transform/Shared/"
-#Transform_Cu = "src/Transform/CUDA/"
-
-Operators_H  = "src/Operators/Headers/"
-Operators_C  = "src/Operators/CXX/"
-Operators_S  = "src/Operators/Shared/"
-#Operators_Cu = "src/Operators/CUDA/"
-
-Physics_H  = "src/Physics/Headers/"
-Physics_C  = "src/Physics/CXX/"
-Physics_S  = "src/Physics/Shared/"
-#Physics_Cu = "src/Physics/CUDA/"
-
-NuRecon_H  = "src/NuRecon/Headers/"
-NuRecon_C  = "src/NuRecon/CXX/"
-NuRecon_S  = "src/NuRecon/Shared/"
-#NuRecon_Cu = "src/NuRecon/CUDA/"
+_dir = "src/"
+TrH, TrC, TrS, TrCu  = _dir + "Transform/Headers/", _dir + "Transform/CXX/", _dir + "Transform/Shared/", _dir + "Transform/CUDA/"
+OpH, OpC, OpS, OpCu  = _dir + "Operators/Headers/", _dir + "Operators/CXX/", _dir + "Operators/Shared/", _dir + "Operators/CUDA/"
+PhH, PhC, PhS, PhCu  = _dir + "Physics/Headers/",   _dir + "Physics/CXX/",   _dir + "Physics/Shared/",   _dir + "Physics/CUDA/"
+NuH, NuC, NuS, NuCu  = _dir + "NuRecon/Headers/",   _dir + "NuRecon/CXX/",   _dir + "NuRecon/Shared/",   _dir + "NuRecon/CUDA/"      
 
 PkgH = {
-            "PyC.Transform.Floats" : [
-                Transform_H + "ToCartesianFloats.h", 
-                Transform_H + "ToPolarFloats.h"
-            ], 
-            
-            "PyC.Transform.Tensors" : [
-                Transform_H + "ToCartesianTensors.h", 
-                Transform_H + "ToPolarTensors.h", 
-            ],
+             "PyC.Transform.Floats" : [
+                 TrH + "ToCartesianFloats.h", 
+                 TrH + "ToPolarFloats.h"
+             ], 
+             
+             "PyC.Transform.Tensors" : [
+                 TrH + "ToCartesianTensors.h", 
+                 TrH + "ToPolarTensors.h", 
+             ],
 
-        #     "PyC.Transform.CUDA" : [
-        #         Transform_H + "ToCartesianCUDA.h", 
-        #         Transform_H + "ToPolarCUDA.h"
-        #     ], 
+             "PyC.Transform.CUDA" : [
+                 TrH + "ToCartesianCUDA.h", 
+                 TrH + "ToPolarCUDA.h"
+             ], 
 
             "PyC.Operators.Tensors" : [
-                Operators_H + "Tensors.h" 
+                OpH + "Tensors.h" 
             ],
-        #     "PyC.Operators.CUDA" : [
-        #         Operators_H + "CUDA.h"
-        #     ], 
+            "PyC.Operators.CUDA" : [
+                OpH + "CUDA.h"
+            ], 
 
             "PyC.Physics.Tensors.Cartesian" : [
-                Transform_H + "ToPolarTensors.h", 
-                Physics_H + "FromCartesianTensors.h",
-                Physics_H + "Tensors.h"
+                TrH + "ToPolarTensors.h", 
+                PhH + "FromCartesianTensors.h",
+                PhH + "Tensors.h"
             ],
             
-        #     "PyC.Physics.CUDA.Cartesian" : [ 
-        #         Transform_H + "ToPolarCUDA.h",
-        #         Physics_H + "CUDA.h", 
-        #         Physics_H + "FromCartesianCUDA.h", 
-        #     ], 
+            "PyC.Physics.CUDA.Cartesian" : [ 
+                TrH + "ToPolarCUDA.h",
+                PhH + "CUDA.h", 
+                PhH + "FromCartesianCUDA.h", 
+            ], 
 
             "PyC.Physics.Tensors.Polar" : [
-                Transform_H + "ToCartesianTensors.h", 
-                Physics_H + "FromPolarTensors.h",
-                Physics_H + "Tensors.h"
+                TrH + "ToCartesianTensors.h", 
+                PhH + "FromPolarTensors.h",
+                PhH + "Tensors.h"
             ],
-        #     "PyC.Physics.CUDA.Polar" : [ 
-        #         Transform_H + "ToCartesianCUDA.h",
-        #         Physics_H + "CUDA.h", 
-        #         Physics_H + "FromPolarCUDA.h", 
-        #     ], 
+            "PyC.Physics.CUDA.Polar" : [ 
+                TrH + "ToCartesianCUDA.h",
+                PhH + "CUDA.h", 
+                PhH + "FromPolarCUDA.h", 
+            ], 
             "PyC.NuSol.Tensors" : [
-                Transform_H + "ToCartesianTensors.h", 
-                Physics_H + "Tensors.h",
-                Operators_H + "Tensors.h",
+                TrH + "ToCartesianTensors.h", 
+                PhH + "Tensors.h",
+                OpH + "Tensors.h",
 
-                NuRecon_H + "NuSolTensor.h",
+                NuH + "NuSolTensor.h",
             ], 
 
             "PyC.NuSol.Tensors" : [
-                Transform_H + "ToCartesianTensors.h", 
-                Transform_H + "ToPolarTensors.h",
+                TrH + "ToCartesianTensors.h", 
+                TrH + "ToPolarTensors.h",
 
-                Physics_H + "Tensors.h",
-                Operators_H + "Tensors.h",
+                PhH + "Tensors.h",
+                OpH + "Tensors.h",
 
-                NuRecon_H + "NuSolTensor.h",
+                NuH + "NuSolTensor.h",
             ], 
-        #     "PyC.NuSol.CUDA" : [
-        #         Transform_H + "ToCartesianCUDA.h",
-        #         Transform_H + "ToPolarCUDA.h", 
-        #         Physics_H + "CUDA.h", 
-        #         Operators_H + "CUDA.h", 
+            "PyC.NuSol.CUDA" : [
+                TrH + "ToCartesianCUDA.h",
+                TrH + "ToPolarCUDA.h", 
+                PhH + "CUDA.h", 
+                OpH + "CUDA.h", 
 
-        #         NuRecon_H + "NuSolCUDA.h",
-        #     ], 
+                NuH + "NuSolCUDA.h",
+            ], 
 }
 
 PkgC = {
         "PyC.Transform.Floats" : [
-                Transform_C + "ToCartesianFloats.cxx", 
-                Transform_C + "ToPolarFloats.cxx", 
-                Transform_S + "Floats.cxx"
+                TrC + "ToCartesianFloats.cxx", 
+                TrC + "ToPolarFloats.cxx", 
+                TrS + "Floats.cxx"
         ],
 
         "PyC.Transform.Tensors" : [
-                Transform_C + "ToCartesianTensors.cxx", 
-                Transform_C + "ToPolarTensors.cxx", 
-                Transform_S + "Tensors.cxx"
+                TrC + "ToCartesianTensors.cxx", 
+                TrC + "ToPolarTensors.cxx", 
+                TrS + "Tensors.cxx"
         ],
 
-        # "PyC.Transform.CUDA" : [
-        #         Transform_Cu + "Cartesian.cu",
-        #         Transform_Cu + "CartesianKernel.cu", 
-        #         Transform_Cu + "CartesianTorch.cu", 
-        #         Transform_Cu + "Polar.cu",
-        #         Transform_Cu + "PolarKernel.cu", 
-        #         Transform_Cu + "PolarTorch.cu", 
-        #         Transform_S  + "CUDA.cxx", 
-        # ],
+        "PyC.Transform.CUDA" : [
+                TrCu + "Cartesian.cu",
+                TrCu + "CartesianKernel.cu", 
+                TrCu + "CartesianTorch.cu", 
+                TrCu + "Polar.cu",
+                TrCu + "PolarKernel.cu", 
+                TrCu + "PolarTorch.cu", 
+                TrS  + "CUDA.cxx", 
+        ],
 
         "PyC.Operators.Tensors" : [
-                Operators_C + "Tensors.cxx", 
-                Operators_S + "Tensors.cxx", 
+                OpC + "Tensors.cxx", 
+                OpS + "Tensors.cxx", 
         ], 
 
-        # "PyC.Operators.CUDA" : [
-        #         Operators_Cu + "Operators.cu", 
-        #         Operators_Cu + "OperatorsKernel.cu", 
-        #         Operators_Cu + "OperatorsTorch.cu", 
-        #         Operators_S  + "CUDA.cxx"
-        # ],
+        "PyC.Operators.CUDA" : [
+                OpCu + "Operators.cu", 
+                OpCu + "OperatorsKernel.cu", 
+                OpCu + "OperatorsTorch.cu", 
+                OpS  + "CUDA.cxx"
+        ],
 
         "PyC.Physics.Tensors.Cartesian" : [
-                Transform_C + "ToPolarTensors.cxx",
-                Physics_C + "Tensors.cxx",
-                Physics_S + "CartesianTensors.cxx"
+                TrC + "ToPolarTensors.cxx",
+                PhC + "Tensors.cxx",
+                PhS + "CartesianTensors.cxx"
         ], 
 
-        # "PyC.Physics.CUDA.Cartesian" : [
-        #         Transform_Cu + "Polar.cu",
-        #         Transform_Cu + "PolarKernel.cu", 
-        #         Transform_Cu + "PolarTorch.cu", 
+        "PyC.Physics.CUDA.Cartesian" : [
+                TrCu + "Polar.cu",
+                TrCu + "PolarKernel.cu", 
+                TrCu + "PolarTorch.cu", 
 
-        #         Physics_Cu + "Physics.cu", 
-        #         Physics_Cu + "PhysicsKernel.cu",
-        #         Physics_Cu + "PhysicsTorch.cu", 
+                PhCu + "Physics.cu", 
+                PhCu + "PhysicsKernel.cu",
+                PhCu + "PhysicsTorch.cu", 
 
-        #         Physics_S + "CartesianCUDA.cxx",
-        # ], 
+                PhS + "CartesianCUDA.cxx",
+        ], 
 
         "PyC.Physics.Tensors.Polar" : [
-                Transform_C + "ToCartesianTensors.cxx",
-                Physics_C + "Tensors.cxx",
-                Physics_S + "PolarTensors.cxx"
+                TrC + "ToCartesianTensors.cxx",
+                PhC + "Tensors.cxx",
+                PhS + "PolarTensors.cxx"
         ], 
 
-        # "PyC.Physics.CUDA.Polar" : [
-        #         Transform_Cu + "Cartesian.cu",
-        #         Transform_Cu + "CartesianKernel.cu", 
-        #         Transform_Cu + "CartesianTorch.cu", 
+        "PyC.Physics.CUDA.Polar" : [
+                TrCu + "Cartesian.cu",
+                TrCu + "CartesianKernel.cu", 
+                TrCu + "CartesianTorch.cu", 
 
-        #         Physics_Cu + "Physics.cu", 
-        #         Physics_Cu + "PhysicsKernel.cu",
-        #         Physics_Cu + "PhysicsTorch.cu", 
+                PhCu + "Physics.cu", 
+                PhCu + "PhysicsKernel.cu",
+                PhCu + "PhysicsTorch.cu", 
 
-        #         Physics_S + "PolarCUDA.cxx",
-        # ], 
+                PhS + "PolarCUDA.cxx",
+        ], 
 
         "PyC.NuSol.Tensors" : [
-                Transform_C + "ToCartesianTensors.cxx",
-                Transform_C + "ToPolarTensors.cxx", 
+                TrC + "ToCartesianTensors.cxx",
+                TrC + "ToPolarTensors.cxx", 
 
-                Physics_C + "Tensors.cxx",
-                Operators_C + "Tensors.cxx",
+                PhC + "Tensors.cxx",
+                OpC + "Tensors.cxx",
 
-                NuRecon_C + "NuSolTensor.cxx",
-                NuRecon_C + "SingleNuTensor.cxx",
-                NuRecon_C + "DoubleNuTensor.cxx",
-                NuRecon_S + "Tensor.cxx"
+                NuC + "NuSolTensor.cxx",
+                NuC + "SingleNuTensor.cxx",
+                NuC + "DoubleNuTensor.cxx",
+                NuS + "Tensor.cxx"
         ], 
 
-        # "PyC.NuSol.CUDA" : [
-        #         Transform_Cu + "Cartesian.cu",
-        #         Transform_Cu + "CartesianKernel.cu", 
-        #         Transform_Cu + "CartesianTorch.cu", 
+        "PyC.NuSol.CUDA" : [
+                TrCu + "Cartesian.cu",
+                TrCu + "CartesianKernel.cu", 
+                TrCu + "CartesianTorch.cu", 
 
-        #         Transform_Cu + "Polar.cu",
-        #         Transform_Cu + "PolarKernel.cu", 
-        #         Transform_Cu + "PolarTorch.cu", 
+                TrCu + "Polar.cu",
+                TrCu + "PolarKernel.cu", 
+                TrCu + "PolarTorch.cu", 
 
-        #         Physics_Cu + "Physics.cu", 
-        #         Physics_Cu + "PhysicsKernel.cu",
-        #         Physics_Cu + "PhysicsTorch.cu", 
+                PhCu + "Physics.cu", 
+                PhCu + "PhysicsKernel.cu",
+                PhCu + "PhysicsTorch.cu", 
 
-        #         Operators_Cu + "Operators.cu", 
-        #         Operators_Cu + "OperatorsKernel.cu", 
-        #         Operators_Cu + "OperatorsTorch.cu", 
+                OpCu + "Operators.cu", 
+                OpCu + "OperatorsKernel.cu", 
+                OpCu + "OperatorsTorch.cu", 
 
-        #         NuRecon_Cu + "NuSol.cu", 
-        #         NuRecon_Cu + "NuSolKernel.cu", 
-        #         NuRecon_Cu + "NuSolTorch.cu", 
+                NuCu + "NuSol.cu", 
+                NuCu + "NuSolKernel.cu", 
+                NuCu + "NuSolTorch.cu", 
 
-        #         NuRecon_S + "CUDA.cxx"
-        # ], 
+                NuS + "CUDA.cxx"
+        ], 
 }
 
-# Pkg = [
-#         "PyC.Transform.Floats", "PyC.Transform.Tensors", "PyC.Transform.CUDA", 
-#         "PyC.Operators.Tensors", "PyC.Operators.CUDA", 
-#         "PyC.Physics.Tensors.Cartesian", "PyC.Physics.CUDA.Cartesian", 
-#         "PyC.Physics.Tensors.Polar", "PyC.Physics.CUDA.Polar", 
-#         "PyC.NuSol.Tensors", "PyC.NuSol.CUDA"
-#         ]
-Pkg = [
-        "PyC.Transform.Floats", "PyC.Transform.Tensors", 
-        "PyC.Operators.Tensors", 
-        "PyC.Physics.Tensors.Cartesian", 
-        "PyC.Physics.Tensors.Polar", 
-        "PyC.NuSol.Tensors"
-        ]
-# if torch.cuda.is_available() == False:
-#     Pkg = [i for i in Pkg if i.endswith("CUDA") == False]
-setup(
-        name = "AnalysisTopGNN-Extensions", 
-        version = "1.0", 
-        package_data = { i : PkgH[i] for i in Pkg }, 
-        #ext_modules = [ CUDAExtension(i, PkgC[i]) if i.endswith("CUDA") else CppExtension(i, PkgC[i]) for i in Pkg ], 
-        ext_modules = [ CppExtension(i, PkgC[i]) for i in Pkg ], 
-        cmdclass = {"build_ext" : BuildExtension}, 
-)
+_cmd = {
+                "name" : "AnalysisTopGNN-Extensions", 
+                "readme" : "README.md", 
+                "version" : "1.1", 
+                "package_data" : {}, 
+                "ext_modules" : [], 
+                "cmdclass" : {"build_ext" : BuildExtension},
+}
 
+for i in PkgH:
+        _cu = os.environ.get("CUDA_PATH")
+        if (_cu == None or _cu == "") and "CUDA" in i:
+                continue
+        if "CUDA" in i:
+                from torch.utils.cpp_extension import CUDAExtension
+                _cmd["ext_modules"].append(CUDAExtension( i, PkgC[i] ))
+                _cmd["package_data"][ i ] = PkgH[i]
+                continue
+        from torch.utils.cpp_extension import CppExtension
+        _cmd["package_data"][ i ] = PkgH[i]
+        _cmd["ext_modules"].append(CppExtension( i, PkgC[i] ))
 
+setup(**_cmd)

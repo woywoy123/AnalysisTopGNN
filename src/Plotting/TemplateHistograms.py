@@ -188,8 +188,11 @@ class CombineTH1F(Functions):
         reorg = sorted(reorder)
         reorg.reverse()
         self.Histograms = [self.Histograms[k] for i in reorg for k in reorder[i]]
+        
+        bins = set([i.xBins for i in self.Histograms if i.xBins != None])
+        bins = self.xBins if len(bins) == 0 else max(bins)
         for i in self.Histograms:
-            i.xBins = self.xBins
+            i.xBins = bins
             i.xMin = self.xMin
             i.xMax = self.xMax
             i.xRange = i.xRange

@@ -1,7 +1,6 @@
 from AnalysisTopGNN.IO import File
 from AnalysisTopGNN.Samples.Event import EventContainer
 from AnalysisTopGNN.Samples.Managers import SampleTracer
-
 from AnalysisTopGNN.Notification import EventGenerator_
 from AnalysisTopGNN.Tools import Threading, Tools
 from .Settings import Settings, _Code
@@ -81,10 +80,12 @@ class EventGenerator(EventGenerator_, Settings, Tools, SampleTracer):
                 it += 1
                 if self.EventStart > it and self.EventStart != -1:
                     continue
-                if self.EventStop != None and self.EventStop < it:
+                if self.EventStop != None and self.EventStop-1 < it:
                     break
                 cmp.append([F_i, indx, obj]) 
-            
+            if len(cmp) == 0:
+                break
+
             th = Threading(cmp, _MakeEvents, self.Threads, self.chnk)
             th.VerboseLevel = self.VerboseLevel
             th.Title = "READING/COMPILING EVENT"

@@ -22,10 +22,9 @@ class Interface:
 
         if isinstance(SampleDirectory, str):
             if SampleDirectory.endswith(".root"):
-                SampleDirectory = {"/".join(SampleDirectory.split("/")[:-1]) : SampleDirectory.split("/")[-1]}
+                SampleDirectory = {"/".join(SampleDirectory.split("/")[:-1]) : [SampleDirectory.split("/")[-1]]}
             else:
                 SampleDirectory = [SampleDirectory] 
-        
         if self.AddDictToDict(self._SampleMap, Name) or SampleDirectory == None:
             root = self.OutputDirectory + "/" + self.ProjectName + "/Tracers/"
             tracers = { root + i + "/" + Name : "*" for i in ["DataCache", "EventCache"]}
@@ -41,7 +40,7 @@ class Interface:
                 self._SampleMap[Name][directory].append(i.split("/")[-1])
             self.ResetSampleContainer()
             return 
-
+        
         if isinstance(SampleDirectory, dict):
             self._SampleMap[Name] |= self.ListFilesInDir(SampleDirectory, ".root")
             return 
@@ -97,15 +96,6 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         Settings.__init__(self) 
         SampleTracer.__init__(self)
     
-    @property
-    def _TempDisableCache(self):
-        self.__Cache = (self.DumpPickle, self.DumpHDF5)
-        self.DumpPickle, self.DumpHDF5 = False, False
-    
-    @property
-    def _TempEnableCache(self):
-        self.DumpPickle, self.DumpHDF5 = self.__Cache 
-
     def __BuildRootStructure(self): 
         self.OutputDirectory = self.RemoveTrailing(self.OutputDirectory, "/")
         if self._tmp:
@@ -113,50 +103,57 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         self._tmp = self.pwd()
         if (self.DumpPickle or self.DumpHDF5) or self.TrainingSampleName or (len(self._MSelection) > 0 or len(self._Selection) > 0):
             self.mkdir(self.OutputDirectory + "/" + self.ProjectName)
-            self.output = self.OutputDirectory + "/" + self.ProjectName
-            self.cd(self.output)
-        self.output = "." 
+            self.cd(self.OutputDirectory)
+        self.output = self.ProjectName
 
     def __GenerateEvents(self, InptMap, name):
-        
+       
         rem = []
-        reE = self.__SearchAssets("EventCache", name) if self.EventCache else None
-        rem += [f for f in self.DictToList(InptMap) if f not in self or reE == False] if self.EventCache else []
+        reE, reD = False, False
+        if self.EventCache:
+            reE = self.__SearchAssets("EventCache", name)
         
-        reD = self.__SearchAssets("DataCache", name) if self.DataCache else None
-        rem += [f for f in self.DictToList(InptMap) if f in self or reD == False] if self.DataCache else []
-        if len(rem) == 0:
+        if self.DataCache:
+            reD = self.__SearchAssets("DataCache", name)
+        
+        if self.EventCache and reE == False and self.DumpPickle == False and self.DumpHDF5 == False:
+            self.DumpPickle = True
+        if self.DataCache and reD == False and self.DumpPickle == False and self.DumpHDF5 == False:
+            self.DumpPickle = True
+   
+        if self.NoSamples(InptMap, name):
             return 
-        
+
+        files = self.DictToList(InptMap)
+        it = iter(files)
         _r = ""
-        for f in set(rem):
+        while True:
+            f = next(it)
             tmp = f.split("/")
-            _r = self.ReadingFileDirectory(tmp[-2]) if _r != tmp[-2] else _r
-           
-            if self.EventCache and f not in self or reE == False:
-                if self.Event == None:
+            if f not in self:
+                _r = self.ReadingFileDirectory(tmp[-2]) if _r != tmp[-2] else _r
+            
+            if self.Event != None and f not in self:
+                self.SampleContainer += self.__EventGenerator(name, tmp).SampleContainer
+            
+            if self.EventGraph != None and reD == False:
+                if f not in self:
+                    self.__SearchAssets("EventCache", name)
+                if f not in self:
+                    if self.Event == None:
+                        self.NoEventImplementation()
+                        continue
+                    self.SampleContainer += self.__EventGenerator(name, tmp).SampleContainer
+                if self.EventGraph == None:
                     self.NoEventImplementation()
                     continue
-                self += self.__EventGenerator(name, tmp)
-            
-            if self.DataCache:
-                if reE == None and reD == False and self.EventCache == False:
-                    self.EventCache = True 
-                    self.__SearchAssets("EventCache", name)
-                    self.EventCache = False
-                
-                if reD == False and self.EventCache == False and f not in self:
-                    self._TempDisableCache
-                    self += self.__EventGenerator(name, tmp)
-                    self._TempEnableCache
+                self.SampleContainer += self.__GraphGenerator(name, tmp).SampleContainer
 
-                if self.EventGraph == None:
-                    self.NoEventGraphImplementation()
-                    continue
+            if files[-1] == f:
+                break
 
-                if f not in self or reD == False:
-                    self += self.__GraphGenerator(name, tmp)
-            
+        if (self.DumpPickle or self.DumpHDF5) and self.Model == None:
+            self.ResetSampleContainer()
 
     def __EventGenerator(self, name, filedir):
         ev = EventGenerator()
@@ -242,9 +239,9 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         search = False
         search = "EventCache" if self.EventCache else search
         search = "DataCache" if self.DataCache else search
+
         if search == False and self.TrainingSampleName: 
             self.CantGenerateTrainingSample()
-
         self.EmptySampleList()
         if self.Training == False:
             self.CheckPercentage()
@@ -293,16 +290,12 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
                     bar.update(1)
             return out
 
-        if isinstance(Name, list):
-            for i in Name:
-                self.__SearchAssets(CacheType, i)
-            return 
-        
         tr = self.output + "/Tracers/" + CacheType + "/" + Name
         smpls = self.output + "/" + CacheType + "/" + Name
         tracers = set([ tr + "/" + i + ".pkl" for i in self.ls(smpls) ] + [ tr + "/" + i  for i in self.ls(tr) ])
         samples = set([ smpls + "/" + i for i in self.ls(smpls) ] + [ smpls + "/" + i.replace(".pkl", "")  for i in self.ls(tr) ])
         if len(tracers) == 0:
+            self.MissingTracer(Name)
             return False
         th = Threading([i for i in tracers if i.split("/")[-1].replace(".pkl", "") not in self], function, self.Threads, int(len(tr)/self.chnk)+1) 
         th.Title = "READING TRACERS - " + CacheType + " - " + Name
@@ -313,7 +306,7 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
                 self.MissingTracer(i[0])
                 continue
             self.SampleContainer += i[1] 
-
+        
         _pkl = self.DictToList(self.ListFilesInDir({i : "*" for i in samples}, ".pkl"))
         if len(_pkl) != 0:
             if len(_pkl) <= 1:
@@ -370,10 +363,9 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         pkl.Caller = self.Caller
         pkl.VerboseLevel = 0
 
-        s = self.list()
         for i in self._Selection:
             self.mkdir(self.output + "/Selections/" + i)
-            th = Threading([[self._Selection[i], k, i] for k in s], _select, self.Threads, self.chnk)
+            th = Threading([[self._Selection[i], k, i] for k in self], _select, self.Threads, self.chnk)
             th.Title = "EXECUTING SELECTION (" + i + ")"
             th.VerboseLevel = self.VerboseLevel
             th.Start()
@@ -416,49 +408,76 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         
         for i in self._SampleMap:
             self.__GenerateEvents(self._SampleMap[i], i)
-
         self.__GenerateTrainingSample()
         self.__Optimization() 
         self.__ModelEvaluator()
         self.__Selection()
 
+        self.Finished()
         self.WhiteSpace()
-        self.output = self.pwd()
         self.cd(self._tmp)
         self._tmp = False
 
     def __iter__(self):
-        if self.SampleContainer._locked or self._launch == False:
-            ec = self.ls(self.output + "/EventCache")
-            dc = self.ls(self.output + "/DataCache")
-            if len(self._SampleMap) != 0:
-                ec = [i for i in self._SampleMap if i in ec]
-                dc = [i for i in self._SampleMap if i in dc]
+        Dumped = self.DumpPickle or self.DumpHDF5
+        CacheType = "EventCache" if self.EventCache else None
+        CacheType = "DataCache" if self.DataCache else CacheType
             
-            trig = False
-            if self.EventCache and len(ec) != 0:
-                typ, dx = "EventCache", ec
-                trig = True
-            if self.DataCache and len(dc) != 0:
-                typ, dx = "DataCache", dc
-                trig = True
-            if trig == False:
-                typ, dx = ("DataCache", dc) if len(dc) > len(ec) else ("EventCache", ec)
-            self.__SearchAssets(typ, dx)
+        smpls = {i["INPUTSAMPLE"]["Name"] : None for i in self._InputValues if "INPUTSAMPLE" in i}
+        self._lst = { "Data" : iter(self.SampleContainer.list()), "Tracers" : None, "Current" : []}
+        if len(smpls) != 0 and CacheType != None and Dumped:
+            self.ResetSampleContainer()
+            
+            cache = "/Tracers/" + CacheType + "/"
+            if self._tmp == False:
+                self.__BuildRootStructure()
+                cache = self.pwd() + "/" + self.output + cache
+                self.cd(self._tmp)
+                self._tmp = False
+            else:
+                cache = self.output + cache
+            self._lst["Tracers"] = [ cache + i + "/" + j for i in smpls for j in self.ls(cache + i) ]
+            self._lst["Data"] = [ i.replace("/Tracers", "").replace(".pkl", "") for i in self._lst["Tracers"] ]
+            self._lst["Data"] = iter([ [i + "/" + j for j in self.ls(i)] for i in self._lst["Data"] ])
+            self._lst["Tracers"] = iter(self._lst["Tracers"])
         
-        self._lst = [i for i in self.SampleContainer.list() if i != ""]
-        if len(self._lst) == 0:
-            self.NothingToIterate()
-            return self
+        if self._lst["Tracers"] == None and self._launch == False:
+            self.Launch()
+            return self.__iter__()
 
-        if self.Tree == None:
-            self.Tree = list(self._lst[0].Trees)[0]
         self.Lumi = 0
         return self
 
     def __next__(self):
-        if len(self._lst) == 0:
-            raise StopIteration()
-        evnt = self._lst.pop(0)
-        self.Lumi += float(evnt.Trees[self.Tree].Lumi)
-        return evnt
+        event = next(self._lst["Data"]) if len(self._lst["Current"]) == 0 else self._lst["Current"].pop(0) 
+        if isinstance(event, list):
+            events = { i.split("/")[-1].replace(".hdf5", "").replace(".pkl", "") : i for i in event }
+            hdf5 = [ i for i in events.values() if i.endswith(".hdf5") ]
+            Pkl = [ i for i in events.values() if i.endswith(".pkl") ]
+            SampleContainer = UnpickleObject(next(self._lst["Tracers"]))
+            events = {}
+            if len(Pkl) != 0:
+                pkl = Pickle()
+                pkl.Caller = self.Caller
+                pkl.VerboseLevel = 0
+                pkl.Threads = self.Threads
+                events |= pkl.MultiThreadedReading(Pkl)
+           
+            if len(hdf5) != 0:
+                hdf = HDF5()
+                hdf.Caller = self.Caller
+                hdf.VerboseLevel = 0
+                hdf.MultiThreadedReading(hdf5)
+                events |= {_hash : ev for _hash, ev in hdf._names}
+            
+            SampleContainer.RestoreEvents(events, self.Threads, self.chnk)
+            self._lst["Current"] = SampleContainer.list()
+            self.SampleContainer += SampleContainer
+
+            event = self._lst["Current"].pop(0)
+
+        if self.Tree == None:
+            self.Tree = list(event.Trees)[0]
+        self.Lumi += float(event.Trees[self.Tree].Lumi)
+        
+        return event

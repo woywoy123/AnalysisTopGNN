@@ -12,7 +12,9 @@ class Analysis(Notification):
     def NoSamples(self, SampleMap, name):
         if len(SampleMap) == 0:
             self.Failure("No ROOT samples were found in: " + name)
-    
+            return True 
+        return False
+
     def NothingToIterate(self):
         self.Failure("No samples loaded.")
     
@@ -38,8 +40,8 @@ class Analysis(Notification):
         string1 = "---" + " Starting Project: " + self.ProjectName + " ---"
 
         string = ""
-        string += "> EventGenerator < :: " if self.EventCache and self.Event != None else ""
-        string += "> GraphGenerator < :: " if self.DataCache and self.EventGraph != None else ""
+        string += "> EventGenerator < :: " if self.Event != None else ""
+        string += "> GraphGenerator < :: " if self.EventGraph != None else ""
         string += "> TrainingSampleGenerator < :: " if self.TrainingSampleName else ""
         string += "> Optimization < :: " if self.Model != None else ""
         string += "> ModelEvaluator < :: " if len(self._ModelDirectories) != 0 or self.PlotNodeStatistics else ""
@@ -56,7 +58,10 @@ class Analysis(Notification):
         self.Warning("No cache was found under " + Directory)
 
     def MissingTracer(self, Directory):
-        self.Warning("Tracer not found under: " + Directory + " please enable either 'DumpPickle' or 'DumpHDF5'")
+        _str = "Tracer not found under: " + Directory
+        _str += " please enable either 'DumpPickle' or 'DumpHDF5'." if self.DumpPickle == False and  self.DumpHDF5 == False else ""
+        _str += " Regenerating..."
+        self.Warning(_str)
 
     def NoEventImplementation(self):
         ex = "Or do: from AnalysisTopGNN.Events import Event"
@@ -131,3 +136,6 @@ class Analysis(Notification):
             return 
         self.Warning("Found the following invalid settings: " + "\n".join(inv))
         time.sleep(5)
+
+    def Finished(self):
+        self.Success("Finished Analysis")
