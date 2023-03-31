@@ -100,12 +100,12 @@ def PlotTemplate(nevents, lumi):
 
 
 # Calculate efficiency of objects in the same group coming from same top or coming from resonance
-def Efficiency(group, ev, fromRes = False):
+def Efficiency(group, fromRes = False):
     doesPass = False
     if len(group) == 2:
-        allPartonsProperty = {0: [ev.TopChildren[p.TopChildIndex[0]].FromRes if fromRes else ev.TopChildren[p.TopChildIndex[0]].TopIndex for p in group[0].Parton], 1: [group[1].FromRes if fromRes else group[1].TopIndex] }
+        allPartonsProperty = {0: [p.Parent[0].FromRes if fromRes else p.Parent[0].TopIndex for p in group[0].Parton], 1: [group[1].FromRes if fromRes else group[1].TopIndex] }
     else:
-        allPartonsProperty = {i: [ev.TopChildren[p.TopChildIndex[0]].FromRes if fromRes else ev.TopChildren[p.TopChildIndex[0]].TopIndex for p in tj.Parton] for i,tj in enumerate(group)}
+        allPartonsProperty = {i: [p.Parent[0].FromRes if fromRes else p.Parent[0].TopIndex for p in tj.Parton] for i,tj in enumerate(group)}
     #print(f"allPartonsProperty = {allPartonsProperty}")
     intersectionProperty = set.intersection(*map(set,allPartonsProperty.values()))
     if not fromRes and intersectionProperty:
@@ -181,7 +181,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
             #print("Leptonic group 0 has largest pt: assigning it to resonance")
             LeptonicResTop = leptonicGroups[0]
             LeptonicSpecTop = leptonicGroups[1]
-            if Efficiency([event_groups["leptonic"][i][0][0], event_groups["leptonic"][i][0][1]], event_groups["ev"][i], True):
+            if Efficiency([event_groups["leptonic"][i][0][0], event_groups["leptonic"][i][0][1]], True):
                 #print("Resonance assignment correct")
                 eff_resonance_lep += 1
                 correctResAssignment += 1
@@ -189,7 +189,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
             #print("Leptonic group 1 has largest pt: assigning it to resonance")
             LeptonicResTop = leptonicGroups[1]
             LeptonicSpecTop = leptonicGroups[0]
-            if Efficiency([event_groups["leptonic"][i][1][0], event_groups["leptonic"][i][1][1]], event_groups["ev"][i], True):
+            if Efficiency([event_groups["leptonic"][i][1][0], event_groups["leptonic"][i][1][1]], True):
                 #print("Resonance assignment correct")
                 eff_resonance_lep += 1
                 correctResAssignment += 1
@@ -200,7 +200,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
             #print("Best hadronic group has highest pt: assigning it to resonance")
             HadronicResTop = hadronicGroups[0]
             HadronicSpecTop = hadronicGroups[1]
-            if Efficiency(event_groups["hadronic"][i][0], event_groups["ev"][i], True):
+            if Efficiency(event_groups["hadronic"][i][0], True):
                 #print("Resonance assignment correct")
                 eff_resonance_had += 1
                 correctResAssignment += 1
@@ -208,7 +208,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
             #print("Second best hadronic group has highest pt: assigning it to resonance")
             HadronicResTop = hadronicGroups[1]
             HadronicSpecTop = hadronicGroups[0]
-            if Efficiency(event_groups["hadronic"][i][1], event_groups["ev"][i], True):
+            if Efficiency(event_groups["hadronic"][i][1], True):
                 #print("Resonance assignment correct")
                 eff_resonance_had += 1
                 correctResAssignment += 1
@@ -218,15 +218,15 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
 
         # Calculate efficiencies of groupings
         # Leptonic groups
-        if Efficiency(event_groups["leptonic"][i][0], event_groups["ev"][i]):
+        if Efficiency(event_groups["leptonic"][i][0]):
             eff_closestLeptonicGroup += 1
-        if Efficiency(event_groups["leptonic"][i][1], event_groups["ev"][i]):
+        if Efficiency(event_groups["leptonic"][i][1]):
             eff_remainingLeptonicGroup += 1
 
         # Hadronic groups
-        if Efficiency(event_groups["hadronic"][i][0], event_groups["ev"][i]):
+        if Efficiency(event_groups["hadronic"][i][0]):
             eff_bestHadronicGroup += 1
-        if Efficiency(event_groups["hadronic"][i][1], event_groups["ev"][i]):
+        if Efficiency(event_groups["hadronic"][i][1]):
             eff_remainingHadronicGroup += 1
 
         # Calculate masses of tops and resonance
