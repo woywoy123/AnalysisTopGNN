@@ -23,7 +23,7 @@ class CustomEvent:
     def create_children(self):
 
         for c in range(len(self.children_dict["pdgid"])):
-            child = create_particle(self.children_dict["pdgid"][c], self.children_dict["topIndex"][c], self.tops_fromRes[self.cchildren_dict["topIndex"][c]])
+            child = create_particle(self.children_dict["pdgid"][c], self.children_dict["topIndex"][c], self.tops_fromRes[self.children_dict["topIndex"][c]])
             self.Children.append(child)
             if abs(child.pdgid) in [11, 13, 15]:
                 self.Leptons.append(child)
@@ -34,6 +34,7 @@ class CustomEvent:
             tj = TruthJet()
             for p in range(len(self.truthJets_dict["pdgid"][t])):
                 parton = TruthJetParton(self.truthJets_dict["pdgid"][t][p], self.truthJets_dict["topIndex"][t][p], self.truthJets_dict["topChildIndex"][t][p], self.tops_fromRes[self.truthJets_dict["topIndex"][t][p]])
+                parton.Parent = self.Children[parton.TopChildIndex]
                 tj.Parton.append(parton)
             self.TruthJets.append(tj)
 
@@ -41,8 +42,6 @@ class CustomEvent:
         self.LeptonicGroup = {"res": [], "spec": []}
         self.HadronicGroup = {"res": [], "spec": []}
 
-        # num_groups = max([v for list in self.group_assignment.values() for v in list]) + 1
-        # for g in range(num_groups):
         for l, group in enumerate(self.group_assignment["leptons"]):
             origin = "res" if self.fromRes_assignment[group] else "spec"
             self.LeptonicGroup[origin].append(self.Leptons[l])
@@ -53,12 +52,13 @@ class CustomEvent:
             else:
                 self.HadronicGroup[origin].append(self.TruthJets[tj])
 
-def Efficiency(group, ev, fromRes = False):
+def Efficiency(group, fromRes = False):
     doesPass = False
+    allPartonsProperty = {}
     if len(group) == 2:
-        allPartonsProperty = { 0: [group[0].FromRes if fromRes else group[0].TopIndex], 1: [(ev.Children[p.TopChildIndex].FromRes if p.TopChildIndex > 0 else -1) if fromRes else (ev.Children[p.TopChildIndex].TopIndex if p.TopChildIndex > 0 else -1) for p in group[1].Parton] }
+        allPartonsProperty = { 0: [group[0].FromRes if fromRes else group[0].TopIndex], 1: [p.Parent.FromRes if fromRes else p.Parent.TopIndex for p in group[1].Parton] }
     else:
-        allPartonsProperty = {i: [(ev.Children[p.TopChildIndex].FromRes if p.TopChildIndex > 0 else -1) if fromRes else (ev.Children[p.TopChildIndex].TopIndex if p.TopChildIndex > 0 else -1) for p in tj.Parton] for i,tj in enumerate(group)}
+        allPartonsProperty = {i: [p.Parent.FromRes if fromRes else p.Parent.TopIndex for p in tj.Parton] for i,tj in enumerate(group)}
     #print(f"allPartonsProperty = {allPartonsProperty}")
     intersectionProperty = set.intersection(*map(set,allPartonsProperty.values()))
     if not fromRes and intersectionProperty:
@@ -71,6 +71,8 @@ with open("Events.json") as f:
     jsondata = json.load(f)
 
 for event in jsondata["events"]:
+
+    if not event["to_run"]: continue
 
     ev = CustomEvent(event)
     ev.create_children()
@@ -98,13 +100,13 @@ for event in jsondata["events"]:
     print(f"Hadronic group from res = {hadGroupRes_pdgid}\n")
     print("EFFICIENCIES")
     print("-> Grouping:")
-    print(f"Leptonic group from spec: {Efficiency(ev.LeptonicGroup['spec'], ev)}")
-    print(f"Leptonic group from res: {Efficiency(ev.LeptonicGroup['res'], ev)}")
-    print(f"Hadronic group from spec: {Efficiency(ev.HadronicGroup['spec'], ev)}")
-    print(f"Hadronic group from res: {Efficiency(ev.HadronicGroup['res'], ev)}")
+    print(f"Leptonic group from spec: {Efficiency(ev.LeptonicGroup['spec'])}")
+    print(f"Leptonic group from res: {Efficiency(ev.LeptonicGroup['res'])}")
+    print(f"Hadronic group from spec: {Efficiency(ev.HadronicGroup['spec'])}")
+    print(f"Hadronic group from res: {Efficiency(ev.HadronicGroup['res'])}")
     print("-> Resonance assignment:")
-    print(f"Leptonic group from spec: {Efficiency(ev.LeptonicGroup['spec'], ev, True)}")
-    print(f"Leptonic group from res: {Efficiency(ev.LeptonicGroup['res'], ev, True)}")
-    print(f"Hadronic group from spec: {Efficiency(ev.HadronicGroup['spec'], ev, True)}")
-    print(f"Hadronic group from res: {Efficiency(ev.HadronicGroup['res'], ev, True)}")
+    print(f"Leptonic group from spec: {Efficiency(ev.LeptonicGroup['spec'], True)}")
+    print(f"Leptonic group from res: {Efficiency(ev.LeptonicGroup['res'], True)}")
+    print(f"Hadronic group from spec: {Efficiency(ev.HadronicGroup['spec'], True)}")
+    print(f"Hadronic group from res: {Efficiency(ev.HadronicGroup['res'], True)}")
 
