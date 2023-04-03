@@ -7,6 +7,7 @@ from AnalysisTopGNN.Plotting import TH1F, CombineTH1F
 from itertools import combinations
 import numpy as np
 import math
+from collections import Counter
  
 _charged_leptons = [11, 13, 15]
 
@@ -16,52 +17,60 @@ mT_GeV = 172.5  # GeV : t Quark Mass
 def ParticleGroups(ev):
 
     groups = {"hadronic": [], "leptonic": []}
-    lquarks = []
-    bquarks = []
+    ljets = []
+    bjets = []
     leptons = []
 
+    topTJ = [l for t in ev.Tops for l in t.TruthJets]
+    for tj in topTJ:
+        if tj.is_b:
+            bjets.append(tj)
+        else:
+            ljets.append(tj)
     for p in ev.TopChildren:
-        if abs(p.pdgid) < 5:
-            lquarks.append(p)
-        elif abs(p.pdgid) == 5:
-            bquarks.append(p)
-        elif abs(p.pdgid) in _charged_leptons:
+        if abs(p.pdgid) in _charged_leptons:
             leptons.append(p)
-
+    
+    ## Take highest 4 pT truth jets
+    if len(ljets) > 4:
+        ljets = sorted(ljets, key=lambda p: p.pt, reverse=True)[0:4]
+    if len(bjets) > 4:
+        bjets = sorted(bjets, key=lambda p: p.pt, reverse=True)[0:4]
+    
     # Only keep same-sign dilepton events with 4 b's and 4 non-b's
-    if len(leptons) != 2 or leptons[0].charge != leptons[1].charge or len(bquarks) != 4 or len(lquarks) != 4:
+    if len(leptons) != 2 or leptons[0].charge != leptons[1].charge or len(bjets) != 4 or len(ljets) != 4:
         return 0
 
-    # Find the group of one b quark and two jets for which the invariant mass is closest to that of a top quark
+    # Find the group of one b and two jets for which the invariant mass is closest to that of a top quark
     closestGroups = []
-    while len(bquarks) > 2:
+    while len(bjets) > 2:
         lowestError = 1e100
-        for b in bquarks:
-            for pair in combinations(lquarks, 2):
+        for b in bjets:
+            for pair in combinations(ljets, 2):
                 IM = sum([b, pair[0], pair[1]]).Mass
                 if abs(mT_GeV - IM) < lowestError:
                     bestB = b
-                    bestQuarkPair = pair
+                    bestJetPair = pair
                     lowestError = abs(mT_GeV - IM)
         # Remove last closest group from lists and add them to dictionary
-        bquarks.remove(bestB)
-        lquarks.remove(bestQuarkPair[0])
-        lquarks.remove(bestQuarkPair[1])
-        groups["hadronic"].append([bestB, bestQuarkPair[0], bestQuarkPair[1]])
+        bjets.remove(bestB)
+        ljets.remove(bestJetPair[0])
+        ljets.remove(bestJetPair[1])
+        groups["hadronic"].append([bestB, bestJetPair[0], bestJetPair[1]])
 
-    # Match remaining leptons with their closest b quarks
+    # Match remaining leptons with their closest b
     closestPairs = []
     while leptons != []:
         lowestDR = 100
         for l in leptons:
-            for b in bquarks:
+            for b in bjets:
                 if l.DeltaR(b) < lowestDR: 
                     lowestDR = l.DeltaR(b)
                     closestB = b
                     closestL = l
         # Remove last closest lepton and b from lists and add them to dictionary
         leptons.remove(closestL)
-        bquarks.remove(closestB)
+        bjets.remove(closestB)
         groups["leptonic"].append([closestB, closestL])
 
     return groups
@@ -82,12 +91,28 @@ def PlotTemplate(nevents, lumi):
                 "yMin" : 0, 
                 "xMax" : None,
                 "xBins" : None,
-                "OutputDirectory" : "./Figures_Dilepton/", 
+                "OutputDirectory" : "./Figures_Dilepton_truthJets/", 
                 "Style" : "ATLAS",
                 "ATLASLumi" : lumi,
                 "NEvents" : nevents
             }
     return Plots
+
+
+# Calculate efficiency of objects in the same group coming from same top or coming from resonance
+def Efficiency(group, fromRes = False):
+    doesPass = False
+    if len(group) == 2:
+        allPartonsProperty = {0: [p.Parent[0].FromRes if fromRes else p.Parent[0].TopIndex for p in group[0].Parton], 1: [group[1].FromRes if fromRes else group[1].TopIndex] }
+    else:
+        allPartonsProperty = {i: [p.Parent[0].FromRes if fromRes else p.Parent[0].TopIndex for p in tj.Parton] for i,tj in enumerate(group)}
+    #print(f"allPartonsProperty = {allPartonsProperty}")
+    intersectionProperty = set.intersection(*map(set,allPartonsProperty.values()))
+    if not fromRes and intersectionProperty:
+        doesPass = True 
+    elif fromRes and intersectionProperty == {1}:
+        doesPass = True 
+    return doesPass
 
 
 def DileptonAnalysis_withNeutrinoReco(Ana):
@@ -134,7 +159,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
         neutrinos = sel.NuNu(event_groups["leptonic"][i][0][0], event_groups["leptonic"][i][1][0], event_groups["leptonic"][i][0][1], event_groups["leptonic"][i][1][1], event_groups["ev"][i])
         #print(f"len(neutrinos) = {len(neutrinos)}")
 
-         # Test if a solution was found
+        # Test if a solution was found
         if not neutrinos: 
             #print("No neutrino solutions, continuing")
             numSolutions.append(0)
@@ -150,67 +175,59 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
         closest_nuSol = close[x[0]]
 
         # Make reconstructed tops and assign them to resonance/spectator
+        correctResAssignment = 0
         leptonicGroups = [sum([event_groups["leptonic"][i][g][0], event_groups["leptonic"][i][g][1], closest_nuSol[g]]) for g in range(2)]
         if leptonicGroups[0].pt > leptonicGroups[1].pt:
             #print("Leptonic group 0 has largest pt: assigning it to resonance")
             LeptonicResTop = leptonicGroups[0]
             LeptonicSpecTop = leptonicGroups[1]
-            nFromRes_leptonicGroup = len([p for p in event_groups["leptonic"][i][0] if event_groups["tops"][i][p.TopIndex].FromRes == 1])
-            #print(f"FromRes for this group is {[event_groups['tops'][i][p.TopIndex].FromRes for p in event_groups['leptonic'][i][0]]}")
+            if Efficiency([event_groups["leptonic"][i][0][0], event_groups["leptonic"][i][0][1]], True):
+                #print("Resonance assignment correct")
+                eff_resonance_lep += 1
+                correctResAssignment += 1
         else:
             #print("Leptonic group 1 has largest pt: assigning it to resonance")
             LeptonicResTop = leptonicGroups[1]
             LeptonicSpecTop = leptonicGroups[0]
-            nFromRes_leptonicGroup = len([p for p in event_groups["leptonic"][i][1] if event_groups["tops"][i][p.TopIndex].FromRes == 1])
-            #print(f"FromRes for this group is {[event_groups['tops'][i][p.TopIndex].FromRes for p in event_groups['leptonic'][i][1]]}")
-        #print(f"nFromRes_leptonicGroup = {nFromRes_leptonicGroup}")
-        if nFromRes_leptonicGroup == 2:
-            eff_resonance_lep += 1
+            if Efficiency([event_groups["leptonic"][i][1][0], event_groups["leptonic"][i][1][1]], True):
+                #print("Resonance assignment correct")
+                eff_resonance_lep += 1
+                correctResAssignment += 1
+
 
         hadronicGroups = [sum(event_groups["hadronic"][i][g]) for g in range(2)]
         if hadronicGroups[0].pt > hadronicGroups[1].pt:
             #print("Best hadronic group has highest pt: assigning it to resonance")
             HadronicResTop = hadronicGroups[0]
             HadronicSpecTop = hadronicGroups[1]
-            nFromRes_hadronicGroup = len([p for p in event_groups["hadronic"][i][0] if event_groups["tops"][i][p.TopIndex].FromRes == 1])
-            #print(f"FromRes for this group is {[event_groups['tops'][i][p.TopIndex].FromRes for p in event_groups['hadronic'][i][0]]}")
+            if Efficiency(event_groups["hadronic"][i][0], True):
+                #print("Resonance assignment correct")
+                eff_resonance_had += 1
+                correctResAssignment += 1
         else:
             #print("Second best hadronic group has highest pt: assigning it to resonance")
             HadronicResTop = hadronicGroups[1]
             HadronicSpecTop = hadronicGroups[0]
-            nFromRes_hadronicGroup = len([p for p in event_groups["hadronic"][i][1] if event_groups["tops"][i][p.TopIndex].FromRes == 1])
-            #print(f"FromRes for this group is {[event_groups['tops'][i][p.TopIndex].FromRes for p in event_groups['hadronic'][i][1]]}")  
-        #print(f"nFromRes_hadronicGroup = {nFromRes_hadronicGroup}")
-        if nFromRes_hadronicGroup == 3:
-            eff_resonance_had += 1
+            if Efficiency(event_groups["hadronic"][i][1], True):
+                #print("Resonance assignment correct")
+                eff_resonance_had += 1
+                correctResAssignment += 1
 
-        if nFromRes_leptonicGroup == 2 and nFromRes_hadronicGroup == 3: 
+        if correctResAssignment == 2:
             eff_resonance += 1
 
         # Calculate efficiencies of groupings
-        if event_groups["leptonic"][i][0][0].TopIndex == event_groups["leptonic"][i][0][1].TopIndex: 
+        # Leptonic groups
+        if Efficiency(event_groups["leptonic"][i][0]):
             eff_closestLeptonicGroup += 1
-        #     print(f"l/b from closest leptonic group come from same top {event_groups['leptonic'][i][0][0].TopIndex}")
-        # else:
-        #     print(f"l/b from closest leptonic group come from different tops: {[event_groups['leptonic'][i][0][j].TopIndex for j in range(2)]}")
-        
-        if event_groups["leptonic"][i][1][0].TopIndex == event_groups["leptonic"][i][1][1].TopIndex: 
+        if Efficiency(event_groups["leptonic"][i][1]):
             eff_remainingLeptonicGroup += 1
-        #     print(f"l/b from second closest leptonic group come from same top {event_groups['leptonic'][i][1][0].TopIndex}")
-        # else:
-        #     print(f"l/b from second closest leptonic group come from different tops: {[event_groups['leptonic'][i][1][j].TopIndex for j in range(2)]}")
 
-        if event_groups["hadronic"][i][0][0].TopIndex == event_groups["hadronic"][i][0][1].TopIndex and event_groups["hadronic"][i][0][1].TopIndex == event_groups["hadronic"][i][0][2].TopIndex: 
+        # Hadronic groups
+        if Efficiency(event_groups["hadronic"][i][0]):
             eff_bestHadronicGroup += 1
-        #     print(f"b/q/q from best hadronic group come from same top {event_groups['hadronic'][i][0][0].TopIndex}")
-        # else:
-        #     print(f"b/q/q from best hadronic group come from different tops: {[event_groups['hadronic'][i][0][j].TopIndex for j in range(3)]}")
-        
-        if event_groups["hadronic"][i][1][0].TopIndex == event_groups["hadronic"][i][1][1].TopIndex and event_groups["hadronic"][i][1][1].TopIndex == event_groups["hadronic"][i][1][2].TopIndex: 
+        if Efficiency(event_groups["hadronic"][i][1]):
             eff_remainingHadronicGroup += 1
-        #     print(f"b/q/q from remaining hadronic group come from same top {event_groups['hadronic'][i][1][0].TopIndex}")
-        # else:
-        #     print(f"b/q/q from remaining hadronic group come from different tops: {[event_groups['hadronic'][i][1][j].TopIndex for j in range(3)]}")
 
         # Calculate masses of tops and resonance
         print(f"Hadronic top mass: res = {HadronicResTop.Mass}, spec = {HadronicSpecTop.Mass}")
@@ -236,7 +253,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     string += f"All decay products correctly assigned to resonance: {eff_resonance / (neventsFinal)} \n"
     print(string)
 
-    f = open("Dilepton_withNeutrinoReco_efficiencies.txt", "w")
+    f = open("Dilepton_withNeutrinoReco_truthJets_efficiencies.txt", "w")
     f.write(string)
     f.close()
 
@@ -245,7 +262,7 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots["Title"] = "Reconstructed Hadronic Top Mass"
     Plots["xTitle"] = "Mass (GeV)"
     Plots["xBins"] = 200
-    Plots["xMin"] = 150
+    Plots["xMin"] = 0
     Plots["xMax"] = 200
     Plots["Filename"] = "RecoHadTopMass"
     Plots["Histograms"] = []
@@ -263,24 +280,9 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots["Title"] = "Reconstructed Leptonic Top Mass"
     Plots["xTitle"] = "Mass (GeV)"
     Plots["xBins"] = 200
-    Plots["xMin"] = 150
+    Plots["xMin"] = 0
     Plots["xMax"] = 200
     Plots["Filename"] = "RecoLepTopMass"
-    Plots["Histograms"] = []
-
-    for i in ReconstructedLepTopMass:
-        _Plots = {}
-        _Plots["Title"] = i
-        _Plots["xData"] = ReconstructedLepTopMass[i]
-        Plots["Histograms"].append(TH1F(**_Plots))
-    
-    X = CombineTH1F(**Plots)
-    X.SaveFigure()
-
-    Plots["xMin"] = 100
-    Plots["xMax"] = 500
-    Plots["Logarithmic"] = True
-    Plots["Filename"] = "RecoLepTopMass_log"
     Plots["Histograms"] = []
 
     for i in ReconstructedLepTopMass:
@@ -310,8 +312,8 @@ def DileptonAnalysis_withNeutrinoReco(Ana):
     Plots = PlotTemplate(neventsFinal, lumi)
     Plots["Title"] = "Number of neutrino solutions"
     Plots["xTitle"] = "#"
-    Plots["xMin"] = -1
     Plots["xStep"] = 1
+    Plots["xMin"] = -1
     Plots["xBinCentering"] = True
     Plots["Filename"] = "NumNeutrinoSolutions"
     Plots["Histograms"] = []
