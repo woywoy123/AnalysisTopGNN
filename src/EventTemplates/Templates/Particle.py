@@ -140,7 +140,7 @@ class ParticleTemplate(VariableManager):
         return particle
 
     def __eq__(self, other):
-        if other == None:
+        if other == None: 
             return False
         if len(self.__dict__) != len(other.__dict__):
             return False
