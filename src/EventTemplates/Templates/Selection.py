@@ -42,11 +42,11 @@ class Selection(Settings, Tools):
     
     @property
     def Luminosity(self):
-        return ((sum(self._EventWeights))**2) / sum([i**2 for i in self._EventWeights])
+        return ((sum(self._SelectionEventWeights))) / sum(self._AllEventWeights)
     
     @property
     def NEvents(self):
-        return len(self._EventWeights)
+        return len(self._SelectionEventWeights)
 
 
     def Selection(self, event):
@@ -111,6 +111,7 @@ class Selection(Settings, Tools):
         if self._hash == None:
             self._hash = event.Filename
         
+        self._AllEventWeights += [event.Trees[self.Tree].Lumi]        
         if self.Selection(event.Trees[self.Tree]) == False:
             if "Rejected::Selection" not in self._CutFlow:
                 self._CutFlow["Rejected::Selection"] = 0
@@ -127,7 +128,7 @@ class Selection(Settings, Tools):
             self._CutFlow[o] += 1
         else:
             self._Residual += [o] if o != None else []
-        self._EventWeights += [event.Trees[self.Tree].Lumi] 
+        self._SelectionEventWeights += [event.Trees[self.Tree].Lumi] 
 
         if self._OutDir:
             o = self._OutDir

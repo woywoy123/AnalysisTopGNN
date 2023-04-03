@@ -211,7 +211,8 @@ class _Selection:
         self._Residual = []
         self._CutFlow = {}
         self._TimeStats = []
-        self._EventWeights = []
+        self._AllEventWeights = []
+        self._SelectionEventWeights = []
  
 class Settings(_General):
     

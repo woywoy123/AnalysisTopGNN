@@ -8,26 +8,38 @@ import PlottingCode.Resonance_ZPrimePtMass as ZPrime
 import Studies.Resonance.ResonanceTruthTops as RTT_Sel
 import PlottingCode.ResonanceTruthTops as RTT_Plot
 
-import Studies.Event.TruthEvent as ETE_Sel
-import PlottingCode.TruthEvent as ETE_Plot
+import Studies.Resonance.ResonanceTruthChildren as RTC_Sel
+import PlottingCode.ResonanceTruthChildren as RTC_Plot
 
 import Studies.TruthTops.TopDecay as TTT_Sel
 import PlottingCode.TopDecay as TTT_Plot
 
+import Studies.TruthChildrenKinematics.DeltaRChildren as TCK_Sel
+import PlottingCode.TruthChildrenKinematics as TCK_Plot
+
+import Studies.Event.TruthEvent as ETE_Sel
+import PlottingCode.TruthEvent as ETE_Plot
 
 import os 
 
 smpl = os.environ["Samples"]
 
 toRun = [
-        #"ZPrimeMatrix", 
-        #"ResonanceDecayModes", 
-        #"ResonanceMassFromTops", 
-        #"ResonanceDeltaRTops", 
-        #"ResonanceTopKinematics", 
-        #"EventNTruthJetAndJets", 
-        #"EventMETImbalance",
-        "TopDecayModes", 
+        #    "ZPrimeMatrix", 
+        #    "ResonanceDecayModes", 
+        #    "ResonanceMassFromTops", 
+        #    "ResonanceDeltaRTops", 
+        #    "ResonanceTopKinematics", 
+        #    "EventNTruthJetAndJets", 
+        #    "EventMETImbalance",
+        #    "TopDecayModes", 
+        #    "ResonanceMassFromChildren"
+        
+
+
+
+
+        
 ]
 
 studies = {
@@ -39,6 +51,7 @@ studies = {
             "EventNTruthJetAndJets" : ETE_Sel.EventNTruthJetAndJets, 
             "EventMETImbalance" : ETE_Sel.EventMETImbalance,
             "TopDecayModes" : TTT_Sel.TopDecayModes, 
+            "ResonanceMassFromChildren" : RTC_Sel.ResonanceMassFromChildren
 }
 
 studiesPlots = {
@@ -50,6 +63,7 @@ studiesPlots = {
                     "EventNTruthJetAndJets" : ETE_Plot.EventNTruthJetAndJets,
                     "EventMETImbalance" : ETE_Plot.EventMETImbalance,
                     "TopDecayModes" : TTT_Plot.TopDecayModes,
+                    "ResonanceMassFromChildren" : RTC_Plot.ResonanceMassFromChildren, 
 }
 
 
@@ -71,7 +85,7 @@ Ana.Event = Event
 Ana.EventStop = 1000
 Ana.EventCache = True
 Ana.DumpPickle = True
-Ana.Launch()
+#Ana.Launch()
 
 # Runs the plotting code
 for i in toRun:

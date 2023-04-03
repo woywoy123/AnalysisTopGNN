@@ -28,5 +28,24 @@ def TopDecayModes(x):
 
     Plots["xWeights"] = [float(i / x.TopCounter) for i in x.CounterPDGID.values()]
     Plots["Filename"] = "Figure_2.1a"
-    x = TH1F(**Plots)
-    x.SaveFigure()
+    plt = TH1F(**Plots)
+    plt.SaveFigure()
+
+    Plots = PlotTemplate(x)
+    Plots["Title"] = "Reconstructed Invariant Top Mass from Immediate Decay Products"
+    Plots["xTitle"] = "Invariant Top Mass (GeV)"
+    Plots["xBins"] = 1000
+    Plots["xMin"] = 0
+    Plots["xMax"] = 300
+    Plots["Filename"] = "Figure_2.1b"
+    Plots["Histograms"] = []
+    
+    for i in x.TopMassTC:
+        _Plots = {}
+        _Plots["Title"] = i
+        _Plots["xData"] = x.TopMassTC[i]
+        Plots["Histograms"].append(TH1F(**_Plots))
+    plt = CombineTH1F(**Plots)
+    plt.SaveFigure()
+
+

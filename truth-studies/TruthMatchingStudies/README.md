@@ -34,7 +34,10 @@ It also explores the MET vs n-Lepton correlations.
 A set of plots which explore the missing transverse discrepency between measurement from the detector simulation and the truth neutrinos.
 - **TopDecayModes**:
 Plots indicating to which children the Top-Quark decays into. 
-
+- **ResonanceMassFromChildren**:
+Plots relating to the resonance being reconstructed from the top truth children, where the resonance tops decay either Hadronically, Leptonically or Hadronically-Leptonically.
+- **TruthChildrenKinematics**:
+This selection implementation aims to investigate the deltaR dependency of the parent top PT and how closely clustered the children are together. 
 
 ## Figures Produced:
 ### ZPrimeMatrix:
@@ -73,7 +76,7 @@ Azimuthal angle of tops
 
 ### EventNTruthJetAndJets:
 - **N-TruthJets_n-Jets**:
-A plot, depicating on a per event basis, the number of truth jets vs reconstructed jets (i.e. observed jets).
+A plot, depicting on a per event basis, the number of truth jets vs reconstructed jets (i.e. observed jets).
 Ideally, this would be as diagonal as possible to indicate no truth jet loss
 - **MissingET_n-TruthLep**:
 A plot illustrating how the number of leptonically decaying tops contribute to the missing transverse momenta of the event.
@@ -100,8 +103,16 @@ The observed difference between measurement and rotated truth neutrinos.
 ### TopDecayModes:
 - **Figure_2.1a**:
 A plot depicting the fraction by which the Top-Quark decays into. 
+- **Figure_2.1b**:
+A plot of the reconstructed invariant mass of the tops from their corresponding truth children.
 
+### ResonanceMassFromChildren:
+- **Figure_2.1c**:
+A plot of the reconstructed resonance from truth children.
 
+### TruthChildrenKinematics:
+- **Figure_2.1d**:
+A plot illustrating the delta-R between truth children originating from a common top, but partitioned into resonance/spectator tops.
 
 <!--
 -> Figure 2.1:
