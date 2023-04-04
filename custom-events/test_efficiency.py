@@ -53,16 +53,16 @@ class CustomEvent:
                 self.HadronicGroup[origin].append(self.TruthJets[tj])
 
 def Efficiency(group, fromRes = False):
-    print(f"In Efficiency with fromRes = {fromRes}")
+    #print(f"In Efficiency with fromRes = {fromRes}")
     doesPass = False
     allPartonsProperty = {}
     if len(group) == 2:
-        allPartonsProperty = { 0: [group[0].FromRes if fromRes else group[0].TopIndex], 1: [p.Parent.FromRes if fromRes else p.Parent.TopIndex for p in group[1].Parton] }
+        allPartonsProperty = { 0: [(group[0].FromRes if fromRes else group[0].TopIndex) if group[0].pdgid != 21 else None], 1: [(p.Parent.FromRes if fromRes else p.Parent.TopIndex) if p.pdgid != 21 else None for p in group[1].Parton] }
     else:
-        allPartonsProperty = {i: [p.Parent.FromRes if fromRes else p.Parent.TopIndex for p in tj.Parton] for i,tj in enumerate(group)}
-    print(f"allPartonsProperty = {allPartonsProperty}")
+        allPartonsProperty = {i: [(p.Parent.FromRes if fromRes else p.Parent.TopIndex) if p.pdgid != 21 else None for p in tj.Parton] for i,tj in enumerate(group)}
+    #print(f"allPartonsProperty = {allPartonsProperty}")
     intersectionProperty = set.intersection(*map(set,allPartonsProperty.values()))
-    print(f"intersectionProperty: {intersectionProperty}")
+    #print(f"intersectionProperty: {intersectionProperty}")
     if not fromRes and intersectionProperty:
         doesPass = True 
     elif fromRes and intersectionProperty == {1}:
