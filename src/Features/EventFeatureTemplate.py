@@ -57,14 +57,14 @@ def TruthTopChildren():
         }
 
     NT = {
-            "res" : tc_nf.FromRes, 
+            "node_res" : tc_nf.FromRes, 
             "top" : tc_nf.FromTop, 
             "islep"  : tc_nf.islepton, 
             "isNu"   : tc_nf.isneutrino, 
         }
     
     ET = {
-            "res"  : tc_ef.ResEdge,
+            "edge_res"  : tc_ef.ResEdge,
             "edge" : tc_ef.edge
         }
     

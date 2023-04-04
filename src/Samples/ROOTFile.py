@@ -2,7 +2,6 @@ from .Hashing import Hashing
 from AnalysisTopGNN.Vectors import IsIn
 from AnalysisTopGNN.Tools import Threading
 
-
 class ROOTFile(Hashing):
     
     def __init__(self, Filename, Threads = 1, chnk = 1):

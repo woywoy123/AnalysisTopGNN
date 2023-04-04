@@ -1,5 +1,4 @@
 from AnalysisTopGNN.Tools import Tools
-import torch 
 
 class _Code(Tools):
 
@@ -114,7 +113,7 @@ class _Optimization:
         self.Optimizer = None 
         self.Scheduler = None
         self.Device = "cpu"
-        self.VerbosityIncrement = 10
+        self.VerbosityIncrement = 10 # Might need deprecation...
 
 class _ModelEvaluator:
     
@@ -152,6 +151,7 @@ class _Analysis:
         self.DataCache = False
         self._launch = False
         self._tmp = False
+        self.output = None
 
         self.DumpHDF5 = False
         self.DumpPickle = False
@@ -211,6 +211,8 @@ class _Selection:
         self._Residual = []
         self._CutFlow = {}
         self._TimeStats = []
+        self._AllEventWeights = []
+        self._SelectionEventWeights = []
  
 class Settings(_General):
     

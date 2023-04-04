@@ -32,8 +32,6 @@ class HDF5(Settings, Tools, IO_):
 
         if str(name) in self._File:
             return 
-        
-        #self.DumpingObjectName(Name)
         self._Ref = self._File.create_dataset(str(name), (1, ), dtype = h5py.ref_dtype)
 
     def __AddToDataSet(self, RefName, Key, Val = ""):
@@ -187,6 +185,7 @@ class HDF5(Settings, Tools, IO_):
         inpo = [[name, ObjectDict[name]] for name in ObjectDict]
         TH = Threading(inpo, function, self.Threads, self.chnk)
         TH.VerboseLevel = self.VerboseLevel
+        TH.Title = "DUMPING HDF5"
         TH.Start()
     
     def MultiThreadedReading(self, InputFiles):

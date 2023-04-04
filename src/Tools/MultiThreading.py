@@ -159,9 +159,6 @@ class Threading(MultiThreading):
             it = iter(running)
             f = next(it)
 
-#        for f in self._exc:
-#            self._exc[f][1].send(True)
-#            self._exc[f][0].join()
         del self._exc
 
         self._Close

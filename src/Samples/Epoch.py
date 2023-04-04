@@ -49,8 +49,8 @@ class Epoch(EpochPlots, Metrics, Tools):
         # Get the loss for this prediction
         self.TotalLoss = 0
         for key in Accuracy: 
-            Accuracy[key].append(loss_acc[key][1].detach().cpu().item())
-            self.TotalLoss += loss_acc[key][0]        
+            Accuracy[key].append(loss_acc[key][1].detach().cpu().tolist())
+            self.TotalLoss = self.TotalLoss + loss_acc[key][0] 
             Loss[key].append(loss_acc[key][0].detach().cpu().item())
         TotalLoss += [self.TotalLoss.detach().cpu().item()]
 
@@ -73,7 +73,10 @@ class Epoch(EpochPlots, Metrics, Tools):
             self.NodeTimingHistograms()
             self.AccuracyHistograms(self.ModelOutputs)
             self.LossHistograms(self.ModelOutputs)
-        self.CompileROC(self.names, self.ModelOutputs)
+        try:
+            self.CompileROC(self.names, self.ModelOutputs)
+        except:
+            pass
 
         self._Package[self.Epoch] = {}
         self._Package[self.Epoch] |= {"Accuracy_" + i : self.MakeStatics(self.__dict__["Accuracy_" + i]) for i in self.names }

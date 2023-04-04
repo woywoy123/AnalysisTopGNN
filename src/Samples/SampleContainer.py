@@ -37,6 +37,7 @@ class SampleContainer:
     def hash(self, force = False):
         if len(self._Hashes) != len(self) or force:
             self._Hashes = {_hash : self.ROOTFiles[name][_hash] for name in self.ROOTFiles for _hash in self.ROOTFiles[name].hash()}
+            self.list(True)
         return list(self._Hashes.keys())
 
     def ClearEvents(self):
@@ -85,6 +86,7 @@ class SampleContainer:
         self.list()
         if isinstance(key, str) == False:
             return False
+        v = self.ROOTFiles.get(key)
         if key in self.ROOTFiles:
             return self.ROOTFiles[key]
         if key in self._Hashes:
@@ -101,28 +103,40 @@ class SampleContainer:
                 continue
             self.ROOTFiles[name][key] += obj
             break
-    
+    def __radd__(self, other):
+        smpl = SampleContainer()
+        if other == 0:
+            smpl += self
+            return smpl
+        smpl += self
+        smpl += other
+        return smpl
+
     def __add__(self, other):
+        smpl = SampleContainer()
+
         names = list(self.ROOTFiles) + list(other.ROOTFiles)
         samples = list(self.ROOTFiles.values()) + list(other.ROOTFiles.values())
         
-        self.ROOTFiles = {}
+        smpl.ROOTFiles = {}
         for name, sample in zip(names, samples):
-            if name not in self.ROOTFiles:
-                self.ROOTFiles[name] = sample
+            if name not in smpl.ROOTFiles:
+                smpl.ROOTFiles[name] = sample
                 continue
-            if self.ROOTFiles[name]._lock:
-                self.ROOTFiles[name] = sample
+            if smpl.ROOTFiles[name]._lock:
+                smpl.ROOTFiles[name] = sample
                 continue
-            self.ROOTFiles[name] += sample
-        self.hash()
-        self.list()
-        return self
+            smpl.ROOTFiles[name] += sample
+        smpl.hash()
+        smpl.list()
+        return smpl
    
     def __contains__(self, key):
         
         if key in self.ROOTFiles:
-            return True 
+            return True
+        if self.__len__() != len(self._Hashes):
+            self.hash(True)
         if key in self._Hashes:
             return True
         if key in self._EventMap:

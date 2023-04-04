@@ -12,6 +12,10 @@ class EventContainer(Hashing):
     def MakeEvent(self, ClearVal):
         for i in self.Trees:
             self.Trees[i]._Compile(ClearVal)
+            try:
+                self.EventIndex = int(self.Trees[i].eventNumber)
+            except:
+                pass 
             self.Filename = self.MD5(self.Filename + "/" + str(self.EventIndex))
     
     def MakeGraph(self):

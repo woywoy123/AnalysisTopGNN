@@ -1,6 +1,5 @@
 from AnalysisTopGNN.Templates import Selection
 
-
 class Example(Selection):
 
     def __init__(self):

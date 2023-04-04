@@ -3,7 +3,12 @@ from AnalysisTopGNN.Templates import ParticleTemplate
 from AnalysisTopGNN.Generators import Settings
 from AnalysisTopGNN.Tools import Tools
 from AnalysisTopGNN.IO import PickleObject
-from PyC.NuSol.Tensors import NuDoublePtEtaPhiE, NuNuDoublePtEtaPhiE
+import statistics
+
+try:
+    from PyC.NuSol.Tensors import NuDoublePtEtaPhiE, NuNuDoublePtEtaPhiE
+except: 
+    pass
 
 class Neutrino(ParticleTemplate):
     
@@ -26,6 +31,23 @@ class Selection(Settings, Tools):
     @property 
     def _t2(self):
         self._TimeStats.append(time() - self.__t1)
+    
+    @property
+    def AverageTime(self):
+        return statistics.mean(self._TimeStats)
+    
+    @property
+    def StdevTime(self):
+        return statistics.stdev(self._TimeStats)
+    
+    @property
+    def Luminosity(self):
+        return ((sum(self._SelectionEventWeights))) / sum(self._AllEventWeights)
+    
+    @property
+    def NEvents(self):
+        return len(self._SelectionEventWeights)
+
 
     def Selection(self, event):
         return True
@@ -89,17 +111,25 @@ class Selection(Settings, Tools):
         if self._hash == None:
             self._hash = event.Filename
         
+        self._AllEventWeights += [event.Trees[self.Tree].Lumi]        
         if self.Selection(event.Trees[self.Tree]) == False:
-            return  
+            if "Rejected::Selection" not in self._CutFlow:
+                self._CutFlow["Rejected::Selection"] = 0
+            self._CutFlow["Rejected::Selection"] += 1
+            return 
+        
         self._t1
         o = self.Strategy(event.Trees[self.Tree])
         self._t2
+        
         if isinstance(o, str) and "->" in o:
             if o not in self._CutFlow:
                 self._CutFlow[o] = 0
             self._CutFlow[o] += 1
         else:
             self._Residual += [o] if o != None else []
+        self._SelectionEventWeights += [event.Trees[self.Tree].Lumi] 
+
         if self._OutDir:
             o = self._OutDir
             PickleObject(self.__dict__, self._OutDir + "/" + self._hash)

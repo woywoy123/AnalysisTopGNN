@@ -80,7 +80,11 @@ class IO(String, IO_):
         except FileExistsError:
             pass
     def rm(self, directory):
-        os.remove(self.abs(directory))
+        try:
+            os.remove(self.abs(directory))
+        except IsADirectoryError:
+            import shutil
+            shutil.rmtree(self.abs(directory))
 
     def cd(self, directory):
         os.chdir(directory)

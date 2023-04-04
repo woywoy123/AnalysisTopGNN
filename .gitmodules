@@ -1,0 +1,3 @@
+[submodule "sample-production"]
+	path = sample-production
+	url = git@github.com:woywoy123/BSM4tops-GNN-ntuples.git

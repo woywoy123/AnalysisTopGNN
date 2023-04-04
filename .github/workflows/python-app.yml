@@ -1,1 +1,66 @@
+# Very useful documentation: 
+# https://github.com/ptheywood/cuda-cmake-github-actions/blob/master/.github/workflows/Ubuntu.yml
 
+name: AnalysisTopGNN-Building-Action
+
+on:
+        push: 
+                branches: 
+                        - "master"
+                paths-ignore: 
+                        - '**.md'
+                        - '**.txt'
+jobs:
+        build:
+                runs-on: ${{ matrix.os }}
+                strategy:
+                        fail-fast: false
+                        matrix:
+                                include:
+                                        - os: ubuntu-latest
+                                          cuda: "11.8"
+                                          version: "cu118"
+                                          torch: 1.13.0
+                                          gcc: 11
+                                        - os: ubuntu-latest
+                                          cuda: ""
+                                          version: "cpu"
+                                          torch: 1.13.0
+                                          gcc: 11
+                steps:
+                        - uses: actions/checkout@v3
+                        - uses: actions/setup-python@v4
+                          with:
+                                    python-version: '3.10'
+                                    cache: 'pip'
+
+                        - name: Configuring Environment 
+                          env:
+                                  cuda: ${{ matrix.cuda }}
+                                  version: ${{ matrix.version }}
+                                  torch: ${{ matrix.torch }}
+                                  gcc: ${{ matrix.gcc }}
+                          run: |
+                                  chmod +x ./.github/scripts/setup_env.sh
+                                  ./.github/scripts/setup_env.sh 
+                          shell: bash
+                        
+                        - name: Building AnalysisTopGNN
+                          run: |
+                                  pip install .
+
+                        - name: Building Torch-Extensions
+                          run: |
+                                  cd torch-extensions 
+                                  export TORCH_CUDA_ARCH_LIST="6.1"
+                                  python setup.py install
+
+                        - name: Closure Tests
+                          run: | 
+                                  cd test
+                                  py.test test_import.py -vv
+                                  py.test test_particle.py -vv
+                                  py.test test_io.py -vv
+                                  py.test test_generators.py -vv
+                                  py.test test_exporter.py -vv
+                                  py.test test_tools.py

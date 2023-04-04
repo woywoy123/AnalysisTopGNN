@@ -1,5 +1,7 @@
 from .Manager import VariableManager
 import copy 
+import sys
+sys.setrecursionlimit(100000000)
 
 class EventTemplate(VariableManager):
     def __init__(self):
@@ -10,9 +12,10 @@ class EventTemplate(VariableManager):
         self.Leaves = []
         self._Store = None
         self._SampleIndex = -1
-        self.Lumi = 0
+        self.Lumi = 1
         self._Deprecated = False
         self._CommitHash = False
+        self.eventNumber = "eventNumber"
 
     def DefineObjects(self):
         for name in self.Objects:

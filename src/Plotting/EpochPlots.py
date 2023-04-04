@@ -111,7 +111,10 @@ class EpochPlots:
                 Plots = self.TemplateHistograms("Accuracy (%)", 100, Outdir)
                 Acc = getattr(self, "Accuracy_" + names)[feat]
                 Plots["Title"] = names
-                Plots["xData"] = [k for k in Acc]
+                if len(Acc) != 0 and isinstance(Acc[0], list):
+                    Plots["xData"] = [j for k in Acc for j in k]
+                else:
+                    Plots["xData"] = [k for k in Acc]
                 Hists.append(TH1F(**Plots))    
             
             Plots = self.TemplateHistograms("Accuracy (%)", 100, Outdir)

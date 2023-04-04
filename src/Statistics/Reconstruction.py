@@ -1,6 +1,9 @@
 import torch 
-import PyC.Physics.Tensors.Polar as PT
-import PyC.Physics.Tensors.Cartesian as CT
+try:
+    import PyC.Physics.Tensors.Polar as PT
+    import PyC.Physics.Tensors.Cartesian as CT
+except:
+    pass
 
 class Reconstruction:
 
