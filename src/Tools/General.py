@@ -69,8 +69,12 @@ class Tools(IO):
             out= {}
             for i in set(l1 + l2):
                 if isinstance(ob1[i] if i in l1 else ob2[i], dict):
+                    ob1[i] = {} if i not in l1 else ob1[i]
+                    ob2[i] = {} if i not in l2 else ob2[i]
                     out[i] = self.MergeData(ob1[i], ob2[i])
                 elif isinstance(ob1[i] if i in l1 else ob2[i], list):
+                    ob1[i] = [] if i not in l1 else ob1[i]
+                    ob2[i] = [] if i not in l2 else ob2[i]
                     out[i] = self.MergeData(ob1[i], ob2[i])
                 else:
                     o = ob1[i] + ob2[i] if i in ob1 and i in ob2 else None

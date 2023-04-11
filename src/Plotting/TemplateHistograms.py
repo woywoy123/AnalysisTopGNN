@@ -214,6 +214,8 @@ class CombineTH1F(Functions):
             self.Normalize = False
         elif self.Normalize and self.Histogram != None: 
             Sum = self.Histogram.NPHisto[0].sum()
+        elif self.Normalize == "%" and self.Histogram == None:
+            Sum = sum([i.NPHisto[0].sum() for i in self.Histograms])*0.01
 
         if self.Histogram != None:
             try:
@@ -234,7 +236,7 @@ class CombineTH1F(Functions):
         
         if self.Stack:
             hep.histplot(Numpies, 
-                    density = self.Normalize, 
+                    density = self.Normalize if self.Normalize == True else False, 
                     histtype = self.FillHist, 
                     alpha = self.Alpha, 
                     stack = self.Stack, 

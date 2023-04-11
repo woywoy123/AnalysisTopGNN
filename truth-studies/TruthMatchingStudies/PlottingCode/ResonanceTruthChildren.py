@@ -14,16 +14,7 @@ def PlotTemplate(x):
             }
     return Plots
 
-def ResonanceMassFromChildren(x)
-
-    for i in x.ResonanceMass:
-        _Plots = {}
-        _Plots["Title"] = i
-        _Plots["xData"] = TopMass[i]
-        Plots["Histograms"].append(TH1F(**_Plots))
-    X = CombineTH1F(**Plots)
-    X.SaveFigure()
-
+def ResonanceMassFromChildren(x):
     Plots = PlotTemplate(x)
     Plots["Title"] = "Reconstructed Invariant Scalar H Mass from Top Truth Children"
     Plots["xTitle"] = "Invariant Scalar H Mass (GeV)"
@@ -32,3 +23,14 @@ def ResonanceMassFromChildren(x)
     Plots["xMax"] = 2000
     Plots["Filename"] = "Figure_2.1c"
     Plots["Histograms"] = []
+
+    for i in x.ResonanceMass:
+        _Plots = {}
+        _Plots["Title"] = i
+        _Plots["xData"] = x.ResonanceMass[i]
+        Plots["Histograms"].append(TH1F(**_Plots))
+    X = CombineTH1F(**Plots)
+    X.SaveFigure()
+
+
+

@@ -131,11 +131,12 @@ def EventMETImbalance(x):
     thc = TH1F(**Plots)
 
     Plots_ = TemplatePlotsTH1F(x)
-    Plots_["Title"] = "Missing Transverse Energy"
+    Plots_["Title"] = "Missing Transverse Energy - Before Rotation"
     Plots_["xTitle"] = "Missing Transverse Energy (GeV)"
     Plots_["Histograms"] = [tht, thc]
     Plots_["xStep"] = 100
     Plots_["xMin"] = 0
+    Plots_["xMax"] = 1000
     Plots_["Filename"] = "MissingET"
     tc = CombineTH1F(**Plots_)
     tc.SaveFigure()
@@ -178,6 +179,7 @@ def EventMETImbalance(x):
     Plots_["Histograms"] = [tht, thc]
     Plots_["xStep"] = 100
     Plots_["xMin"] = 0
+    Plots_["xMax"] = 1000
     Plots_["Filename"] = "MissingET-Rotated"
     tc = CombineTH1F(**Plots_)
     tc.SaveFigure()
