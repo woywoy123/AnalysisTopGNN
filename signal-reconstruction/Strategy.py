@@ -18,7 +18,7 @@ class Common(Selection):
         num_tau = len([1 for child in event.TopChildren if abs(child.pdgid) == 15])
         num_gluon = len([1 for child in event.TopChildren if abs(child.pdgid) == 21])
         num_gamma = len([1 for child in event.TopChildren if abs(child.pdgid) == 22])
-        return num_tops == 4 and num_lep == 2 and num_lep_res == 1 and num_tau == 0 and num_gluon == 0 and num_gamma == 0
+        return num_tops == 4 and num_lep == 2 and num_lep_res == 1# and num_tau == 0 and num_gluon == 0 and num_gamma == 0
 
 
     def Strategy(self, event):
