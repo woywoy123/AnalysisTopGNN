@@ -3,10 +3,8 @@ import json
 
 _leptons = [11, 13, 15]
 
-def create_particle(pdgid, top_index, from_res): #px, py, pz, E, 
-    p = Child()
-    #p.px, p.py, p.pz, p.e, p.pdgid, p.TopIndex, p.FromRes = px, py, pz, E, pdgid, top_index, from_res
-    p.pdgid, p.TopIndex, p.FromRes = pdgid, top_index, from_res
+def create_particle(pdgid, top_index, from_res, energy): 
+    p = Child(pdgid, top_index, from_res, energy)
 
     return p 
 
@@ -25,7 +23,7 @@ class CustomEvent:
     def create_children(self):
 
         for c in range(len(self.children_dict["pdgid"])):
-            child = create_particle(self.children_dict["pdgid"][c], self.children_dict["topIndex"][c], self.tops_fromRes[self.children_dict["topIndex"][c]])
+            child = create_particle(self.children_dict["pdgid"][c], self.children_dict["topIndex"][c], self.tops_fromRes[self.children_dict["topIndex"][c]], self.children_dict["energy"][c])
             self.Children.append(child)
             if abs(child.pdgid) in _leptons:
                 self.Leptons.append(child)
@@ -35,7 +33,7 @@ class CustomEvent:
         for t in range(len(self.truthJets_dict["pdgid"])):
             tj = TruthJet()
             for p in range(len(self.truthJets_dict["pdgid"][t])):
-                parton = TruthJetParton(self.truthJets_dict["pdgid"][t][p], self.truthJets_dict["topIndex"][t][p], self.truthJets_dict["topChildIndex"][t][p], self.tops_fromRes[self.truthJets_dict["topIndex"][t][p]])
+                parton = TruthJetParton(self.truthJets_dict["pdgid"][t][p], self.truthJets_dict["topIndex"][t][p], self.truthJets_dict["topChildIndex"][t][p], self.tops_fromRes[self.truthJets_dict["topIndex"][t][p]], self.truthJets_dict["energy"][t][p])
                 parton.Parent = self.Children[parton.TopChildIndex]
                 tj.Parton.append(parton)
             self.TruthJets.append(tj)
@@ -147,7 +145,7 @@ def Efficiency_continuous1(group, top_assignment, had = True):
     # print(f"efficiency_group = {efficiency_group}")
     return efficiency_group
 
-def Efficiency(group, top_assignment, had = True):
+def Efficiency_continuous2(group, top_assignment, had = True):
     if had: truthjets = group 
     else: truthjets = group[1:]
     efficiency_objects = [p.Parent.TopIndex == top_assignment for tj in truthjets for p in tj.Parton]
@@ -158,13 +156,38 @@ def Efficiency(group, top_assignment, had = True):
     # print(f"efficiency_group = {efficiency_group}")
     return efficiency_group
 
+def Efficiency_weighted1(group, top_assignment, had = True):
+    if had: truthjets = group 
+    else: truthjets = group[1:]
+    efficiency_objects = [sum([p.e*(p.Parent.TopIndex == top_assignment) for p in tj.Parton])/sum([p.e for p in tj.Parton]) for tj in truthjets]
+    if not had: 
+        efficiency_objects.append(1. if group[0].TopIndex == top_assignment else 0.)
+    #print(f"efficiency_objects = {efficiency_objects}")
+    efficiency_group = sum(efficiency_objects)/len(group)
+    #print(f"efficiency_group = {efficiency_group}")
+    return efficiency_group
+
+def Efficiency_weighted2(group, top_assignment, had = True):
+    if had: truthjets = group 
+    else: truthjets = group[1:]
+    efficiency_objects = [p.e*(p.Parent.TopIndex == top_assignment) for tj in truthjets for p in tj.Parton]
+    if not had: 
+        efficiency_objects.append(group[0].e * (group[0].TopIndex == top_assignment))
+    #print(f"efficiency_objects = {efficiency_objects}")
+    efficiency_group = sum(efficiency_objects)/(sum([p.e for tj in truthjets for p in tj.Parton]) + (group[0].e if not had else 0.))
+    #print(f"efficiency_group = {efficiency_group}")
+    return efficiency_group
+
 
 with open("Events.json") as f:
     jsondata = json.load(f)
 
-for event in jsondata["events"]:
+for i,event in enumerate(jsondata["events"]):
 
     if not event["to_run"]: continue
+
+    print(f"------{i+1}------")
+    print(f"Event: {event['name']}\n")
 
     ev = CustomEvent(event)
     ev.create_children()
@@ -174,15 +197,18 @@ for event in jsondata["events"]:
     print(f"CHILDREN = {[c.pdgid for c in ev.Children]}\n")
     print(f"LEPTONS = {[l.pdgid for l in ev.Leptons]}")
     print(f"-> TopIndex = {[l.TopIndex for l in ev.Leptons]}")
-    print(f"-> FromRes = {[l.FromRes for l in ev.Leptons]}\n")
+    print(f"-> FromRes = {[l.FromRes for l in ev.Leptons]}")
+    print(f"-> Energy = {[l.e for l in ev.Leptons]}\n")
     truthJets_pdgid = {i: [parton.pdgid for parton in tj.Parton] for i,tj in enumerate(ev.TruthJets)}
     truthJets_topIndex = {i: [parton.TopIndex for parton in tj.Parton] for i,tj in enumerate(ev.TruthJets)}
     truthJets_topChildIndex = {i: [parton.TopChildIndex for parton in tj.Parton] for i,tj in enumerate(ev.TruthJets)}
     truthJets_fromRes = {i: [parton.FromRes for parton in tj.Parton] for i,tj in enumerate(ev.TruthJets)}
+    truthJets_energy = {i: [parton.e for parton in tj.Parton] for i,tj in enumerate(ev.TruthJets)}
     print(f"TRUTHJETs = {truthJets_pdgid}")
     print(f"-> TopIndex = {truthJets_topIndex}")
     print(f"-> TopChildIndex = {truthJets_topChildIndex}")
-    print(f"-> FromRes = {truthJets_fromRes}\n")
+    print(f"-> FromRes = {truthJets_fromRes}")
+    print(f"-> Energy = {truthJets_energy}\n")
     print(f"GROUPS = ")
     print(f"Leptonic group from spec = {[ev.LeptonicGroup['spec'][0].pdgid, [parton.pdgid for parton in ev.LeptonicGroup['spec'][1].Parton]]}")
     print(f"Leptonic group from res = {[ev.LeptonicGroup['res'][0].pdgid, [parton.pdgid for parton in ev.LeptonicGroup['res'][1].Parton]]}")
@@ -208,8 +234,14 @@ for event in jsondata["events"]:
     children_topIndices = {res_key: {topIndex: [pdgid for c,pdgid in enumerate(event["children"]["pdgid"]) if event["children"]["topIndex"][c] == topIndex] for topIndex in topIndicesRes[res_key]} for res_key in res_flags.keys()}
     topIndices = {res_key: {'lep': [index for index, clist in children_topIndices[res_key].items() if any([abs(pdgid) in _leptons for pdgid in clist])][0], 'had': [index for index, clist in children_topIndices[res_key].items() if not any([abs(pdgid) in _leptons for pdgid in clist])][0]} for res_key in res_flags.keys()}
     print("EFFICIENCIES")
-    print(f"Leptonic group from spec: {Efficiency(ev.LeptonicGroup['spec'], topIndices['spec']['lep'], False)}")
-    print(f"Leptonic group from res: {Efficiency(ev.LeptonicGroup['res'], topIndices['res']['lep'], False)}")
-    print(f"Hadronic group from spec: {Efficiency(ev.HadronicGroup['spec'], topIndices['spec']['had'], True)}")
-    print(f"Hadronic group from res: {Efficiency(ev.HadronicGroup['res'], topIndices['res']['had'], True)}")
+    print("-> Weighted method 1:")
+    print(f"Leptonic group from spec: {Efficiency_weighted1(ev.LeptonicGroup['spec'], topIndices['spec']['lep'], False)}")
+    print(f"Leptonic group from res: {Efficiency_weighted1(ev.LeptonicGroup['res'], topIndices['res']['lep'], False)}")
+    print(f"Hadronic group from spec: {Efficiency_weighted1(ev.HadronicGroup['spec'], topIndices['spec']['had'], True)}")
+    print(f"Hadronic group from res: {Efficiency_weighted1(ev.HadronicGroup['res'], topIndices['res']['had'], True)}")
+    print("-> Weighted method 2:")
+    print(f"Leptonic group from spec: {Efficiency_weighted2(ev.LeptonicGroup['spec'], topIndices['spec']['lep'], False)}")
+    print(f"Leptonic group from res: {Efficiency_weighted2(ev.LeptonicGroup['res'], topIndices['res']['lep'], False)}")
+    print(f"Hadronic group from spec: {Efficiency_weighted2(ev.HadronicGroup['spec'], topIndices['spec']['had'], True)}")
+    print(f"Hadronic group from res: {Efficiency_weighted2(ev.HadronicGroup['res'], topIndices['res']['had'], True)}\n")
 
