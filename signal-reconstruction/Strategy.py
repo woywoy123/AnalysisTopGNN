@@ -26,6 +26,11 @@ class Common(Selection):
         #< To Collect statistics on events, just return a string containing '->' >
         for object_type in self.object_types:
             for case_num in self.cases:
-                mass = MttReconstructor(event, case_num, object_type).mtt
-                self.masses[object_type][case_num].append(mass)
+                mtt_reconstructor = MttReconstructor(event, case_num, object_type)
+                self.masses[object_type][case_num].append(mtt_reconstructor.mtt)
+                # here is how you get the grouping:
+                # grouping = mtt_reconstructor.grouping
+                # it will return a list of lists
+                # grouping[0] is a list of objects, matched to top #0
+                print(mtt_reconstructor.grouping)
         return "Success->SomeString"

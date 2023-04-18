@@ -1,5 +1,9 @@
 import sys
-import Submission
+import EventGenerator
+import IO
+import EventGraph
+import Exporter
+#import Submission
 import Modular 
 import Optimizer
 import RandomSampler
@@ -30,8 +34,41 @@ def Test(F, **kargs):
     print(result)
 
 
+if __name__ == '__main__':
+
+    RootDir = "."
+    
+    ## ==== Testing IO ==== #
+    #TextFileDir = "./TestCaseFiles/Tools/TestFiles/"
+    #Test(IO.TestlsFiles, Directory = TextFileDir)
+    #Test(IO.Testls, Directory = TextFileDir)
+    #Test(IO.TestIsFile, Directory = TextFileDir)
+    #Test(IO.TestListFilesInDir, Directory = TextFileDir)
+    #Test(IO.TestSourceCodeExtraction)
+    #Test(IO.TestDataMerging)
+
+    ## ==== Test EventGenerator ==== #
+    Test(EventGenerator.TestEventGenerator, Files = {RootDir + "tttt" : ["QU_0.root"], RootDir + "t" : ["QU_14.root"]})
+
+    ## ==== Test EventGraph ==== #
+    #Test(EventGraph.TestEventGraph, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+
+    ## ==== Test Merger ==== #
+    #Test(Exporter.TestEventGenerator, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+    #Test(Exporter.TestGraphGenerator, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+    #Test(Exporter.TestEventGeneratorDumper, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+    #Test(Exporter.TestGraphGeneratorDumper, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+
+    ## ==== Test Modules ==== #
+    #Test(Modular.TestEventGenerator, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
+    #Test(Modular.TestAnalysis, Files = [RootDir + "tttt/QU_0.root", RootDir + "ttbar/DAOD_TOPQ1.27296306._000077.root"])
+    #Test(Modular.TestLargeSample, File = "/home/tnom6927/Downloads/LISA/LisaSamples/user.esitniko/user.esitniko.32411527._000002.output.root")
+
+    ## ==== Test Selection ===== #
+    #Test(Selection.TestSelection, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
 
     # ==== Test Optimizer ==== # 
+    #Test(RandomSampler.TestRandomSampling, Files = [RootDir + "tttt/QU_0.root", RootDir + "t/QU_14.root"])
     #Test(Optimizer.TestOptimizer, Files = [RootDir + "tttt/QU_0.root", {RootDir + "t" : ["QU_14.root", "QU_5.root"]}])
 
     # === Test Submission ==== #

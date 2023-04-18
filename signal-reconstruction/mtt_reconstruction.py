@@ -306,6 +306,8 @@ class MttReconstructor:
         self.add = jets.get_add()
         self.loss_calc = LossCalculator()
         self.compare_add_to_w = False if self.data_type =='Children' else True
+        self._mtt = -1
+        self._grouping = -1
 
     def _select_resonance_truth(self):
         result = []
@@ -351,6 +353,19 @@ class MttReconstructor:
 
     @property
     def mtt(self):
+        if self._mtt == -1:
+            self.calculate_mtt()
+        return self._mtt
+
+    @property
+    def grouping(self):
+        if self._grouping == -1:
+            self.calculate_mtt()
+        return self._grouping
+
+    def calculate_mtt(self):
+        self._mtt = None
+        self._grouping = None
         key = None
         mtt = None
 
@@ -394,5 +409,5 @@ class MttReconstructor:
                         new_key = 1 if self.case_num in [0, 1, 2, 3] else self.calculate_loss()
                         if key == None or new_key < key:
                             key = new_key
-                            mtt = sum(self.res_products).Mass if len(self.res_products) != 0 else 0
-        return mtt
+                            self._mtt = sum(self.res_products).Mass if len(self.res_products) != 0 else 0
+                            self._grouping = self.tops.copy()
