@@ -32,5 +32,4 @@ class Common(Selection):
                 # grouping = mtt_reconstructor.grouping
                 # it will return a list of lists
                 # grouping[0] is a list of objects, matched to top #0
-                print(mtt_reconstructor.grouping)
         return "Success->SomeString"
