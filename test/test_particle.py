@@ -32,10 +32,10 @@ def test_particle_vector():
     
     # test magic function.
     _t = sum([_c3, _c1, _c2])
-    assert _t.px == px
-    assert _t.py == py
-    assert _t.pz == pz
-    assert _t.e == e
+    assert abs(_t.px - px) < 1e-6
+    assert abs(_t.py - py) < 1e-6
+    assert abs(_t.pz - pz) < 1e-6
+    assert abs(_t.e - e) < 1e-6
     
     # test the polar calculation 
     assert abs(t.pt  - _t.pt )/abs(t.pt ) < 1e-6 
@@ -46,13 +46,44 @@ def test_particle_vector():
     
     # test setter functions 
     _t.pt, _t.eta, _t.phi, _t.e = t.pt, t.eta, t.phi, t.e
-    assert _t.pt  == t.pt 
-    assert _t.eta == t.eta
-    assert _t.phi == t.phi
-    assert _t.e   == t.e  
+    assert abs(_t.pt - t.pt)/t.pt < 1e-7
+    assert abs(_t.eta - t.eta) < 1e-7
+    assert abs(_t.phi - t.phi) < 1e-7
+    assert abs(_t.e - t.e) < 1e-7
 
     _t.px, _t.py, _t.pz, _t.e = t.px, t.py, t.pz, t.e
-    assert _t.px == t.px
-    assert _t.py == t.py
-    assert _t.pz == t.pz
-    assert _t.e  == t.e 
+    assert abs(_t.px - t.px)/abs(t.px) < 1e-7
+    assert abs(_t.py - t.py)/abs(t.py) < 1e-7
+    assert abs(_t.pz - t.pz)/abs(t.pz) < 1e-7
+    assert abs(_t.e - t.e)/abs(t.e) < 1e-7
+
+def test_particle_hashing():
+    t = Particle()
+    t.pt, t.eta, t.phi, t.e = 207050.75, 0.5622375011444092, 2.262759208679199, 296197.3125
+    t.pdgid = 1
+
+    z = Particle()
+    z.pt, z.eta, z.phi, z.e = 207050.75, 0.5622375011444092, 2.262759208679199, 296197.3125
+    z.pdgid = 1
+    
+    assert t == z
+
+    t = Particle()
+    t.pt, t.eta, t.phi, t.e = 207050.75, 0.5622375011444092, 2.262759208679199, 296197.
+    t.pdgid = 3
+
+    z = Particle()
+    z.pt, z.eta, z.phi, z.e = 207050.75, 0.5622375011444092, 2.262759208679199, 296197.3125
+    z.pdgid = 1
+    
+    assert z in [t, z] 
+    assert [t, z].index(z) == 1
+    
+    x = list(set([t, t, t, t, t, t, z]))
+    assert len(x) == 2
+    assert t in x
+    assert z in x
+    assert x[0].pt == t.pt
+
+
+test_particle_vector()

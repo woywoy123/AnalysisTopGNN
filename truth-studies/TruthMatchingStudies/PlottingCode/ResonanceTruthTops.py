@@ -58,12 +58,15 @@ def ResonanceMassFromTops(x):
     Plots["Histograms"] = []
     for k in x.ResDecayMode:
         _Plots = {}
+        dec = ""
         if k == "HH":
-            dec == "Hadronic"
+            dec = "Hadronic"
         if k == "HL":
             dec = "Hadronic-Leptonic"
         if k == "LL":
             dec = "Leptonic"
+        if dec == "":
+            continue 
         _Plots["Title"] = dec
         _Plots["xData"] = x.ResDecayMode[k]
         _Plots["xBins"] = 100

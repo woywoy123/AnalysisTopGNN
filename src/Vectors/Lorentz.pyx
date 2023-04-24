@@ -4,36 +4,36 @@ from libc.math cimport sin, cos, sinh, atan2, asinh, pow
 
 __all__ = ["Px", "Py", "Pz", "PT", "Phi", "Eta", "PxPyPzEMass", "deltaR", "energy", "IsIn"]
 
-cpdef float Px(float pt, float phi):
+cpdef double Px(double pt, double phi):
     return pt*cos(phi)
 
-cpdef float Py(float pt, float phi):
+cpdef double Py(double pt, double phi):
     return pt*sin(phi)
 
-cpdef float Pz(float pt, float eta):
+cpdef double Pz(double pt, double eta):
     return pt*sinh(eta)
 
-cpdef float PT(float px, float py):
+cpdef double PT(double px, double py):
     return pow( pow(px, 2) + pow(py, 2), 0.5 )
 
-cpdef float Phi(float px, float py):
+cpdef double Phi(double px, double py):
     return atan2(py, px)
 
-cpdef float Eta(float px, float py, float pz):
-    cdef float pt = PT(px, py)
+cpdef double Eta(double px, double py, double pz):
+    cdef double pt = PT(px, py)
     return asinh(pz/pt)
 
-cpdef float PxPyPzEMass(float px, float py, float pz, float e):
-    cdef float s = pow(e, 2) - pow(px, 2) - pow(py, 2) - pow(pz, 2)
+cpdef double PxPyPzEMass(double px, double py, double pz, double e):
+    cdef double s = pow(e, 2) - pow(px, 2) - pow(py, 2) - pow(pz, 2)
     if s < 0:
         return 0
     return pow(s, 0.5)/1000
 
-cpdef float deltaR(float eta1, float eta2, float phi1, float phi2):
+cpdef double deltaR(double eta1, double eta2, double phi1, double phi2):
     return pow(pow(eta1 - eta2, 2) + pow(phi1 - phi2, 2), 0.5)
 
-cpdef float energy(float m, float px, float py, float pz):
-    cdef float p2 = pow(px, 2) + pow(py, 2) + pow(pz, 2)
+cpdef double energy(double m, double px, double py, double pz):
+    cdef double p2 = pow(px, 2) + pow(py, 2) + pow(pz, 2)
     return pow( p2 + pow(m, 2), 0.5 )
 
 cpdef IsIn(list srch, dict objdic):

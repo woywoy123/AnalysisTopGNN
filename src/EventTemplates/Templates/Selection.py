@@ -10,6 +10,11 @@ try:
 except: 
     pass
 
+try:
+    from PyC.Transform.Floats import Px, Py
+except:
+    pass
+
 class Neutrino(ParticleTemplate):
     
     def __init__(self):
@@ -48,12 +53,17 @@ class Selection(Settings, Tools):
     def NEvents(self):
         return len(self._SelectionEventWeights)
 
-
     def Selection(self, event):
         return True
 
     def Strategy(self, event):
         pass
+
+    def Px(self, val, phi):
+        return Px(val, phi)
+
+    def Py(self, val, phi):
+        return Py(val, phi)
 
     def MakeNu(self, s_):
         if sum(s_) == 0.:
