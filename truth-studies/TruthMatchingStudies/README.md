@@ -31,13 +31,18 @@ Depicts the various kinematics of the spectator/signal tops being produced from 
 This study aims to identify the loss in truth jets by having off-diagonal elements in a 2D plot. 
 It also explores the MET vs n-Lepton correlations.
 - **EventMETImbalance**:
-A set of plots which explore the missing transverse discrepency between measurement from the detector simulation and the truth neutrinos.
+A set of plots which explore the missing transverse discrepancy between measurement from the detector simulation and the truth neutrinos.
+- **EventNuNuSolutions**:
+This study aims to investigate the number of double neutrino solutions obtained when rotating the 4-top system such that, the z-component of the 4-vector points down the beam-pipe.
+The number of solutions obtained after rotation is compared to a non-rotation operation.
+Only events containing exactly two neutrinos and b-quarks originating from two truth tops are considered, regardless of whether these originate from the resonance.
 - **TopDecayModes**:
 Plots indicating to which children the Top-Quark decays into. 
 - **ResonanceMassFromChildren**:
 Plots relating to the resonance being reconstructed from the top truth children, where the resonance tops decay either Hadronically, Leptonically or Hadronically-Leptonically.
 - **TruthChildrenKinematics**:
-This selection implementation aims to investigate the deltaR dependency of the parent top PT and how closely clustered the children are together. 
+This selection implementation aims to investigate the delta-R dependency of the parent top PT and how closely clustered the children are together. 
+
 
 ## Figures Produced:
 ### ZPrimeMatrix:
@@ -100,6 +105,22 @@ A plot illustrating the distribution of the missing Energy in the Transverse dir
 - **difference-MissingET-Rotated**:
 The observed difference between measurement and rotated truth neutrinos.
 
+### EventNuNuSolutions:
+- **Number-of-solutions**:
+Number of returned neutrino solutions with and without rotation of the 4-top system.
+- **Delta-Missing-MET-NoRotation**:
+A TH2F plot of the missing energy in the x and y direction without rotating the truth children into the 4-top system
+- **Delta-Missing-MET-Rotation**:
+A TH2F plot of the missing energy in the x and y direction with rotating the truth children into the 4-top system
+- **Top-Mass-Delta-NoRotation**:
+A mass difference plot of the truth mass and the reconstructed top from neutrino solutions. 
+This plot aims to identify potential patterns when not rotating the reference frame of the truth children into the 4-top system.
+- **Top-Mass-Delta-Rotation**:
+A mass difference plot of the truth mass and the reconstructed top from neutrino solutions. 
+This plot aims to identify potential patterns when rotating the reference frame of the truth children into the 4-top system.
+- **MET-Ratio**:
+A TH2F plot of the MET and truth neutrino's pt with and without rotation.
+
 ### TopDecayModes:
 - **Figure_2.1a**:
 A plot depicting the fraction by which the Top-Quark decays into. 
@@ -113,17 +134,22 @@ A plot of the reconstructed resonance from truth children.
 ### TruthChildrenKinematics:
 - **Figure_2.1d**:
 A plot illustrating the delta-R between truth children originating from a common top, but partitioned into resonance/spectator tops.
+- **Figure_2.1e**:
+A plot illustrating the delta-R between originating truth top and decay children partitioned into leptonic and hadronic top decay channels.
+- **Figure_2.1f**:
+A plot illustrating the overlap in delta-R between truth children originating and not originating from mutual top. 
+This aims to identify whether only using the delta-R to cluster children causes falsely matched children.
+From the legend, 'False' implies the parent tops are not equal.
+- **Figure_2.1g**:
+A TH2F plot of the originating top's PT and only hadronically decaying top children delta-R. 
+This aims to verify whether a correlation between the top's PT and the clustering of children is present. 
+- **Figure_2.1h**:
+A TH2F plot of the originating top's PT and only Leptonically decaying top children delta-R. 
+This aims to verify whether a correlation between the top's PT and the clustering of children is present. 
+- **Figure_2.1i**:
+A plot illustrating the fractional PT being transferred to truth children from associated top.
 
 <!--
--> Figure 2.1:
-b: Reconstructed Invariant Top Mass from Children - Divided into Leptonic and Hadronic decay channels
-c: Reconstructed Invariant Mass of scalar H resonance - Lep-Lep, Lep-Had, Had-Had
-d: DeltaR between children of mutual top (this tests how well the children are clustered) - Split into leptonic and hadronic
-e: DeltaR between children and mutual top (tests how much children cluster around the parent top) - Split into leptonic and hadronic
-f: DeltaR between adjacent children as a function of parent top PT (we can use this information to see if the resulting jets are possibly merged or produce large-R jets)
-g: Fractional Top PT distribution transferred to children - Split by PDGID
-f: Invariant mass calculation difference between using Cython and PyTorch
-
 -> Figure 3.1:
 a: PDGID of Truth Jet parton contributions - These are derived from the GhostPartons that define the truth jet
 b: Fraction of parton PT contribution to truth jet

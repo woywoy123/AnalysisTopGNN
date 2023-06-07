@@ -8,13 +8,14 @@ class Particle(ParticleTemplate):
 
 class Child(Particle):
 
-    def __init__(self, pdgid=None, TopIndex=None, FromRes=None):
+    def __init__(self, pdgid=None, TopIndex=None, FromRes=None, Energy=None):
         self.Type = "children"
         Particle.__init__(self)
 
         self.pdgid = pdgid
         self.TopIndex = TopIndex
         self.FromRes = FromRes
+        self.e = Energy
 
     def __Sel(self, lst):
         return True if abs(self.pdgid) in lst else False
@@ -42,7 +43,7 @@ class TruthJet(Particle):
 
 class TruthJetParton(Particle):
 
-    def __init__(self, pdgid=None, TopIndex=None, TopChildIndex=None, FromRes=None):
+    def __init__(self, pdgid=None, TopIndex=None, TopChildIndex=None, FromRes=None, Energy=None):
         self.Type = "TJparton"
         Particle.__init__(self)
 
@@ -50,6 +51,7 @@ class TruthJetParton(Particle):
         self.TopIndex = TopIndex
         self.TopChildIndex = TopChildIndex
         self.FromRes = FromRes
+        self.e = Energy
     
 
     

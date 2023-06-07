@@ -1,5 +1,7 @@
 from .Manager import VariableManager
 import copy 
+import sys
+sys.setrecursionlimit(100000000)
 
 class EventTemplate(VariableManager):
     def __init__(self):

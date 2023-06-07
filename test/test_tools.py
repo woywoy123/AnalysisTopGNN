@@ -2,7 +2,7 @@ from AnalysisTopGNN.Generators import Analysis
 from AnalysisTopGNN.Events import Event
 from AnalysisTopGNN.Events import EventGraphTruthJetLepton
 from Templates.EventFeatureTemplate import ApplyFeatures
-
+from AnalysisTopGNN.Tools import Tools
 
 smpl = "./TestCaseFiles/Sample/"
 Files = {smpl + "Sample1" : ["smpl1.root"], smpl + "Sample2" : ["smpl1.root", "smpl2.root", "smpl3.root"]}
@@ -32,4 +32,17 @@ def test_random_sampling():
     Ana.TrainingSampleName = "Test"
     Ana.Launch()
     Ana.rm("RandomSampler")
-   
+
+def test_merge_data():
+    x1 = {"All" : [2], "a" : 1, "b" : {"test1" : 0}}
+    x2 = {"All" : [1], "a" : 2, "b" : {"test2" : 0}}
+    x_t = {"All" : [2, 1], "a" : 3, "b" : {"test1" : 0, "test2" : 0}}
+    T = Tools()
+    out = T.MergeData(x1, x2)
+    assert out == x_t 
+
+    x1 = {"a" : 1, "b" : {"test1" : 0}}
+    x2 = {"All" : [1], "a" : 2, "b" : {"test2" : 0}}
+    x_t = {"All" : [1], "a" : 3, "b" : {"test1" : 0, "test2" : 0}}
+    out = T.MergeData(x1, x2)
+    assert x_t == out

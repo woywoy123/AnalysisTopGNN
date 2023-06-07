@@ -107,7 +107,7 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
         self.output = self.ProjectName
 
     def __GenerateEvents(self, InptMap, name):
-       
+        
         rem = []
         reE, reD = False, False
         if self.EventCache:
@@ -377,7 +377,7 @@ class Analysis(Interface, Analysis_, Settings, SampleTracer, GraphFeatures, Tool
             th.VerboseLevel = self.VerboseLevel
             th.Start()
             pkl.PickleObject(sum([k for k in th._lists if k != None]), i, self.output + "/Selections/Merged/")
-   
+    
     def Launch(self):
         self.__CheckSettings()
         self._launch = True 
