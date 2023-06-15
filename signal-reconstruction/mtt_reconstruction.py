@@ -378,24 +378,15 @@ class MttReconstructor:
 
         for self.bs in b_matching:
             lep_matching = Matching(self.lep, is_truth=True) if self.case_num in [0, 1, 2, 3] else \
-            Matching(self.lep, is_truth=False, tops=b_matching.tops, allow_assignment_to_one_top=False)
+            Matching(self.lep,
+                     is_truth=False,
+                     tops=b_matching.tops,
+                     allow_assignment_to_one_top=False)
 
             for self.leps in lep_matching:
-                if len(self.leps) != 2 or len([i for i in self.bs if i in self.leps]) != 2: continue
+                if len(self.leps) != 2 or len([i for i in self.bs if i in self.leps]) != 2:
+                    continue
                 override_tops = {nu.TopIndex : [key for key in self.leps if self.leps[key][0].TopIndex == nu.TopIndex][0] for nu in self.nu} if self.case_num in [4, 7] else None
-                
-                dc = {
-                        "bs": [self.bs[i] for i in self.leps if i in self.bs],
-                        "leps" : list(self.leps.values()),
-                        "nus" : list(nu_matching_truth.values()),
-                        "matching_type" : 'truth' if self.case_num in [0, 1, 4, 7] else 'reco_truth' if self.case_num in [2, 5, 8] else 'reco_loss',
-                        "tops" : list(self.leps.keys()),
-                        "met" : self.event.met if self.data_type == 'Jet' else sum(self.nu).pt,
-                        "met_phi" : self.event.met_phi if self.data_type == 'Jet' else sum(self.nu).phi,
-                        "allow_assignment_to_one_top" : False,
-                        "override_tops" : override_tops
-                }
-                nu_matching = NuMatching(**dc)
 
                 nu_matching = \
                     NuMatching(bs=[self.bs[i] for i in self.leps if i in self.bs],

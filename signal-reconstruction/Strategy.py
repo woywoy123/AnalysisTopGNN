@@ -28,23 +28,18 @@ class Common(SelectionTemplate):
     def Strategy(self, event):
         #< here we can write out 'grouping' routine. >
         #< To Collect statistics on events, just return a string containing '->' >
-        #print("---New Event---")
         for object_type in self.object_types:
-            #print(f"--{object_type}--")
             for case_num in self.cases:
-                #print(f"--Case {case_num}--")
                 mtt_reconstructor = MttReconstructor(event, case_num, object_type)
                 self.masses[object_type][case_num].append(mtt_reconstructor.mtt)
                 # here is how you get the grouping:
                 # grouping = mtt_reconstructor.grouping
                 # it will return a list of lists
                 # grouping[0] is a list of objects, matched to top #0
-                grouping = False #mtt_reconstructor.grouping
+                grouping = mtt_reconstructor.grouping
                 if not grouping: grouping = []
                 for method in range(2):
                     self.efficiencies[object_type][case_num][method].append([Efficiency_weighted1(grouping[i], i, event) for i in range(len(grouping))] if method == 0 else [Efficiency_weighted2(grouping[i], i, event) for i in range(len(grouping))])
                     self.efficiency_avg[object_type][case_num][method].append(mean(self.efficiencies[object_type][case_num][method][-1]) if self.efficiencies[object_type][case_num][method][-1] else 0)
-                # print(f"self.efficiencies[object_type][case_num][0] = {self.efficiencies[object_type][case_num][0]}")
-                # print(f"self.efficiency_avg[object_type][case_num][0] = {self.efficiency_avg[object_type][case_num][0]}")
 
         return "Success->SomeString"
