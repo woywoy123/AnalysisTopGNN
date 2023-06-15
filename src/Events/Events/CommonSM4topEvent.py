@@ -1,4 +1,4 @@
-from AnalysisG.Particles.Particles import *
+from AnalysisG.Particles.CommonSM4topParticles import *
 from AnalysisG.Templates import EventTemplate
 
 class Event(EventTemplate):
