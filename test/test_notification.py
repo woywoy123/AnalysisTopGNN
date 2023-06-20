@@ -1,10 +1,12 @@
 from AnalysisG.Notification import Notification
 
+
 def test_notification():
     _nt = Notification()
     assert _nt.Success("test")
     assert _nt.Warning("test")
     assert _nt.Failure("test")
+
 
 def test_notification_verbose3():
     print()
@@ -15,6 +17,7 @@ def test_notification_verbose3():
     assert _nt.Warning("!!!test")
     assert _nt.Failure("!!!test")
 
+
 def test_notification_verbose2():
     print()
     _nt = Notification()
@@ -24,6 +27,7 @@ def test_notification_verbose2():
     assert _nt.Warning("!!!test")
     assert _nt.Failure("!!!test")
 
+
 def test_notification_verbose1():
     _nt = Notification()
     _nt.Verbose = 1
@@ -31,6 +35,7 @@ def test_notification_verbose1():
     assert _nt.Success("!test")
     assert _nt.Warning("!!test")
     assert _nt.Failure("!!test")
+
 
 def test_notification_verbose0():
     _nt = Notification()
@@ -40,9 +45,11 @@ def test_notification_verbose0():
     assert _nt.Warning("!!test")
     assert _nt.Failure("!!test")
 
+
 if __name__ == "__main__":
     test_notification()
     test_notification_verbose3()
     test_notification_verbose2()
     test_notification_verbose1()
     test_notification_verbose0()
+    pass

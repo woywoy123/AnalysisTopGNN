@@ -12,8 +12,8 @@ class _General:
         self._condor = False
         self.OutputDirectory = None
 
+
 class _UpROOT:
-    
     def __init__(self):
         self.StepSize = 1000
         self.Trees = []
@@ -21,14 +21,14 @@ class _UpROOT:
         self.Leaves = []
         self.Files = {}
 
+
 class _EventGenerator:
-    
     def __init__(self):
         self.Event = None
         self.Files = {}
 
-class _GraphGenerator:
 
+class _GraphGenerator:
     def __init__(self):
         self.EventGraph = None
         self.SelfLoop = True
@@ -37,15 +37,15 @@ class _GraphGenerator:
         self.NodeAttribute = {}
         self.EdgeAttribute = {}
 
+
 class _SelectionGenerator:
-    
     def __init__(self):
         self.Selections = {}
         self.Merge = {}
         self.OutputDirectory = "./"
 
+
 class _RandomSampler:
-    
     def __init__(self):
         self.nEvents = 10
         self.TrainingSize = False
@@ -53,20 +53,21 @@ class _RandomSampler:
         self.Shuffle = True
         self.kFolds = False
 
+
 class _FeatureAnalysis:
     def __init__(self):
         self.GraphAttribute = {}
         self.NodeAttribute = {}
-        self.EdgeAttribute = {} 
+        self.EdgeAttribute = {}
         self.TestFeatures = False
 
+
 class _Analysis:
-    
     def __init__(self):
         _UpROOT.__init__(self)
         _Pickle.__init__(self)
-        _EventGenerator.__init__(self) 
-        _GraphGenerator.__init__(self) 
+        _EventGenerator.__init__(self)
+        _GraphGenerator.__init__(self)
         _SelectionGenerator.__init__(self)
         _RandomSampler.__init__(self)
         _FeatureAnalysis.__init__(self)
@@ -79,14 +80,14 @@ class _Analysis:
         self.DataCache = False
         self.PurgeCache = False
 
-class _Pickle:
 
+class _Pickle:
     def __init__(self):
         self._ext = ".pkl"
 
+
 class _Plotting:
     def __init__(self):
-
         self.Style = None
         self.ATLASData = False
         self.ATLASYear = None
@@ -96,7 +97,7 @@ class _Plotting:
         self.Colors = []
         self.NEvents = None
         self.LaTeX = True
-        
+
         self.FontSize = 10
         self.LabelSize = 12.5
         self.TitleSize = 10
@@ -106,20 +107,20 @@ class _Plotting:
         self.xScaling = 1.25
         self.yScaling = 1.25
         self.DPI = 250
-    
+
         self.Title = None
         self.Filename = None
         self.OutputDirectory = "Plots"
 
-         # --- Histogram Cosmetic Styles --- #
+        # --- Histogram Cosmetic Styles --- #
         self.Texture = False
         self.Alpha = 0.5
         self.FillHist = "fill"
-        
+
         # --- Data Display --- #
-        self.Normalize = None    
+        self.Normalize = None
         self.IncludeOverflow = False
-        
+
         # --- Cosmetic --- #
         self.LineStyle = None
         self.LineWidth = 1
@@ -128,9 +129,9 @@ class _Plotting:
         self.MakeStaticHistograms = False
         self.Lines = []
         self.LegendOn = True
- 
-class _Condor:
 
+
+class _Condor:
     def __init__(self):
         self.CondaEnv = None
         self.PythonVenv = None
@@ -142,8 +143,8 @@ class _Condor:
         self.Tree = None
         self.OutputDirectory = None
 
-class _CondorScript:
 
+class _CondorScript:
     def __init__(self):
         self.ExecPath = None
         self.ScriptName = "main"
@@ -155,8 +156,8 @@ class _CondorScript:
         self.CondaEnv = None
         self.PythonVenv = None
 
-class _JobSpecification:
 
+class _JobSpecification:
     def __init__(self):
         self.Job = None
         self.Time = None
@@ -166,16 +167,16 @@ class _JobSpecification:
         self.CondaEnv = None
         self.PythonVenv = None
 
-class _Optimizer:
 
+class _Optimizer:
     def __init__(self):
         self.ProjectName = "UNTITLED"
 
         self.Optimizer = None
-        self.Scheduler = None 
+        self.Scheduler = None
         self.SchedulerParams = {}
         self.OptimizerParams = {}
-        
+
         self.RunName = "RUN"
         self.Epoch = None
         self.Epochs = 10
@@ -189,51 +190,75 @@ class _Optimizer:
         self.BatchSize = 1
         self.EnableReconstruction = False
 
+
 class Settings:
-    
-    def __init__(self, caller = False):
-        if caller: self.Caller = caller
+    def __init__(self, caller=False):
+        if caller:
+            self.Caller = caller
         _General.__init__(self)
-        if self.Caller == "UP-ROOT": _UpROOT.__init__(self)
-        if self.Caller == "PICKLER": _Pickle.__init__(self)
-        if self.Caller == "EVENTGENERATOR": _EventGenerator.__init__(self) 
-        if self.Caller == "GRAPHGENERATOR": _GraphGenerator.__init__(self) 
-        if self.Caller == "SELECTIONGENERATOR": _SelectionGenerator.__init__(self)
-        if self.Caller == "RANDOMSAMPLER": _RandomSampler.__init__(self)
-        if self.Caller == "FEATUREANALYSIS": _FeatureAnalysis.__init__(self)
-        if self.Caller == "OPTIMIZER": _Optimizer.__init__(self) 
-        if self.Caller == "ANALYSIS": _Analysis.__init__(self)
-        if self.Caller == "CONDOR": _Condor.__init__(self)
-        if self.Caller == "JOBSPECS": _JobSpecification.__init__(self)
-        if self.Caller == "CONDORSCRIPT": _CondorScript.__init__(self)
-        if self.Caller == "PLOTTING": _Plotting.__init__(self)
-    
+        if self.Caller == "UP-ROOT":
+            _UpROOT.__init__(self)
+        if self.Caller == "PICKLER":
+            _Pickle.__init__(self)
+        if self.Caller == "EVENTGENERATOR":
+            _EventGenerator.__init__(self)
+        if self.Caller == "GRAPHGENERATOR":
+            _GraphGenerator.__init__(self)
+        if self.Caller == "SELECTIONGENERATOR":
+            _SelectionGenerator.__init__(self)
+        if self.Caller == "RANDOMSAMPLER":
+            _RandomSampler.__init__(self)
+        if self.Caller == "FEATUREANALYSIS":
+            _FeatureAnalysis.__init__(self)
+        if self.Caller == "OPTIMIZER":
+            _Optimizer.__init__(self)
+        if self.Caller == "ANALYSIS":
+            _Analysis.__init__(self)
+        if self.Caller == "CONDOR":
+            _Condor.__init__(self)
+        if self.Caller == "JOBSPECS":
+            _JobSpecification.__init__(self)
+        if self.Caller == "CONDORSCRIPT":
+            _CondorScript.__init__(self)
+        if self.Caller == "PLOTTING":
+            _Plotting.__init__(self)
+
     @property
-    def Device(self): return self._Device
+    def Device(self):
+        return self._Device
 
     @Device.setter
     def Device(self, val):
         import torch
-        if val == None: self._Device = "cpu"; return 
+
+        if val == None:
+            self._Device = "cpu"
+            return
         self._Device = val if "cuda" in val and torch.cuda.is_available() else "cpu"
 
     def ImportSettings(self, inpt):
-        if not issubclass(type(inpt), Settings): return 
+        if not issubclass(type(inpt), Settings):
+            return
         s = Settings(self.Caller)
         for i in s.__dict__:
-            try: setattr(self, i, getattr(inpt, i))
-            except AttributeError: continue
-    
-    @property    
+            try:
+                setattr(self, i, getattr(inpt, i))
+            except AttributeError:
+                continue
+
+    @property
     def DumpSettings(self):
         default = Settings(self.Caller)
         default.__dict__["Device"] = "cpu"
         out = {}
-        for i in default.__dict__: 
-            if i.startswith("_"): continue
-            try: getattr(self, i) == default.__dict__[i]
-            except KeyError: continue
-            if getattr(self, i) == default.__dict__[i]: continue
+        for i in default.__dict__:
+            if i.startswith("_"):
+                continue
+            try:
+                getattr(self, i) == default.__dict__[i]
+            except KeyError:
+                continue
+            if getattr(self, i) == default.__dict__[i]:
+                continue
             out[i] = getattr(self, i)
         return out
- 

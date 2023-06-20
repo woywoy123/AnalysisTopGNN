@@ -1,12 +1,12 @@
 from AnalysisTopGNN.Tools import Tools
 
-class _Code(Tools):
 
+class _Code(Tools):
     def __init__(self):
-        self.Name = None 
-        self.Module = None 
-        self.Path = None 
-        self.Code = None 
+        self.Name = None
+        self.Module = None
+        self.Path = None
+        self.Code = None
         self._File = None
 
     def DumpCode(self, Instance):
@@ -21,7 +21,7 @@ class _Code(Tools):
         self.Path = self.Module + "." + self.Name
         self.Code = self.GetSourceFile(Instance)
         self._File = self.GetSourceFileDirectory(Instance)
-    
+
     def CopyInstance(self, Instance):
         if callable(Instance):
             try:
@@ -31,17 +31,17 @@ class _Code(Tools):
             Inst = Instance
         if self.Name == None:
             self.DumpCode(Instance)
-            
+
         _, inst = self.GetObjectFromString(self.Module, self.Name)
         return inst
 
     def __eq__(self, other):
         if self.Code == other.Code:
-            return True 
+            return True
         return False
 
-class _General:
 
+class _General:
     def __init__(self):
         self.VerboseLevel = 3
         self.chnk = 12
@@ -56,25 +56,25 @@ class _General:
         self.SampleContainer = None
         self.OutputDirectory = "./"
 
-class _EventGenerator:
 
+class _EventGenerator:
     def __init__(self):
         self.Event = None
         self.InputDirectory = {}
-    
+
+
 class _GraphGenerator:
-    
     def __init__(self):
         self.Device = "cpu"
-        self.SelfLoop = True 
-        self.FullyConnect = True 
+        self.SelfLoop = True
+        self.FullyConnect = True
         self.EventGraph = None
         self.GraphAttribute = {}
         self.NodeAttribute = {}
         self.EdgeAttribute = {}
 
-class _HDF5:
 
+class _HDF5:
     def __init__(self):
         self._File = None
         self._ext = ".hdf5"
@@ -86,19 +86,20 @@ class _HDF5:
         self.Filename = "UNTITLED"
         self.Directory = False
 
-class _Pickle:
 
+class _Pickle:
     def __init__(self):
         self._ext = ".pkl"
         self.VerboseLevel = 3
         self.Threads = 12
         self.chnk = None
 
-class _TrainingSample:
 
+class _TrainingSample:
     def __init__(self):
         self.TrainingSampleName = False
         self.TrainingPercentage = 80
+
 
 class _Optimization:
     def __init__(self):
@@ -110,13 +111,13 @@ class _Optimization:
         self.ContinueTraining = False
         self.RunName = "UNTITLED"
         self.Epochs = 10
-        self.Optimizer = None 
+        self.Optimizer = None
         self.Scheduler = None
         self.Device = "cpu"
-        self.VerbosityIncrement = 10 # Might need deprecation...
+        self.VerbosityIncrement = 10  # Might need deprecation...
+
 
 class _ModelEvaluator:
-    
     def __init__(self):
         self._ModelDirectories = {}
         self._ModelSaves = {}
@@ -132,10 +133,10 @@ class _ModelEvaluator:
         self.PlotEpochDebug = False
         self.PlotModelComparison = False
 
-class _Analysis:
 
+class _Analysis:
     def __init__(self):
-        _General.__init__(self) 
+        _General.__init__(self)
         _EventGenerator.__init__(self)
         _GraphGenerator.__init__(self)
         _TrainingSample.__init__(self)
@@ -146,7 +147,7 @@ class _Analysis:
         self._MSelection = {}
         self._InputValues = []
         self._lst = []
-        
+
         self.EventCache = False
         self.DataCache = False
         self._launch = False
@@ -157,8 +158,8 @@ class _Analysis:
         self.DumpPickle = False
         self.FeatureTest = False
 
-class _Condor:
 
+class _Condor:
     def __init__(self):
         self.CondaEnv = False
         self.PythonVenv = "$PythonGNN"
@@ -170,8 +171,8 @@ class _Condor:
         self.Tree = None
         self.OutputDirectory = None
 
-class _CondorScript:
 
+class _CondorScript:
     def __init__(self):
         self.ExecPath = None
         self.ScriptName = "main"
@@ -183,8 +184,8 @@ class _CondorScript:
         self.CondaEnv = False
         self.PythonVenv = "$PythonGNN"
 
-class _JobsSpecification:
 
+class _JobsSpecification:
     def __init__(self):
         self.Job = None
         self.Time = None
@@ -195,15 +196,15 @@ class _JobsSpecification:
         self.DataCache = None
         self.CondaEnv = False
         self.PythonVenv = "$PythonGNN"
- 
-class _File:
 
+
+class _File:
     def __init__(self):
         self.StepSize = 5000
         self.VerboseLevel = 3
 
-class _Selection:
 
+class _Selection:
     def __init__(self):
         self.Tree = None
         self._OutDir = False
@@ -213,13 +214,13 @@ class _Selection:
         self._TimeStats = []
         self._AllEventWeights = []
         self._SelectionEventWeights = []
- 
+
+
 class Settings(_General):
-    
     def __init__(self):
         if self.Caller == "CONDOR":
             _Condor.__init__(self)
-            return 
+            return
 
         if self.Caller == "FILE":
             _File.__init__(self)
@@ -227,24 +228,24 @@ class Settings(_General):
 
         if self.Caller == "CONDORSCRIPT":
             _CondorScript.__init__(self)
-            return 
+            return
 
         if self.Caller == "JOBSPECS":
             _JobsSpecification.__init__(self)
-            return 
-        
+            return
+
         if self.Caller == "PICKLER":
             _Pickle.__init__(self)
-            return 
-        
+            return
+
         if self.Caller == "SELECTION":
             _Selection.__init__(self)
-            return 
+            return
 
         _General.__init__(self)
         if self.Caller == "EVENTGENERATOR":
             _EventGenerator.__init__(self)
-        
+
         if self.Caller == "GRAPHGENERATOR":
             _GraphGenerator.__init__(self)
 
@@ -259,19 +260,27 @@ class Settings(_General):
 
         if self.Caller == "ANALYSIS":
             _Analysis.__init__(self)
-        
+
     def DumpSettings(self):
-        return self.__dict__ 
-    
+        return self.__dict__
+
     def ExportAnalysisScript(self):
         def Hash(obj):
             return str(hex(id(self.AddCode(obj))))
 
         dic = self.DumpSettings()
         exclude = ["Caller", "_Code", "SampleContainer", "_dump"]
-        code = ["Event", "EventGraph", "GraphAttribute", "NodeAttribute", "EdgeAttribute", "Model", "_InputValues"] 
+        code = [
+            "Event",
+            "EventGraph",
+            "GraphAttribute",
+            "NodeAttribute",
+            "EdgeAttribute",
+            "Model",
+            "_InputValues",
+        ]
         ana_tmp = _Analysis()
-            
+
         out = []
         for i in dic:
             if i in exclude:
@@ -282,7 +291,7 @@ class Settings(_General):
             if i in code:
                 if i == "Event":
                     Event = self.CopyInstance(dic[i])
-                    ev = {k : Hash(Event.Objects[k]) for k in Event.Objects}
+                    ev = {k: Hash(Event.Objects[k]) for k in Event.Objects}
                     continue
 
                 elif i == "_InputValues":
@@ -290,11 +299,17 @@ class Settings(_General):
                         if "INPUTSAMPLE" in k:
                             continue
                         elif "EVALUATEMODEL" in k:
-                            k["EVALUATEMODEL"]["ModelInstance"] = Hash(k["EVALUATEMODEL"]["ModelInstance"])
+                            k["EVALUATEMODEL"]["ModelInstance"] = Hash(
+                                k["EVALUATEMODEL"]["ModelInstance"]
+                            )
                         elif "ADDSELECTION" in k:
                             k["ADDSELECTION"]["inpt"] = Hash(k["ADDSELECTION"]["inpt"])
-                else: 
-                    dic[i] = {k : Hash(dic[i][k]) for k in dic[i]} if isinstance(dic[i], dict) else Hash(dic[i])
+                else:
+                    dic[i] = (
+                        {k: Hash(dic[i][k]) for k in dic[i]}
+                        if isinstance(dic[i], dict)
+                        else Hash(dic[i])
+                    )
 
             inst = str(dic[i]) if isinstance(dic[i], int) else ""
             inst = "'" + dic[i] + "'" if isinstance(dic[i], str) else inst
@@ -302,9 +317,9 @@ class Settings(_General):
             inst = str(dic[i]) if dic[i] == None else inst
             inst = str(dic[i]) if isinstance(dic[i], dict) else inst
 
-            out += ["<*AnalysisName*>." + i + " = " + inst] 
+            out += ["<*AnalysisName*>." + i + " = " + inst]
         return out
-   
+
     def CheckSettings(self):
         S = Settings
         S.Caller = self.Caller
@@ -321,7 +336,7 @@ class Settings(_General):
             if i not in inpt:
                 continue
             if i == "_Code" or i == "SampleContainer" or i == "Caller":
-               continue
+                continue
             self.__dict__[i] = inpt[i]
 
     def AddCode(self, Instance):
@@ -333,11 +348,10 @@ class Settings(_General):
 
     def CopyInstance(self, Instance):
         _c = self.AddCode(Instance)
-        return _c.CopyInstance(Instance) 
-    
+        return _c.CopyInstance(Instance)
+
     def GetCode(self, inpt):
         for _c in inpt._Code:
             if _c in self._Code:
                 continue
             self._Code.append(_c)
- 

@@ -1,9 +1,9 @@
 from .Notification import Notification
 
-class _MultiThreading(Notification):
 
+class _MultiThreading(Notification):
     def __init__(self):
-       pass
+        pass
 
     def RecoveredThread(self, w):
         self.Warning("A Thread has failed. Switching to main thread. Worker: " + str(w))

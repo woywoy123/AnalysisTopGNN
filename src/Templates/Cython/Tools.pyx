@@ -1,5 +1,7 @@
 #distutils: language = c++
-from libcpp.string cimport string 
+#cython: language_level=3
+
+from libcpp.string cimport string
 
 cdef extern from "../Headers/Tools.h" namespace "Tools":
     string Hashing(string inpt)

@@ -22,3 +22,6 @@
 **/_Pickle
 **/logs
 **/PythonGNN
+**/.tox
+**/.coverage*
+setup-scripts/source_this.sh

@@ -1,15 +1,17 @@
 from AnalysisTopGNN.Templates import ParticleTemplate
 
-### Default AnalysisTop particles 
+
+### Default AnalysisTop particles
 class Particle(ParticleTemplate):
-    def __init__(self, Type = "Particle"):
+    def __init__(self, Type="Particle"):
         ParticleTemplate.__init__(self)
-        
+
         self.Type = Type
         self.pt = self.Type + "_pt"
         self.eta = self.Type + "_eta"
         self.phi = self.Type + "_phi"
         self.e = self.Type + "_e"
+
 
 class Lepton(Particle):
     def __init__(self):
@@ -23,22 +25,27 @@ class Lepton(Particle):
         self.true_isPrompt = self.Type + "_true_isPrompt"
         Particle.__init__(self, self.Type)
 
+
 class Electron(Lepton):
     def __init__(self):
         self.Type = "el"
         self.ptvarcone20 = self.Type + "_ptvarcone20"
         self.CL = self.Type + "_CF"
         self.true_firstEgMotherTruthType = self.Type + "_true_firstEgMotherTruthType"
-        self.true_firstEgMotherTruthOrigin = self.Type + "_true_firstEgMotherTruthOrigin"
+        self.true_firstEgMotherTruthOrigin = (
+            self.Type + "_true_firstEgMotherTruthOrigin"
+        )
         self.true_firstEgMotherPdgId = self.Type + "_true_firstEgMotherPdgId"
         self.true_isChargeFl = self.Type + "_true_isChargeFl"
         Lepton.__init__(self)
+
 
 class Muon(Lepton):
     def __init__(self):
         self.Type = "mu"
         self.ptvarcone30 = self.Type + "_ptvarcone30"
         Lepton.__init__(self)
+
 
 class Jet(Particle):
     def __init__(self):
@@ -71,6 +78,7 @@ class Jet(Particle):
 
         Particle.__init__(self, self.Type)
 
+
 class TruthJet(Particle):
     def __init__(self):
         self.Type = "truthjet"
@@ -78,12 +86,14 @@ class TruthJet(Particle):
         self.GhostTruthJetMap = "GhostTruthJetMap"
         Particle.__init__(self, self.Type)
 
-### Additional custom particle definitions 
+
+### Additional custom particle definitions
 class TruthTop(Particle):
     def __init__(self):
         self.Type = "truth_top"
         self.FromRes = "truth_top_FromRes"
         Particle.__init__(self, self.Type)
+
 
 class TopPreFSR(Particle):
     def __init__(self):
@@ -92,6 +102,7 @@ class TopPreFSR(Particle):
         self.Status = self.Type + "_status"
         Particle.__init__(self, self.Type)
 
+
 class TopPostFSR(Particle):
     def __init__(self):
         self.Type = "topPostFSR"
@@ -99,12 +110,14 @@ class TopPostFSR(Particle):
         self.FromRes = "Gtop_FromRes"
         Particle.__init__(self, self.Type)
 
+
 class TruthTopChildren(Particle):
     def __init__(self):
         self.Type = "truth_top_child"
         self.charge = self.Type + "_charge"
         self.pdgid = self.Type + "_pdgid"
         Particle.__init__(self, self.Type)
+
 
 class TopPostFSRChildren(Particle):
     def __init__(self):

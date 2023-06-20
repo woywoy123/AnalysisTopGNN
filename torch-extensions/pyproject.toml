@@ -1,24 +1,11 @@
+[build-system]
+requires = ["setuptools", "torch"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "AnalysisG-Extensions"
-version = "1.2"
-requires-python = ">=3.7"
-authors = [
-    { name = "woywyo123" }, 
-]
+version = "1.1"
+authors = [{name = "woywoy123"}]
 readme = "README.md"
-description = "A Double (Single) Neutrino Reconstruction Algorithm - Based on (1305.1878v2)"
-classifiers = [
-    "Programming Language :: Python", 
-    "Programming Language :: C++", 
-]
 
-[project.urls]
-Home = "https://github.com/woywoy123/AnalysisG/tree/master/torch-extensions"
-"Bug Tracker" = "https://github.com/woywoy123/AnalysisG/issues"
-
-[build-system]
-requires = ["pip", "setuptools", "torch"]
-#build-backend = "setuptools.build_meta"
-build-backend = "backend"
-backend-path = ["_custom_build"]
 

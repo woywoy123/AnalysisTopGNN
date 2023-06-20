@@ -1,16 +1,15 @@
 from AnalysisG import Analysis
-from ObjectDefinitions.Event import Event
+from ObjectDefinitions.Event import ExampleEvent
 from AnalysisG.Plotting import TH1F
 
 # // ======================== Running the Event Compiler ============================= //
 # Sample 1: Resonance Top Sample
 Ana = Analysis()
 Ana.InputSample("bsm4t-1000", "<some sample directory>")
-Ana.Event = Event
-Ana.EventCache = True
-Ana.Threads = 12
+Ana.Event = ExampleEvent
+Ana.EventCache = False
+Ana.Threads = 1
 Ana.EventStop = 100 # < How many events to generate
-Ana.Verbose = 1
 Ana.Launch
 
 # Sample 2: Adding some Background 

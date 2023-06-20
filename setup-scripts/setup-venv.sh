@@ -6,17 +6,20 @@ lsetup "gcc gcc620_x86_64_slc6"
 lsetup "python 3.9.14-x86_64-centos7"
 python3 -m venv PythonGNN
 source ./PythonGNN/bin/activate
-echo "export PythonGNN=$PWD/PythonGNN/bin/activate" >> ~/.bashrc
-echo "alias GNN='source $PWD/PythonGNN/bin/activate'" >> ~/.bashrc
 
-export CUDA_PATH=/usr/local/cuda-11.8
-export VERSION=cu118 # e.g. cu116, cu118, etc.
-export TORCH=2.0.0
-export MAX_JOBS=12
-export CC=gcc-11 # gcc-620
-export CXX=g++-11 #g++-620
+echo "#!/bin/bash" > source_this.sh
+echo "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase" >> source_this.sh
+echo 'source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh' >> source_this.sh
+echo 'lsetup "gcc gcc620_x86_64_slc6"' >> source_this.sh
+echo "export PythonGNN=$PWD/PythonGNN/bin/activate" >> source_this.sh
+echo "alias GNN='source $PWD/PythonGNN/bin/activate'" >> source_this.sh
+echo 'source $PythonGNN' >> source_this.sh
 
+source ./source_this.sh
 cd ../
-bash setup.sh
+pip install --no-cache-dir -v .
+CONFIG_PYAMI
+CHECK_CUDA
+POST_INSTALL_PYC
 
 

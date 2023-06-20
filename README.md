@@ -1,5 +1,7 @@
 # A Graph Neural Network Framework for High Energy Particle Physics
-[![AnalysisG-Building-Action](https://github.com/woywoy123/AnalysisTopGNN/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/woywoy123/AnalysisTopGNN/actions/workflows/python-app.yml)
+[![AnalysisG-Building-Action](https://github.com/woywoy123/AnalysisTopGNN/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/woywoy123/AnalysisTopGNN/actions/workflows/test.yml)
+[![AnalysisG-Coverage-Action](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/woywoy123/6fee1eff8f987ac756a20133618659a1/raw/covbadge.json)]()
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## Introduction <a name="introduction"></a>
 The aim of this package is to provide Particle Physicists with an intuitive interface to **Graph Neural Networks**, whilst remaining Analysis agnostic. 
@@ -27,26 +29,16 @@ The framework was originally designed for samples produced via AnalysisTop, howe
 ```
 git clone https://github.com/woywoy123/AnalysisG.git
 ```
-2. Nagivate to setup-scripts and choose whether to use Conda or PyVenv, and open the script. 
+2. Nagivate to setup-scripts and choose whether to use Conda or PyVenv, and execute the appropriate script.
 ```bash 
 cd ./AnalysisG/setup-scripts
+bash setup-venv.sh
 ```
-3. Open the selected installer in your desired text editor and adjust the environment parameters according to your environment.
-By default the following settings are assumed. 
+This will automatically dump a bash script, which can be sourced using your bashrc to restore the environment.
 ```bash 
-CUDA_PATH=/usr/local/cuda-11.8 # Defines the cuda path 
-VERSION=cu118 # The version to use for cuda. If set to 'cpu', cuda will be disabled 
-TORCH=1.13.0  # Version of torch to install
-MAX_JOBS=12   # Number of threads to use for compilation
-CC=gcc-11     # GCC compiler version, see https://stackoverflow.com/questions/6622454/cuda-incompatible-with-my-gcc-version
-CXX=g++-11
+source ./source_this.sh
 ```
-4. **Attention for cluster users**: Add these commands to your `.bashrc`:
-```bash 
-export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
-source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
-lsetup "gcc gcc620_x86_64_slc6"
-```
+3. **Attention for cluster users**: Make sure to source this script within your bashrc.
 
 ## How Do I Make This Code Work With My Samples? <a name="CustomSamples"></a>
 

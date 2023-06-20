@@ -1,7 +1,7 @@
-from AnalysisG.Templates import ParticleTemplate 
+from AnalysisG.Templates import ParticleTemplate
+
 
 class Jet(ParticleTemplate):
-
     def __init__(self):
         ParticleTemplate.__init__(self)
 
@@ -11,25 +11,25 @@ class Jet(ParticleTemplate):
         self.e = "jet_e"
         self.MatchedTops = "jet_TopIndex"
 
-class LazyDefinition(ParticleTemplate):
 
+class LazyDefinition(ParticleTemplate):
     def __init__(self):
         ParticleTemplate.__init__(self)
-        
+
         self.pt = self.Type + "_pt"
         self.eta = self.Type + "_eta"
         self.phi = self.Type + "_phi"
         self.e = self.Type + "_e"
 
-class Top(LazyDefinition):
 
+class Top(LazyDefinition):
     def __init__(self):
         self.Type = "top"
         LazyDefinition.__init__(self)
         self.FromResonance = self.Type + "_FromRes"
 
+
 class TopChildren(LazyDefinition):
-   
     def __init__(self):
         self.Type = "children"
         LazyDefinition.__init__(self)

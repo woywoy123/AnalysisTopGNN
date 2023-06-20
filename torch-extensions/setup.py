@@ -1,104 +1,202 @@
-import os 
-from pathlib import Path
+import os
+import torch
 from setuptools import setup
-
-cuda = False if os.path.isfile("cpu.txt") else True
-from torch.utils.cpp_extension import CppExtension
 from torch.utils.cpp_extension import BuildExtension
-if cuda: from torch.utils.cpp_extension import CUDAExtension
-
-def _check(inpt, ext = [".h", ".cxx", ".cu"]): 
-    if isinstance(ext, str): return inpt.endswith(ext)
-    return len([i for i in ext if i in inpt and not ".swp" in inpt]) > 0
-
-def _clean(inpt):
-    if isinstance(inpt, list): return [j for i in inpt for j in _clean(i)]
-    if not _check(inpt, ["#include"]): return []
-    if _check(inpt, ["<", ">"]): return []
-    inpt = inpt.replace("\n", "")
-    inpt = inpt.replace(" ", "")
-    inpt = inpt.replace('"', "")
-    return [inpt.split("#include")[-1]]
-
-def _getPath(inpt, src):
-    src = src.split("/")[:-1] + [inpt]
-    pth = os.path.abspath("/".join(src))
-    pth = pth.split(os.getcwd())[-1][1:]
-    return pth 
-
-def _reference(inpt, ref):
-    try: 
-        _ref = _clean(open(inpt).readlines())
-        if len(_ref) == 0: return False  
-    except: return False
-    return ref in [_getPath(i, inpt) for i in _ref]   
+from torch.utils.cpp_extension import CppExtension
+try: from torch.utils.cpp_extension import CUDAExtension
+except ModuleNotFoundError: pass
 
 
-def _recursive(inpt):
-    if isinstance(inpt, str): inpt = [inpt] if _check(inpt) else []
-    else: inpt = [i for i in inpt if _check(i)]
-  
-    out = []
-    out += list(inpt)
-    f = {}
-    for i in inpt:
-        try: v = open(i).readlines()
-        except: continue
-        f[i] = _clean(v)
-    f = {_getPath(k, i) : i for i in f for k in f[i]}
-    for j in list(f): out += [j] + _recursive(j)
-    
-    this_f = inpt.pop()
-    for p in Path("/".join(this_f.split("/")[:2])).rglob("*"):
-        if _check(str(p), ".cu") or _check(str(p), ".h") or _check(str(p), ".cxx"): pass
-        else: continue
-        if "Shared" in str(p): continue
-        if "CUDA" in this_f and ".cu" in str(p): pass
-        elif not _reference(str(p), this_f): continue 
-        out.append(str(p))
-    return list(set(out))
- 
+_dir = "src/"
+TrH, TrC, TrS, TrCu = (
+    _dir + "Transform/Headers/",
+    _dir + "Transform/CXX/",
+    _dir + "Transform/Shared/",
+    _dir + "Transform/CUDA/",
+)
+OpH, OpC, OpS, OpCu = (
+    _dir + "Operators/Headers/",
+    _dir + "Operators/CXX/",
+    _dir + "Operators/Shared/",
+    _dir + "Operators/CUDA/",
+)
+PhH, PhC, PhS, PhCu = (
+    _dir + "Physics/Headers/",
+    _dir + "Physics/CXX/",
+    _dir + "Physics/Shared/",
+    _dir + "Physics/CUDA/",
+)
+NuH, NuC, NuS, NuCu = (
+    _dir + "NuRecon/Headers/",
+    _dir + "NuRecon/CXX/",
+    _dir + "NuRecon/Shared/",
+    _dir + "NuRecon/CUDA/",
+)
 
-
-PACKAGES_CXX = {
-    "PyC.Transform.Floats" : "src/Transform/Shared/Floats.cxx", 
-    "PyC.Transform.Tensors" : "src/Transform/Shared/Tensors.cxx",  
-    "PyC.Operators.Tensors" : "src/Operators/Shared/Tensors.cxx",  
-    "PyC.Physics.Tensors.Cartesian" : "src/Physics/Shared/CartesianTensors.cxx", 
-    "PyC.Physics.Tensors.Polar" : "src/Physics/Shared/PolarTensors.cxx", 
-    "PyC.NuSol.Tensors" : "src/NuRecon/Shared/Tensor.cxx", 
+PkgH = {
+    "PyC.Transform.Floats": [TrH + "ToCartesianFloats.h", TrH + "ToPolarFloats.h"],
+    "PyC.Transform.Tensors": [
+        TrH + "ToCartesianTensors.h",
+        TrH + "ToPolarTensors.h",
+    ],
+    "PyC.Transform.CUDA": [TrH + "ToCartesianCUDA.h", TrH + "ToPolarCUDA.h"],
+    "PyC.Operators.Tensors": [OpH + "Tensors.h"],
+    "PyC.Operators.CUDA": [OpH + "CUDA.h"],
+    "PyC.Physics.Tensors.Cartesian": [
+        TrH + "ToPolarTensors.h",
+        PhH + "FromCartesianTensors.h",
+        PhH + "Tensors.h",
+    ],
+    "PyC.Physics.CUDA.Cartesian": [
+        TrH + "ToPolarCUDA.h",
+        PhH + "CUDA.h",
+        PhH + "FromCartesianCUDA.h",
+    ],
+    "PyC.Physics.Tensors.Polar": [
+        TrH + "ToCartesianTensors.h",
+        PhH + "FromPolarTensors.h",
+        PhH + "Tensors.h",
+    ],
+    "PyC.Physics.CUDA.Polar": [
+        TrH + "ToCartesianCUDA.h",
+        PhH + "CUDA.h",
+        PhH + "FromPolarCUDA.h",
+    ],
+    "PyC.NuSol.Tensors": [
+        TrH + "ToCartesianTensors.h",
+        TrH + "ToPolarTensors.h",
+        PhH + "Tensors.h",
+        OpH + "Tensors.h",
+        NuH + "NuSolTensor.h",
+    ],
+    "PyC.NuSol.CUDA": [
+        TrH + "ToCartesianCUDA.h",
+        TrH + "ToPolarCUDA.h",
+        PhH + "CUDA.h",
+        OpH + "CUDA.h",
+        NuH + "NuSolCUDA.h",
+    ],
 }
 
-PACKAGES_CUDA = {
-    "PyC.Transform.CUDA" : "src/Transform/Shared/CUDA.cxx", 
-    "PyC.Operators.CUDA" : "src/Operators/Shared/CUDA.cxx", 
-    "PyC.Physics.CUDA.Cartesian" : "src/Physics/Shared/CartesianCUDA.cxx",   
-    "PyC.Physics.CUDA.Polar" : "src/Physics/Shared/PolarCUDA.cxx",   
-    "PyC.NuSol.CUDA" : "src/NuRecon/Shared/CUDA.cxx"
+PkgC = {
+    "PyC.Transform.Floats": [
+        TrC + "ToCartesianFloats.cxx",
+        TrC + "ToPolarFloats.cxx",
+        TrS + "Floats.cxx",
+    ],
+    "PyC.Transform.Tensors": [
+        TrC + "ToCartesianTensors.cxx",
+        TrC + "ToPolarTensors.cxx",
+        TrS + "Tensors.cxx",
+    ],
+    "PyC.Transform.CUDA": [
+        TrCu + "Cartesian.cu",
+        TrCu + "CartesianKernel.cu",
+        TrCu + "CartesianTorch.cu",
+        TrCu + "Polar.cu",
+        TrCu + "PolarKernel.cu",
+        TrCu + "PolarTorch.cu",
+        TrS + "CUDA.cxx",
+    ],
+    "PyC.Operators.Tensors": [
+        OpC + "Tensors.cxx",
+        OpS + "Tensors.cxx",
+    ],
+    "PyC.Operators.CUDA": [
+        OpCu + "Operators.cu",
+        OpCu + "OperatorsKernel.cu",
+        OpCu + "OperatorsTorch.cu",
+        OpS + "CUDA.cxx",
+    ],
+    "PyC.Physics.Tensors.Cartesian": [
+        TrC + "ToPolarTensors.cxx",
+        PhC + "Tensors.cxx",
+        PhS + "CartesianTensors.cxx",
+    ],
+    "PyC.Physics.CUDA.Cartesian": [
+        TrCu + "Polar.cu",
+        TrCu + "PolarKernel.cu",
+        TrCu + "PolarTorch.cu",
+        PhCu + "Physics.cu",
+        PhCu + "PhysicsKernel.cu",
+        PhCu + "PhysicsTorch.cu",
+        PhS + "CartesianCUDA.cxx",
+    ],
+    "PyC.Physics.Tensors.Polar": [
+        TrC + "ToCartesianTensors.cxx",
+        PhC + "Tensors.cxx",
+        PhS + "PolarTensors.cxx",
+    ],
+    "PyC.Physics.CUDA.Polar": [
+        TrCu + "Cartesian.cu",
+        TrCu + "CartesianKernel.cu",
+        TrCu + "CartesianTorch.cu",
+        PhCu + "Physics.cu",
+        PhCu + "PhysicsKernel.cu",
+        PhCu + "PhysicsTorch.cu",
+        PhS + "PolarCUDA.cxx",
+    ],
+    "PyC.NuSol.Tensors": [
+        TrC + "ToCartesianTensors.cxx",
+        TrC + "ToPolarTensors.cxx",
+        PhC + "Tensors.cxx",
+        OpC + "Tensors.cxx",
+        NuC + "NuSolTensor.cxx",
+        NuC + "SingleNuTensor.cxx",
+        NuC + "DoubleNuTensor.cxx",
+        NuS + "Tensor.cxx",
+    ],
+    "PyC.NuSol.CUDA": [
+        TrCu + "Cartesian.cu",
+        TrCu + "CartesianKernel.cu",
+        TrCu + "CartesianTorch.cu",
+        TrCu + "Polar.cu",
+        TrCu + "PolarKernel.cu",
+        TrCu + "PolarTorch.cu",
+        PhCu + "Physics.cu",
+        PhCu + "PhysicsKernel.cu",
+        PhCu + "PhysicsTorch.cu",
+        OpCu + "Operators.cu",
+        OpCu + "OperatorsKernel.cu",
+        OpCu + "OperatorsTorch.cu",
+        NuCu + "NuSol.cu",
+        NuCu + "NuSolKernel.cu",
+        NuCu + "NuSolTorch.cu",
+        NuS + "CUDA.cxx",
+    ],
 }
 
-PACKAGES = {}
-PACKAGES |= PACKAGES_CXX 
-PACKAGES |= PACKAGES_CUDA if cuda else {}
-DEPENDS = {}
-REFDEPENDS = {}
-INST_ = []
-INST_H = {}
+_cmd = {
+    "package_data": {},
+    "ext_modules": [],
+    "cmdclass": {"build_ext": BuildExtension},
+}
 
-for pkg in PACKAGES:
-    deps = _recursive(PACKAGES[pkg])
-    HEADER = [k for k in deps if _check(k, ".h")]
-    CXX = [k for k in deps if _check(k, ".cxx")]
-    CU = [k for k in deps if _check(k, ".cu")]
-    if not cuda: CU = []
-    
-    dic = {"name" : pkg, "sources": CXX + CU, "extra_compile_args" : ["-std=c++14"]} 
-    INST_.append(CppExtension(**dic) if len(CU) == 0 else CUDAExtension(**dic))
-    INST_H[pkg] = HEADER
+cu = ""
+if "CUDA_PATH" in os.environ:
+    cu = os.environ["CUDA_PATH"]
+else:
+    import subprocess
+    try:
+        o = subprocess.check_output("which nvcc", stderr = subprocess.STDOUT, shell = True)
+        cu = o.decode("UTF-8")
+        os.environ["CUDA_PATH"] = cu
+    except subprocess.CalledProcessError:
+        pass
+    if not torch.cuda.is_available():
+        cu = ""
 
-cmd = { 
-        "ext_modules"  : INST_, 
-        "package_data" : INST_H, 
-        "cmdclass"     : {"build_ext" : BuildExtension}, 
-} 
-setup(**cmd)
+for i in PkgH:
+    if len(cu) == 0 and "CUDA" in i:
+        continue
+    cmd = {"name": i, "sources": PkgC[i], "extra_compile_args": ["-std=c++14"]}
+    if "CUDA" in i:
+        cmd = CUDAExtension(**cmd)
+    else:
+        cmd = CppExtension(**cmd)
+
+    _cmd["ext_modules"].append(cmd)
+    _cmd["package_data"][i] = PkgH[i]
+
+
+setup(**_cmd)

@@ -1,7 +1,7 @@
 from AnalysisTopGNN.Templates import ParticleTemplate
 
-class Particle(ParticleTemplate):
 
+class Particle(ParticleTemplate):
     def __init__(self):
         ParticleTemplate.__init__(self)
 
@@ -10,8 +10,8 @@ class Particle(ParticleTemplate):
         self.phi = self.Type + "_phi"
         self.e = self.Type + "_e"
 
-class Top(Particle):
 
+class Top(Particle):
     def __init__(self):
         self.Type = "top"
         Particle.__init__(self)
@@ -22,8 +22,8 @@ class Top(Particle):
         self.TruthJets = []
         self.Jets = []
 
-class Children(Particle):
 
+class Children(Particle):
     def __init__(self):
         self.Type = "children"
         Particle.__init__(self)
@@ -34,8 +34,8 @@ class Children(Particle):
         self.JetPartons = []
         self.FromRes = 0
 
-class TruthJet(Particle):
 
+class TruthJet(Particle):
     def __init__(self):
         self.Type = "truthjet"
         Particle.__init__(self)
@@ -43,8 +43,8 @@ class TruthJet(Particle):
         self.TruthJetPartons = []
         self.Tops = []
 
-class TruthJetPartons(Particle):
 
+class TruthJetPartons(Particle):
     def __init__(self):
         self.Type = "truJparton"
         Particle.__init__(self)
@@ -55,24 +55,24 @@ class TruthJetPartons(Particle):
         self.TruthJet = []
         self.Tops = []
 
-class Electron(Particle):
 
+class Electron(Particle):
     def __init__(self):
         self.Type = "el"
         Particle.__init__(self)
         self.charge = self.Type + "_charge"
         self.index = []
 
-class Muon(Particle):
 
+class Muon(Particle):
     def __init__(self):
         self.Type = "mu"
         Particle.__init__(self)
         self.charge = self.Type + "_charge"
         self.index = []
 
-class Jets(Particle):
 
+class Jets(Particle):
     def __init__(self):
         self.Type = "jet"
         Particle.__init__(self)
@@ -80,8 +80,8 @@ class Jets(Particle):
         self.JetPartons = []
         self.Tops = []
 
-class JetPartons(Particle):
 
+class JetPartons(Particle):
     def __init__(self):
         self.Type = "Jparton"
         Particle.__init__(self)

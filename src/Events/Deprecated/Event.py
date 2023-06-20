@@ -1,24 +1,25 @@
 from .EventParticles import *
 from AnalysisTopGNN.Templates import EventTemplate
 
+
 class Event(EventTemplate):
     def __init__(self):
         EventTemplate.__init__(self)
         self.Objects = {
-                            "Electrons" : Electron(), 
-                            "Muons" : Muon(), 
-                            "Jets" : Jet(), 
-                            "TruthJets": TruthJet(), 
-                            "TruthTops" : TruthTop(), 
-                            "TruthTopChildren": TruthTopChildren(), 
-                            "TopPreFSR" : TopPreFSR(),
-                            "TopPostFSR" : TopPostFSR(),
-                            "TopPostFSRChildren" : TopPostFSRChildren()
-                        }
+            "Electrons": Electron(),
+            "Muons": Muon(),
+            "Jets": Jet(),
+            "TruthJets": TruthJet(),
+            "TruthTops": TruthTop(),
+            "TruthTopChildren": TruthTopChildren(),
+            "TopPreFSR": TopPreFSR(),
+            "TopPostFSR": TopPostFSR(),
+            "TopPostFSRChildren": TopPostFSRChildren(),
+        }
         self.Trees = ["nominal"]
         self.runNumber = "runNumber"
         self.eventNumber = "eventNumber"
-        
+
         tag = "weight"
         self.pileup = tag + "_pileup"
         self.leptonSF = tag + "_leptonSF"
@@ -47,7 +48,7 @@ class Event(EventTemplate):
         self.mu_actual = "mu_actual"
 
         self.met = "met_met"
-        self.met_phi = "met_phi" 
+        self.met_phi = "met_phi"
 
         self.DefineObjects()
 
@@ -60,7 +61,6 @@ class Event(EventTemplate):
                 setattr(p_i, "FromRes", sig)
                 setattr(p_i, "Index", index)
                 RecursiveSignal(p_i.Children, sig, index)
-     
 
         for i in self.TruthTopChildren.values():
             self.TruthTops[i.Index].Children += [i]
@@ -92,17 +92,19 @@ class Event(EventTemplate):
         self.Electrons = self.DictToList(self.Electrons)
         self.Muons = self.DictToList(self.Muons)
         self.Jets = self.DictToList(self.Jets)
-        
+
         self.Leptons = []
         self.Leptons += self.Electrons
         self.Leptons += self.Muons
-        
-        All = [i for i in self.TopPostFSRChildren.values() if abs(i.pdgid) in [11, 13, 15]]
+
+        All = [
+            i for i in self.TopPostFSRChildren.values() if abs(i.pdgid) in [11, 13, 15]
+        ]
         for j in self.Leptons:
             dr = 99
             low = ""
             for i in All:
-                d = i.DeltaR(j) 
+                d = i.DeltaR(j)
                 if dr < d:
                     continue
                 dr = d
@@ -131,4 +133,3 @@ class Event(EventTemplate):
             RecursiveSignal(i.Children, i.FromRes, i.Index)
             RecursiveSignal(i.TruthJets, i.FromRes, i.Index)
             RecursiveSignal(i.Leptons, i.FromRes, i.Index)
-

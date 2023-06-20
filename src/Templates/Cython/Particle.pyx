@@ -1,4 +1,6 @@
 #distutils: language = c++
+#cython: language_level = 3
+
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp cimport bool
@@ -16,32 +18,32 @@ cdef class ParticleTemplate(object):
         self.ptr = new CyParticleTemplate()
         self._leaves = {}
         self._state = False
-    
+
     def __init__(self):
         self.Children = []
         self.Parent = []
-  
+
     def __dealloc__(self):
         del self.ptr
- 
+
     def __add__(self, other) -> ParticleTemplate:
         if isinstance(self, int): return other
         if isinstance(other, int): return self
 
         cdef ParticleTemplate s = self
-        cdef ParticleTemplate o = other 
-        cdef ParticleTemplate p = self.clone 
+        cdef ParticleTemplate o = other
+        cdef ParticleTemplate p = self.clone
         p.ptr[0] = s.ptr[0] + o.ptr[0]
         return p
-    
+
     def __eq__(self, other) -> bool:
-        if not issubclass(type(other), ParticleTemplate): return False
+        if not issubclass(other.__class__, ParticleTemplate): return False
         cdef ParticleTemplate s = self
-        cdef ParticleTemplate o = other 
+        cdef ParticleTemplate o = other
         s.ptr.Hash()
         o.ptr.Hash()
         return s.ptr[0] == o.ptr[0]
-    
+
     def __hash__(self) -> int:
         return int(self.hash[:8], 0)
 
@@ -59,14 +61,14 @@ cdef class ParticleTemplate(object):
     def __getstate__(self):
         state = {}
         state_keys = list(self.__interpret__)
-        state_keys += list(self.__dict__)  
+        state_keys += list(self.__dict__)
         state_keys += [i for i in self.__dir__() if not i.startswith("_")]
         for i in set(state_keys):
             if i == "clone": continue
             try: v = getattr(self, i)
             except: continue
             if type(v).__name__ == "builtin_function_or_method": continue
-            state |= {i : v}
+            state.update({i : v})
         return state
 
     def __setstate__(self, inpt):
@@ -87,17 +89,16 @@ cdef class ParticleTemplate(object):
 
     @__interpret__.setter
     def __interpret__(self, dict inpt):
-        
         cdef str k
         cdef dict x
-        
+
         try:
             inpt = {k : inpt[self._leaves[k]] for k in self._leaves}
             inpt = {k : inpt[k].tolist() for k in inpt}
         except:
             try: inpt = {k : inpt[k].tolist() for k in inpt}
             except: pass
-        
+
         while True:
             try: self.__interpret__ = {k : inpt[k].pop() for k in inpt}
             except AttributeError:
@@ -124,24 +125,24 @@ cdef class ParticleTemplate(object):
     def Type(self, str val):
         self.ptr.Type = val.encode("UTF-8")
 
-    @property 
+    @property
     def index(self) -> int:
         return self.ptr.index
-    
+
     @index.setter
     def index(self, val: Union[int, float, str]): 
         if isinstance(val, int): self.ptr.index = val
         elif isinstance(val, float): self.ptr.index = <int>val
         elif isinstance(val, str): self._leaves["index"] = val
-    
+
     @property
     def hash(self) -> str:
         return self.ptr.Hash().decode("UTF-8")
-    
+
     @property
     def px(self) -> double:
         return self.ptr.px()
-    
+
     @px.setter
     def px(self, val: Union[str, float]):
         if isinstance(val, float): self.ptr.px(<double>val)
@@ -191,28 +192,28 @@ cdef class ParticleTemplate(object):
     def phi(self, val: Union[str, float]):
         if isinstance(val, float): self.ptr.phi(<double> val)
         elif isinstance(val, str): self._leaves["phi"] = val
-    
+ 
     @property
     def e(self) -> double:
         return self.ptr.e()
 
-    @e.setter 
+    @e.setter
     def e(self, val: Union[str, float]):
         if isinstance(val, float): self.ptr.e(<double>val)
         elif isinstance(val, str): self._leaves["e"] = val
-    
+
     @property
     def Mass(self) -> double:
         return self.ptr.Mass()
-    
+
     @Mass.setter
     def Mass(self, val: Union[str, float]):
         if isinstance(val, float): self.ptr.Mass(<double>val)
         elif isinstance(val, str): self._leaves["Mass"] = val
-    
+
     def DeltaR(ParticleTemplate self, ParticleTemplate other) -> double:
         return self.ptr.DeltaR(other.ptr[0])
-    
+
     @property
     def pdgid(self) -> int:
         return self.ptr.pdgid()
@@ -232,15 +233,15 @@ cdef class ParticleTemplate(object):
         if isinstance(val, float): self.ptr.charge(<double>val)
         elif isinstance(val, int): self.ptr.charge(<double>val)
         elif isinstance(val, str): self._leaves["charge"] = val
-    
+
     @property
     def symbol(self) -> str:
         return self.ptr.symbol().decode("UTF-8")
 
     @symbol.setter
     def symbol(self, string value):
-        self.ptr.symbol(value.decode("UTF-8")); 
-    
+        self.ptr.symbol(value.decode("UTF-8"))
+
     @property
     def is_lep(self) -> bool:
         return self.ptr.is_lep()
@@ -249,21 +250,21 @@ cdef class ParticleTemplate(object):
     def is_nu(self) -> bool:
         return self.ptr.is_nu()
 
-    @property 
+    @property
     def is_b(self) -> bool:
         return self.ptr.is_b()
 
     @property
     def is_add(self) -> bool:
         return not (self.is_lep or self.is_nu or self.is_b)
-    
+
     @property
     def lepdef(self) -> vector[int]:
-        return self.ptr._lepdef 
+        return self.ptr._lepdef
 
     @property
     def nudef(self) -> vector[int]:
-        return self.ptr._nudef 
+        return self.ptr._nudef
 
     @lepdef.setter
     def lepdef(self, vector[signed int] val):
@@ -272,16 +273,16 @@ cdef class ParticleTemplate(object):
     @nudef.setter
     def nudef(self, vector[signed int] val):
         self.ptr._nudef = val
-   
+
     @property
     def _init(self) -> bool:
         return self._state
-    
+
     @_init.setter
     def _init(self, bool val): self._state = val
-       
+
     @property
     def LeptonicDecay(self):
         return len([i for i in self.Children if i.is_nu]) != 0
-        
- 
+
+

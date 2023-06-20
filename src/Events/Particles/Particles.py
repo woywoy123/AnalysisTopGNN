@@ -1,7 +1,7 @@
 from AnalysisG.Templates import ParticleTemplate
 
-class Particle(ParticleTemplate):
 
+class Particle(ParticleTemplate):
     def __init__(self):
         ParticleTemplate.__init__(self)
 
@@ -10,8 +10,8 @@ class Particle(ParticleTemplate):
         self.phi = self.Type + "_phi"
         self.e = self.Type + "_e"
 
-class Top(Particle):
 
+class Top(Particle):
     def __init__(self):
         self.Type = "top"
         Particle.__init__(self)
@@ -23,8 +23,8 @@ class Top(Particle):
         self.TruthJets = []
         self.Jets = []
 
-class Children(Particle):
 
+class Children(Particle):
     def __init__(self):
         self.Type = "children"
         Particle.__init__(self)
@@ -37,6 +37,7 @@ class Children(Particle):
     @property
     def FromRes(self):
         return self.Parent[0].FromRes
+
 
 class TruthJet(Particle):
     def __init__(self):
@@ -57,7 +58,6 @@ class TruthJet(Particle):
 
 
 class TruthJetParton(Particle):
-
     def __init__(self):
         self.Type = "TJparton"
         Particle.__init__(self)
@@ -68,8 +68,8 @@ class TruthJetParton(Particle):
         self.charge = self.Type + "_charge"
         self.pdgid = self.Type + "_pdgid"
 
-class Jet(Particle):
 
+class Jet(Particle):
     def __init__(self):
         self.Type = "jet"
         Particle.__init__(self)
@@ -106,11 +106,12 @@ class Jet(Particle):
 
     @property
     def FromRes(self):
-        if len(self.Tops) == 0: return False
+        if len(self.Tops) == 0:
+            return False
         return len([t for t in self.Tops if t.FromRes == 1]) > 0
 
-class JetParton(Particle):
 
+class JetParton(Particle):
     def __init__(self):
         self.Type = "Jparton"
         Particle.__init__(self)
@@ -121,19 +122,20 @@ class JetParton(Particle):
         self.charge = self.Type + "_charge"
         self.pdgid = self.Type + "_pdgid"
 
-class Electron(Particle):
 
+class Electron(Particle):
     def __init__(self):
         self.Type = "el"
         Particle.__init__(self)
         self.charge = self.Type + "_charge"
         self.index = []
-    
+
     @property
-    def is_lep(self): return True
+    def is_lep(self):
+        return True
+
 
 class Muon(Particle):
-
     def __init__(self):
         self.Type = "mu"
         Particle.__init__(self)
@@ -141,7 +143,9 @@ class Muon(Particle):
         self.index = []
 
     @property
-    def is_lep(self): return True
+    def is_lep(self):
+        return True
+
 
 class Neutrino(ParticleTemplate):
     def __init__(self, px=None, py=None, pz=None):

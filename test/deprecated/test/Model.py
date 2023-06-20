@@ -1,8 +1,8 @@
 from AnalysisTopGNN.Model import Model
-import torch 
+import torch
+
 
 class Model(Model):
-
     def __init__(self, model):
         self._modelinputs = {}
         self._modeloutputs = {}
@@ -24,4 +24,3 @@ class Model(Model):
         self.GetModelOutputs(self._model)
         self.GetModelLossFunction(self._model)
         self.GetModelClassifiers(self._model)
-

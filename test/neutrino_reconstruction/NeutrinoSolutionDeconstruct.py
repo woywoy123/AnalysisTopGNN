@@ -1,104 +1,131 @@
 import numpy as np
 import math
-try: from scipy.optimize import leastsq
-except: leastsq = None
+
+try:
+    from scipy.optimize import leastsq
+except:
+    leastsq = None
+
 
 def CosTheta(v1, v2):
-    '''Function to replace ROOT.Math.VectorUtils.CosTheta()'''
+    """Function to replace ROOT.Math.VectorUtils.CosTheta()"""
     v1_sq = v1.x**2 + v1.y**2 + v1.z**2
     v2_sq = v2.x**2 + v2.y**2 + v2.z**2
     if v1_sq == 0 or v2_sq == 0:
         return 0
-    v1v2 = v1.x*v2.x + v1.y*v2.y + v1.z*v2.z
-    return v1v2/(v1_sq*v2_sq)**0.5
+    v1v2 = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+    return v1v2 / (v1_sq * v2_sq) ** 0.5
+
 
 # A = ellipse, Q[i] = line
 def intersections_ellipse_line(ellipse, line, zero=1e-12):
-    '''Points of intersection between ellipse and line'''
-    _,V = np.linalg.eig(np.cross(line,ellipse).T)
-    sols = sorted([(v.real / v[2].real, np.dot(line,v.real)**2 +
-                    np.dot(v.real,ellipse).dot(v.real)**2) for v in V.T],
-                  key=lambda k: k[1])#[:2] #Removing the two solution constraint
+    """Points of intersection between ellipse and line"""
+    _, V = np.linalg.eig(np.cross(line, ellipse).T)
+    sols = sorted(
+        [
+            (
+                v.real / v[2].real,
+                np.dot(line, v.real) ** 2 + np.dot(v.real, ellipse).dot(v.real) ** 2,
+            )
+            for v in V.T
+        ],
+        key=lambda k: k[1],
+    )  # [:2] #Removing the two solution constraint
     return [s for s, k in sols if k < zero]
+
 
 # A = ellipse, Q[i] = line
 def intersections_diagonal_number(ellipse, line, zero=1e-12):
-    '''Points of intersection between ellipse and line'''
-    _,V = np.linalg.eig(np.cross(line,ellipse).T)
-    sols = sorted([np.dot(line,v.real)**2 + np.dot(v.real,ellipse).dot(v.real)**2 for v in V.T])#[:2]
-    return sols 
+    """Points of intersection between ellipse and line"""
+    _, V = np.linalg.eig(np.cross(line, ellipse).T)
+    sols = sorted(
+        [
+            np.dot(line, v.real) ** 2 + np.dot(v.real, ellipse).dot(v.real) ** 2
+            for v in V.T
+        ]
+    )  # [:2]
+    return sols
+
 
 def cofactor(A, i, j):
-    '''Cofactor[i,j] of 3x3 matrix A'''
-    a = A[not i:2 if i==2 else None :2 if i==1 else 1,not j:2 if j==2 else None :2 if j==1 else 1]
-    return ( -1)**(i+j) * (a[0 ,0]*a[1 ,1] - a[1 ,0]*a[0 ,1])
+    """Cofactor[i,j] of 3x3 matrix A"""
+    a = A[
+        not i : 2 if i == 2 else None : 2 if i == 1 else 1,
+        not j : 2 if j == 2 else None : 2 if j == 1 else 1,
+    ]
+    return (-1) ** (i + j) * (a[0, 0] * a[1, 1] - a[1, 0] * a[0, 1])
+
 
 def R(axis, angle):
-    '''Rotation matrix about x(0),y(1), or z(2) axis'''
+    """Rotation matrix about x(0),y(1), or z(2) axis"""
     c, s = math.cos(angle), math.sin(angle)
     R = c * np.eye(3)
     for i in [-1, 0, 1]:
-        R[(axis-i) % 3, (axis+i) % 3] = i*s + (1 - i*i)
+        R[(axis - i) % 3, (axis + i) % 3] = i * s + (1 - i * i)
     return R
 
+
 def Derivative():
-    '''Matrix to differentiate [cos(t),sin(t),1]'''
+    """Matrix to differentiate [cos(t),sin(t),1]"""
     return R(2, math.pi / 2).dot(np.diag([1, 1, 0]))
 
+
 def UnitCircle():
-    '''Unit circle in extended representation'''
+    """Unit circle in extended representation"""
     return np.diag([1, 1, -1])
 
 
 def multisqrt(y):
-    '''Valid real solutions to y=x*x'''
-    return ([] if y < 0 else
-            [0] if y == 0 else
-            (lambda r: [-r, r])(math.sqrt(y)))
+    """Valid real solutions to y=x*x"""
+    return [] if y < 0 else [0] if y == 0 else (lambda r: [-r, r])(math.sqrt(y))
 
 
 def factor_degenerate(G, zero=0):
-    '''Linear factors of degenerate quadratic polynomial'''
-    if G[0,0] == 0 == G[1,1]:
-        return [[G[0,1], 0, G[1,2]],
-                [0, G[0,1], G[0,2] - G[1,2]]]
-    swapXY = abs(G[0,0]) > abs(G[1,1])
-    Q = G[(1,0,2),][:,(1,0,2)] if swapXY else G
-    Q /= Q[1,1]
-    q22 = cofactor(Q, 2,2)
+    """Linear factors of degenerate quadratic polynomial"""
+    if G[0, 0] == 0 == G[1, 1]:
+        return [[G[0, 1], 0, G[1, 2]], [0, G[0, 1], G[0, 2] - G[1, 2]]]
+    swapXY = abs(G[0, 0]) > abs(G[1, 1])
+    Q = G[(1, 0, 2),][:, (1, 0, 2)] if swapXY else G
+    Q /= Q[1, 1]
+    q22 = cofactor(Q, 2, 2)
     if -q22 <= zero:
-        lines = [[Q[0,1], Q[1,1], Q[1,2]+s]
-                 for s in multisqrt(-cofactor(Q, 0,0))]
+        lines = [[Q[0, 1], Q[1, 1], Q[1, 2] + s] for s in multisqrt(-cofactor(Q, 0, 0))]
     else:
         x0, y0 = [cofactor(Q, i, 2) / q22 for i in [0, 1]]
-        lines = [[m, Q[1,1], -Q[1,1]*y0 - m*x0] for m in [Q[0,1] + s for s in multisqrt(-q22)]]
-    
-    return [[L[swapXY],L[not swapXY],L[2]] for L in lines]
+        lines = [
+            [m, Q[1, 1], -Q[1, 1] * y0 - m * x0]
+            for m in [Q[0, 1] + s for s in multisqrt(-q22)]
+        ]
+
+    return [[L[swapXY], L[not swapXY], L[2]] for L in lines]
+
 
 def intersections_ellipses(A, B, returnLines=False):
-    '''Points of intersection between two ellipses'''
+    """Points of intersection between two ellipses"""
     LA = np.linalg
-    if abs(LA.det(B)) > abs(LA.det(A)): A,B = B,A
-    
+    if abs(LA.det(B)) > abs(LA.det(A)):
+        A, B = B, A
+
     e = next(e.real for e in LA.eigvals(LA.inv(A).dot(B)) if not e.imag)
-    lines = factor_degenerate(B - e*A)
-    points = sum([intersections_ellipse_line(A,L) for L in lines], [])
+    lines = factor_degenerate(B - e * A)
+    points = sum([intersections_ellipse_line(A, L) for L in lines], [])
     diag = sum([intersections_diagonal_number(A, L) for L in lines], [])
-    return points, diag #(points,lines) if returnLines else points
+    return points, diag  # (points,lines) if returnLines else points
+
 
 class SolutionSet(object):
-    '''Definitions for nu analytic solution, t->b,mu,nu'''
+    """Definitions for nu analytic solution, t->b,mu,nu"""
 
     def __init__(self, b, mu, mW2, mT2, mN2):
         c = CosTheta(b, mu)
-        s = math.sqrt(1-c**2)
+        s = math.sqrt(1 - c**2)
 
-        x0p = - (mT2 - mW2 - b.tau2) / (2*b.e)
-        x0 = - (mW2 - mu.tau2 - mN2) / (2*mu.e)
+        x0p = -(mT2 - mW2 - b.tau2) / (2 * b.e)
+        x0 = -(mW2 - mu.tau2 - mN2) / (2 * mu.e)
 
         Bb, Bm = b.beta, mu.beta
-        
-        Sx = (x0 * Bm - mu.mag*(1-Bm**2)) / Bm**2
+
+        Sx = (x0 * Bm - mu.mag * (1 - Bm**2)) / Bm**2
         Sy = (x0p / Bb - c * Sx) / s
 
         w = (Bm / Bb - c) / s
@@ -106,59 +133,71 @@ class SolutionSet(object):
 
         Om2 = w**2 + 1 - Bm**2
         eps2 = (mW2 - mN2) * (1 - Bm**2)
-        x1 = Sx - (Sx+w*Sy) / Om2
-        y1 = Sy - (Sx+w*Sy) * w / Om2
-        Z2 = x1**2 * Om2 - (Sy-w*Sx)**2 - (mW2-x0**2-eps2)
+        x1 = Sx - (Sx + w * Sy) / Om2
+        y1 = Sy - (Sx + w * Sy) * w / Om2
+        Z2 = x1**2 * Om2 - (Sy - w * Sx) ** 2 - (mW2 - x0**2 - eps2)
         Z = math.sqrt(max(0, Z2))
 
-        for item in ['b','mu','c','s','x0','x0p',
-                     'Sx','Sy','w','w_','x1','y1',
-                     'Z','Om2','eps2','mW2']:
+        for item in [
+            "b",
+            "mu",
+            "c",
+            "s",
+            "x0",
+            "x0p",
+            "Sx",
+            "Sy",
+            "w",
+            "w_",
+            "x1",
+            "y1",
+            "Z",
+            "Om2",
+            "eps2",
+            "mW2",
+        ]:
             setattr(self, item, eval(item))
 
     @property
     def H_tilde(self):
-        '''Transformation of t=[c,s,1] to p_nu: F coord.'''
+        """Transformation of t=[c,s,1] to p_nu: F coord."""
         x1, y1, p = self.x1, self.y1, self.mu.mag
         Z, w, Om = self.Z, self.w, math.sqrt(self.Om2)
-        return np.array([[  Z/Om, 0, x1-p],
-                         [w*Z/Om, 0,   y1],
-                         [     0, Z,    0]])
+        return np.array([[Z / Om, 0, x1 - p], [w * Z / Om, 0, y1], [0, Z, 0]])
 
     @property
     def H(self):
-        '''Transformation of t=[c,s,1] to p_nu: lab coord.'''
+        """Transformation of t=[c,s,1] to p_nu: lab coord."""
         return self.R_T.dot(self.H_tilde)
-
 
     @property
     def H_perp(self):
-        '''Transformation of t=[c,s,1] to pT_nu: lab coord.'''
+        """Transformation of t=[c,s,1] to pT_nu: lab coord."""
         return np.vstack([self.H[:2], [0, 0, 1]])
 
     @property
     def N(self):
-        '''Solution ellipse of pT_nu: lab coord.'''
+        """Solution ellipse of pT_nu: lab coord."""
         HpInv = np.linalg.inv(self.H_perp)
         return HpInv.T.dot(UnitCircle()).dot(HpInv)
 
     @property
     def R_T(self):
-        '''Rotation from F coord. to laboratory coord.'''
+        """Rotation from F coord. to laboratory coord."""
         b_xyz = self.b.x, self.b.y, self.b.z
         R_z = R(2, -self.mu.phi)
-        R_y = R(1, 0.5*math.pi - self.mu.theta)
-        R_x = next(R(0,-math.atan2(z,y))
-                   for x,y,z in (R_y.dot(R_z.dot(b_xyz)),))
+        R_y = R(1, 0.5 * math.pi - self.mu.theta)
+        R_x = next(R(0, -math.atan2(z, y)) for x, y, z in (R_y.dot(R_z.dot(b_xyz)),))
         return R_z.T.dot(R_y.T.dot(R_x.T))
 
+
 class singleNeutrinoSolution(object):
-    '''Most likely neutrino momentum for tt-->lepton+jets'''
+    """Most likely neutrino momentum for tt-->lepton+jets"""
+
     def __init__(self, b, mu, met, sigma2, mW2, mT2):
         metX, metY = met
         self.solutionSet = SolutionSet(b, mu, mW2, mT2, 0)
-        S2 = np.vstack([np.vstack([np.linalg.inv(sigma2),
-                                   [0, 0]]).T, [0, 0, 0]])
+        S2 = np.vstack([np.vstack([np.linalg.inv(sigma2), [0, 0]]).T, [0, 0, 0]])
         V0 = np.outer([metX, metY, 0], [0, 0, 1])
         deltaNu = V0 - self.solutionSet.H
         self.X = np.dot(deltaNu.T, S2).dot(deltaNu)
@@ -166,6 +205,7 @@ class singleNeutrinoSolution(object):
 
         solutions, diag = intersections_ellipses(M, UnitCircle())
         self.solutions = sorted(solutions, key=self.calcX2)
+
     def calcX2(self, t):
         return np.dot(t, self.X).dot(t)
 
@@ -175,16 +215,20 @@ class singleNeutrinoSolution(object):
 
     @property
     def nu(self):
-        '''Solution for neutrino momentum'''
+        """Solution for neutrino momentum"""
         return self.solutionSet.H.dot(self.solutions[0])
 
+
 class doubleNeutrinoSolutions(object):
-    '''Solution pairs of neutrino momenta, tt -> leptons'''
+    """Solution pairs of neutrino momenta, tt -> leptons"""
+
     def __init__(self, bs, mus, met, mW2, mT2):
         b, b_ = bs
         mu, mu_ = mus
         metX, metY = met
-        self.solutionSets = [SolutionSet(B, M, mW2, mT2, 0) for B,M in zip((b,b_),(mu,mu_))]
+        self.solutionSets = [
+            SolutionSet(B, M, mW2, mT2, 0) for B, M in zip((b, b_), (mu, mu_))
+        ]
         V0 = np.outer([metX, metY, 0], [0, 0, 1])
         self.S = V0 - UnitCircle()
         N, N_ = [ss.N for ss in self.solutionSets]
@@ -192,31 +236,29 @@ class doubleNeutrinoSolutions(object):
         v, diag = intersections_ellipses(N, n_)
         v_ = [self.S.dot(sol) for sol in v]
         self.diag = diag
-       
+
         self.lsq = False
         if not v and leastsq:
             es = [ss.H_perp for ss in self.solutionSets]
             met = np.array([metX, metY, 1])
 
             def nus(ts):
-                return tuple(e.dot([math.cos(t), math.sin(t), 1])
-                             for e, t in zip(es, ts))
+                return tuple(
+                    e.dot([math.cos(t), math.sin(t), 1]) for e, t in zip(es, ts)
+                )
 
             def residuals(params):
                 return sum(nus(params), -met)[:2]
 
-            ts,_ = leastsq(residuals, [0, 0],
-                           ftol=5e-5, epsfcn=0.01)
+            ts, _ = leastsq(residuals, [0, 0], ftol=5e-5, epsfcn=0.01)
             v, v_ = [[i] for i in nus(ts)]
-            self.lsq = True 
+            self.lsq = True
 
-        for k, v in {'perp': v, 'perp_': v_, 'n_': n_}.items():
+        for k, v in {"perp": v, "perp_": v_, "n_": n_}.items():
             setattr(self, k, v)
 
     @property
     def nunu_s(self):
-        '''Solution pairs for neutrino momenta'''
+        """Solution pairs for neutrino momenta"""
         K, K_ = [ss.H.dot(np.linalg.inv(ss.H_perp)) for ss in self.solutionSets]
         return [(K.dot(s), K_.dot(s_)) for s, s_ in zip(self.perp, self.perp_)]
-
-

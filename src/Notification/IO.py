@@ -1,7 +1,7 @@
 from .Notification import Notification
 
-class _IO(Notification):
 
+class _IO(Notification):
     def __init__(self):
         pass
 
@@ -9,11 +9,15 @@ class _IO(Notification):
         self.Warning("File: " + Name + " not found in " + Directory)
 
     def EmptyDirectoryWarning(self, Directory):
-        self.Warning("No samples found in " + Directory.replace("//", "/") + " skipping.")
+        self.Warning(
+            "No samples found in " + Directory.replace("//", "/") + " skipping."
+        )
 
     def FoundFiles(self, Files):
         for i in Files:
-            self.Success("!!Files Found in Directory: " + i + "\n -> " + "\n -> ".join(Files[i]))
+            self.Success(
+                "!!Files Found in Directory: " + i + "\n -> " + "\n -> ".join(Files[i])
+            )
 
     def PickleOutput(self):
         x = self.abs()
