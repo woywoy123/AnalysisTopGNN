@@ -67,8 +67,16 @@ class MatchingBase:
         return self[self.idx - 1]
 
     def _get_truth_assignment(self):
-        self.assignments = [[obj.TopIndex[0] if self.is_jet else obj.TopIndex for obj in self.lst]]
-        self.tops = list(set(self.assignments[0]))
+        self.assignments = []#[[obj.TopIndex[0] if self.is_jet else obj.TopIndex for obj in self.lst]]
+        self.tops = []#list(set(self.assignments[0]))
+
+class BMatching(MatchingBase):
+    is_jet = True 
+    def __init__(self, lst):
+        super().__init__(tops=[i for i in range(len(lst))], allow_assignment_to_one_top=False)
+        self.lst = lst
+        self.assignments = [[i for i in range(len(lst))]]
+
 
 class Matching(MatchingBase):
     is_jet = False
@@ -125,7 +133,7 @@ class NuMatching(MatchingBase):
         self.matching_type = matching_type
         self.bs = sum(bs, start=[])
         self.leps = sum(leps, start=[])
-        self.nus = sum(nus, start=[])
+        self.nus = sum(nus, start=[]) if nus else None
         if matching_type == 'truth':
             self.lst = self.nus
             self._get_truth_assignment()
@@ -297,10 +305,10 @@ class MttReconstructor:
         self.case_num = case_num
         self.event = event
         self.data_type = data_type
-        children = Filter(event.TopChildren)
+        children = Filter(event.Electrons + event.Muons) if data_type == 'Jet' else Filter(event.TopChildren) 
         self.nu = children.get_nu()
         self.lep = children.get_lep()
-        tj = TruthJetMatcher(event.TruthJets, event.Jets).truthjets
+        tj = TruthJetMatcher(event.TruthJets, event.Jets).truthjets if data_type == 'TruthJet' else []
         jets = Filter(event.TopChildren if data_type == 'Children' else tj if data_type == 'TruthJet' else event.Jets, pt_cut=jet_pt_cut, eta_cut=jet_eta_cut)
         self.b = jets.get_b()
         self.add = jets.get_add()
@@ -369,12 +377,10 @@ class MttReconstructor:
         key = None
         mtt = None
 
-        b_matching = Matching(self.b, is_truth=True)
+        b_matching = BMatching(self.b)
+        
 
         add_matching = Matching(self.add, is_truth=True if self.case_num in [0, 1, 2, 3, 4, 5, 6] else False, compare_to_w=self.compare_add_to_w)
-
-        nu_matching_truth = Matching(self.nu, is_truth=True)[0]
-        lep_tops = [i for i, top in enumerate(self.event.Tops) if sum([1 for child in top.Children if child.is_nu]) != 0]
 
         for self.bs in b_matching:
             lep_matching = Matching(self.lep, is_truth=True) if self.case_num in [0, 1, 2, 3] else \
@@ -391,7 +397,7 @@ class MttReconstructor:
                 nu_matching = \
                     NuMatching(bs=[self.bs[i] for i in self.leps if i in self.bs],
                                leps=list(self.leps.values()),
-                               nus=list(nu_matching_truth.values()),
+                               nus=None,
                                matching_type='truth' if self.case_num in [0, 1, 4, 7] else 'reco_truth' if self.case_num in [2, 5, 8] else 'reco_loss',
                                tops=list(self.leps.keys()),
                                met=self.event.met if self.data_type == 'Jet' else sum(self.nu).pt,

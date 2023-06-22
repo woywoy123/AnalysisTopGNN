@@ -23,6 +23,16 @@ class Event(EventTemplate):
         self.mu = "mu"
         self.met = "met_met"
         self.met_phi = "met_phi"
+        self.BSMBDT_400 = "BSMBDT_400"
+        self.BSMBDT_500 = "BSMBDT_500"
+        self.BSMBDT_600 = "BSMBDT_600"
+        self.BSMBDT_700 = "BSMBDT_700"
+        self.BSMBDT_800 = "BSMBDT_800"
+        self.BSMBDT_900 = "BSMBDT_900"
+        self.BSMBDT_1000 = "BSMBDT_1000"
+        self.eventNumber = "eventNumber"
+        self.runNumber = "runNumber"
+        self.mcChannelNumber = "mcChannelNumber"
 
         self.Deprecated = False
         self.CommitHash = "master@7d70c412a65160d897d0253cbb42e5accf2c5bcf"
@@ -33,7 +43,7 @@ class Event(EventTemplate):
         # self.TopChildren = {c.index : c for c in self.TopChildren.values() if isinstance(c.index, int)}
         # self.TruthJets = {tj.index : tj for tj in self.TruthJets.values()}
         # self.TruthJetPartons = {tj.index : tj for tj in self.TruthJetPartons.values()}
-        self.Jets = {j.index: j for j in self.Jets.values()}
+        # self.Jets = {j.index : j for j in self.Jets.values()}
         # self.JetPartons = {j.index : j for j in self.JetPartons.values()}
 
         # for c in self.TopChildren.values():

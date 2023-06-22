@@ -78,17 +78,17 @@ class Jet(Particle):
         # self.TopIndex = self.Type + "_TopIndex"
         self.Tops = []
 
-        # self.btag_DL1r_60 = self.Type + "_isbtagged_DL1r_60"
-        # self.btag_DL1_60 = self.Type + "_isbtagged_DL1_60"
+        self.btag_DL1r_60 = self.Type + "_isbtagged_DL1r_60"
+        self.btag_DL1_60 = self.Type + "_isbtagged_DL1_60"
 
-        # self.btag_DL1r_70 = self.Type + "_isbtagged_DL1r_70"
-        # self.btag_DL1_70 = self.Type + "_isbtagged_DL1_70"
+        self.btag_DL1r_70 = self.Type + "_isbtagged_DL1r_70"
+        self.btag_DL1_70 = self.Type + "_isbtagged_DL1_70"
 
-        # self.btag_DL1r_77 = self.Type + "_isbtagged_DL1r_77"
-        # self.btag_DL1_77 = self.Type + "_isbtagged_DL1_77"
+        self.btag_DL1r_77 = self.Type + "_isbtagged_DL1r_77"
+        self.btag_DL1_77 = self.Type + "_isbtagged_DL1_77"
 
-        # self.btag_DL1r_85 = self.Type + "_isbtagged_DL1r_85"
-        # self.btag_DL1_85 = self.Type + "_isbtagged_DL1_85"
+        self.btag_DL1r_85 = self.Type + "_isbtagged_DL1r_85"
+        self.btag_DL1_85 = self.Type + "_isbtagged_DL1_85"
 
         # self.DL1_b = self.Type + "_DL1_pb"
         # self.DL1_c = self.Type + "_DL1_pc"
