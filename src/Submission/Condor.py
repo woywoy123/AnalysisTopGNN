@@ -10,6 +10,7 @@ class CondorScript(Settings):
         self.Caller = "CONDORSCRIPT"
         Settings.__init__(self)
         self._config = []
+        self.TransferFiles = "Analysis"
 
     def __Memory(self):
         if self.Memory == None:
@@ -37,11 +38,17 @@ class CondorScript(Settings):
             return self.__AddConfig(string)
         self.__AddConfig("Request_Cpus = " + str(self.Threads))
 
+    def __TransferFiles(self):
+        self.__AddConfig("should_transfer_files = YES")
+        self.__AddConfig("when_to_transfer_output = ON_EXIT")
+        self.__AddConfig(f"transfer_output_files = {self.TransferFiles}")
+
     def Compile(self):
         self.__Exec()
         self.__Hardware()
         self.__Memory()
         self.__Time()
+        self.__TransferFiles()
         self.__AddConfig("queue 1")
 
     def Shell(self):
@@ -82,10 +89,13 @@ class AnalysisScript(AnalysisG.Tools.General.Tools, Settings):
 
         script = ["<*Analysis*> = Analysis()"]
         for i in self.Config:
+            if i == "OutputDirectory":
+                continue
             if i.startswith("_"):
                 continue
             if i in self.Code:
                 continue
+            print(i, self.Config[i])
             if isinstance(self.Config[i], str):
                 script += [
                     "<*Analysis*>." + i + " = " + "'" + str(self.Config[i]) + "'"
@@ -189,6 +199,7 @@ class JobSpecification(AnalysisG.Tools.General.Tools, Settings):
     def __init__(self):
         self.Caller = "JOBSPECS"
         Settings.__init__(self)
+        self.TransferFiles = "Analysis"
 
     def __Build(self, txt, name, pth, exe=True):
         f = open(pth + "/" + name, "w")
@@ -224,6 +235,7 @@ class JobSpecification(AnalysisG.Tools.General.Tools, Settings):
         Con.ExecPath = pth
         Con.Device = self.Device
         Con.Threads = self.Job.Threads
+        Con.TransferFiles = self.TransferFiles
         Con.Compile()
 
         self.__Build(Con._config, self.Name + ".submit", pth)
@@ -249,6 +261,7 @@ class Condor(AnalysisG.Tools.General.Tools, _Condor, Settings):
             self._Jobs[name].Job = instance
             self._Jobs[name].Job._condor = True
             self._Jobs[name].Name = name
+            self._Jobs[name].TransferFiles = self.ProjectName
             if self.EventCache is not None:
                 self._Jobs[name].Job.EventCache = self.EventCache
             if self.DataCache is not None:
