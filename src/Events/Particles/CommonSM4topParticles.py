@@ -154,3 +154,6 @@ class Neutrino(ParticleTemplate):
         self.px = px
         self.py = py
         self.pz = pz
+    @property
+    def e(self): 
+        return (self.px**2 + self.py**2 + self.pz**2)**0.5

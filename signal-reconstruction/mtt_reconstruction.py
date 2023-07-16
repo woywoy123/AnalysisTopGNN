@@ -47,13 +47,14 @@ def Combinatorial(n, k, msk, t = None, v = None, num = 0):
     return t, v
 
 class MatchingBase:
-    def __init__(self, tops=None, allow_assignment_to_one_top=True, override_tops=None):
-        self.tops = tops
+    def __init__(self, lst=None, tops=None, allow_assignment_to_one_top=True, override_tops=None):
+        self.tops = tops if tops is not None else [i for i in range(len(lst))] if lst is not None else [i for i in range(4)]
         self.allow_assignment_to_one_top = allow_assignment_to_one_top
         self.override_tops = override_tops if override_tops != None else {itop : itop for itop in range(-1, 4)}
         self.is_jet = False
 
     def __getitem__(self, key):
+        print(self.assignments[key])
         return {self.override_tops[itop] : [self.lst[i] for i, j in enumerate(self.assignments[key]) if j == itop] for itop in set(self.assignments[key])}
 
     def __iter__(self):
@@ -73,15 +74,15 @@ class MatchingBase:
 class BMatching(MatchingBase):
     is_jet = True 
     def __init__(self, lst):
-        super().__init__(tops=[i for i in range(len(lst))], allow_assignment_to_one_top=False)
+        super().__init__(lst=lst, tops=[i for i in range(len(lst))], allow_assignment_to_one_top=False)
         self.lst = lst
         self.assignments = [[i for i in range(len(lst))]]
 
 
 class Matching(MatchingBase):
     is_jet = False
-    def __init__(self, lst, is_truth=True, tops=[0, 1], allow_assignment_to_one_top=True, override_tops=None, compare_to_w=False):
-        super().__init__(tops=tops, allow_assignment_to_one_top=allow_assignment_to_one_top, override_tops=override_tops)
+    def __init__(self, lst, is_truth=True, tops=[i for i in range(4)], allow_assignment_to_one_top=True, override_tops=None, compare_to_w=False):
+        super().__init__(lst=lst, tops=tops, allow_assignment_to_one_top=allow_assignment_to_one_top, override_tops=override_tops)
         self.lst = lst
         self.compare_to_w = compare_to_w
         if len(self.lst) != 0 and (type(self.lst[0]) == type(TruthJet()) or type(self.lst[0]) == type(Jet())):
@@ -89,9 +90,18 @@ class Matching(MatchingBase):
         self.is_truth = is_truth
         if self.is_truth:
             self._get_truth_assignment()
+        elif len(self.tops) > 2 and not self.allow_assignment_to_one_top:
+            self._get_comb_assignment_template_manytops()
         else:
+            if len(self.tops) > 2 and self.allow_assignment_to_one_top:
+                print('Warning, assigning objects to more than 2 tops, when assignment of several objects to one top is allowed, is not implemented')
             self._get_comb_assignment_template()
             self.update_tops(self.tops)
+
+    def _get_comb_assignment_template_manytops(self):
+        import itertools 
+        self.assignments = [list(perm) for perm in itertools.permutations(self.tops, len(self.lst))]
+
 
     def _get_comb_assignment_template(self):
         n = len(self.lst)
@@ -131,8 +141,11 @@ class NuMatching(MatchingBase):
     def __init__(self, bs=None, leps=None, nus=None, matching_type='truth', tops=None, met=None, met_phi=None, allow_assignment_to_one_top=True, override_tops=None):
         super().__init__(tops=tops, allow_assignment_to_one_top=allow_assignment_to_one_top, override_tops=override_tops)
         self.matching_type = matching_type
-        self.bs = sum(bs, start=[])
-        self.leps = sum(leps, start=[])
+        sorted_tops = sorted(list(leps.keys()), key=lambda x: leps.get(x)[0].pt, reverse=True)
+        self.tops = [i for i in sorted_tops if i in leps and i in bs][:2]
+
+        self.bs = sum([bs[i] for i in bs if i in self.tops], start=[])
+        self.leps = sum([leps[i] for i in leps if i in self.tops], start=[])
         self.nus = sum(nus, start=[]) if nus else None
         if matching_type == 'truth':
             self.lst = self.nus
@@ -325,7 +338,7 @@ class MttReconstructor:
         return result
 
     def _select_resonance_pt(self):
-        pts_lep = {i : sum(top).pt if i in self.leps and len(top) != 0 else 0 for i, top in enumerate(self.tops)}
+        pts_lep = {i : sum(top).pt if i in self.nus and len(top) != 0 else 0 for i, top in enumerate(self.tops)}
         pts_had = {i : sum(top).pt if i not in self.leps and len(top) != 0 else 0 for i, top in enumerate(self.tops)}
         return self.tops[max(pts_lep, key=pts_lep.get)] + self.tops[max(pts_had, key=pts_had.get)]
 
@@ -378,25 +391,26 @@ class MttReconstructor:
         mtt = None
 
         b_matching = BMatching(self.b)
+        # b_matching = Matching(self.b, is_truth=True if self.case_num in [0, 1, 2, 3, 4, 5, 6] else False, allow_assignment_to_one_top=False)
         
 
-        add_matching = Matching(self.add, is_truth=True if self.case_num in [0, 1, 2, 3, 4, 5, 6] else False, compare_to_w=self.compare_add_to_w)
+        add_matching = Matching(self.add, is_truth=True if self.case_num in [0, 1, 2, 3, 4, 5, 6] else False, compare_to_w=self.compare_add_to_w, tops=[0, 1])
 
         for self.bs in b_matching:
             lep_matching = Matching(self.lep, is_truth=True) if self.case_num in [0, 1, 2, 3] else \
             Matching(self.lep,
                      is_truth=False,
-                     tops=b_matching.tops,
+                     tops=None,
                      allow_assignment_to_one_top=False)
 
             for self.leps in lep_matching:
-                if len(self.leps) != 2 or len([i for i in self.bs if i in self.leps]) != 2:
+                if len(self.leps) < 2 or len([i for i in self.bs if i in self.leps]) < 2:
                     continue
                 override_tops = {nu.TopIndex : [key for key in self.leps if self.leps[key][0].TopIndex == nu.TopIndex][0] for nu in self.nu} if self.case_num in [4, 7] else None
 
                 nu_matching = \
-                    NuMatching(bs=[self.bs[i] for i in self.leps if i in self.bs],
-                               leps=list(self.leps.values()),
+                    NuMatching(bs={i : self.bs[i] for i in self.leps if i in self.bs},
+                               leps=self.leps,
                                nus=None,
                                matching_type='truth' if self.case_num in [0, 1, 4, 7] else 'reco_truth' if self.case_num in [2, 5, 8] else 'reco_loss',
                                tops=list(self.leps.keys()),
@@ -406,13 +420,40 @@ class MttReconstructor:
                                override_tops=override_tops)
 
                 for self.nus in nu_matching:
-                    tops = [i for i in range(4) if i not in self.leps]
+                    tops = [i for i in range(4) if i not in self.nus]
                     add_matching.update_tops(tops)
                     for self.adds in add_matching:
+                        # print('\n\nbs:', self.bs)
+                        # print('leps:', self.leps)
+                        # print('nus:', self.nus)
+                        # print('adds:', self.adds)
                         self.combine_tops()
                         self.select_resonance()
                         new_key = 1 if self.case_num in [0, 1, 2, 3] else self.calculate_loss()
-                        if key == None or new_key < key:
+                        # print('key', new_key, key, self._mtt)
+                        # print(len(self.res_products), sum(self.res_products).Mass)
+                        if key is None or new_key < key or (new_key > key and self._mtt == -1):
+                            # print('\n\nWe are here')
+                            # res = sum(self.res_products)
+                            # from AnalysisG.Particles.Particles import Neutrino
+                            # r = ([i for i in self.res_products if not isinstance(i, Neutrino)])
+                            # print('with nu', len(self.res_products), res.e**2-res.px**2 -res.py**2 -res.pz**2)
+                            # print('witout nu', len(r), sum(r).e**2-sum(r).px**2 -sum(r).py**2 -sum(r).pz**2)
+                            e = 0
+                            px = 0
+                            py = 0
+                            pz = 0
+                            for obj in self.res_products:
+                                e += obj.e
+                                px += obj.px 
+                                py += obj.py
+                                pz += obj.pz 
+
+                            # print((e**2-px**2-py**2-pz**2)**0.5, res.Mass)
                             key = new_key
-                            self._mtt = sum(self.res_products).Mass if len(self.res_products) != 0 else 0
+                            # self._mtt = sum(self.res_products).Mass if len(self.res_products) != 0 else 0
+                            m_sq = e**2 - px**2 - py**2 - pz**2
+                            if m_sq >= 0:
+                                self._mtt = m_sq**0.5
+                            # print('MTT', self._mtt)
                             self._grouping = self.tops.copy()
