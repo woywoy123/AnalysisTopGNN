@@ -10,6 +10,7 @@ from AnalysisG.Settings import Settings
 from .Interfaces import _Interface
 from .Optimizer import Optimizer
 from typing import Union
+import json
 
 
 class Analysis(_Analysis, Settings, SampleTracer, _Interface):
@@ -26,6 +27,29 @@ class Analysis(_Analysis, Settings, SampleTracer, _Interface):
         if Name is None and SampleDirectory is None:
             return
         self.InputSample(Name, SampleDirectory)
+
+    def read_settings(self, settings_file_name):
+        with open(settings_file_name, 'r') as settings_file:
+            data = json.load(settings_file)
+            for key, value in data:
+                if key not in self.__dict__:
+                    print(f'WARNING, setting attribute {key}, which is not in the default attribute list. This may or may not have an effect on the Analysis instance')
+                self.__setattr__(key, value)
+            return
+            def get_parameter_value(parameter_name, default_value=None):
+                return data[parameter_name] if parameter_name in data else default_value
+            self.ProjectName = get_parameter_value('ProjectName', self.ProjectName)
+            self.SampleMap = get_parameter_value('SampleMap', self.SampleMap)
+            self.EventCache = get_parameter_value('EventCache', self.EventCache)
+            self.DataCache = get_parameter_value('DataCache', self.DataCache)
+            self.PurgeCache = get_parameter_value('PurgeCache', self.PurgeCache)
+            self.Verbose = get_parameter_value('Verbose', self.Verbose)
+            self.Threads = get_parameter_value('Threads', self.Threads)
+            self.chnk = get_parameter_value('chnk', self.chnk)
+            self.EventStart = get_parameter_value('EventStart', self.EventStart)
+            self.EventStop = get_parameter_value('EventStop', self.EventStop)
+            self.SampleName = get_parameter_value('SampleName', self.SampleName)
+            self.OutputDirectory = get_parameter_value('OutputDirectory', self.OutputDirectory)
 
     @property
     def __build__(self):
@@ -187,7 +211,6 @@ class Analysis(_Analysis, Settings, SampleTracer, _Interface):
             code["Model"] = Optimizer(self).GetCode
         return code
 
-    @property
     def Launch(self):
         if self._condor:
             return self.__CollectCode__
