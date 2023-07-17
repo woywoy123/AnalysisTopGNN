@@ -11,6 +11,9 @@ from .Interfaces import _Interface
 from .Optimizer import Optimizer
 from typing import Union
 import json
+import types
+import sys
+import importlib
 
 
 class Analysis(_Analysis, Settings, SampleTracer, _Interface):
@@ -28,14 +31,55 @@ class Analysis(_Analysis, Settings, SampleTracer, _Interface):
             return
         self.InputSample(Name, SampleDirectory)
 
-    def read_settings(self, settings_file_name):
+    def ReadSettings(self, settings_file_name):
         with open(settings_file_name, 'r') as settings_file:
             data = json.load(settings_file)
-            for key, value in data:
-                if key not in self.__dict__:
-                    print(f'WARNING, setting attribute {key}, which is not in the default attribute list. This may or may not have an effect on the Analysis instance')
-                self.__setattr__(key, value)
-            return
+            imported_classes = {}
+            if 'include' in data:
+                value = data['include']
+                if 'paths' in value:
+                    sys.path = sys.path + value['paths'] 
+                if 'modules' in value:
+                    for module in value['modules']:
+                        try:
+                            imported_module = importlib.import_module(module['module_name'])
+                            imported_classes[module['class_name']] = getattr(imported_module, module['class_name'])
+                            self.Success(f'Imported class {module["class_name"]} from module {module["module_name"]}')
+                        except ModuleNotFoundError:
+                            self.Failure(f'Failed to import class {module["class_name"]} from module {module["module_name"]}. Module does not exist. Analysis instance cannot be initialized correctly. Exiting.')
+                            return False
+                        except AttributeError:
+                            self.Failure(f'Failed to import class {module["class_name"]} from module {module["module_name"]}. Module has no such class. Analysis instance cannot be initialized correctly. Exiting.')
+                            return False
+            for key in data:
+                value = data[key]
+                if key == 'include':
+                    continue
+                elif hasattr(self, key) and isinstance(getattr(self, key), types.MethodType):
+                    if key == 'InputSample':
+                        self.Success(f'InputSample({value[0]}, {value[1]})')
+                        self.InputSample(value[0], value[1])
+                    elif key == 'AddSelection':
+                        self.Success(f'AddSelection({value[0]}, {value[1]})')
+                        self.AddSelection(value[0], imported_classes[value[1]])
+                    elif key == 'MergeSelection':
+                        self.Success(f'MergeSelection({value})')
+                        self.MergeSelection(value)
+                    else:
+                        self.Warning(f'Method {key} is not implemented for reading from settings file yet. Not doing anything.')
+                else:
+                    if not hasattr(self, key):
+                        self.Warning(f'Attribute {key} is not in the default attribute list. Still setting it. This may or may not have an effect on the Analysis instance')
+                    self.Success(f'{key} = {value}')
+                    if key in ['Event']:
+                        if value not in imported_classes:
+                            self.Failure(f'Trying to set {key} = {value}, but {value} class was not imported. Analysis instance cannot be initialized correctly. Exiting.')
+                            return False
+                        else:
+                            self.__setattr__(key, imported_classes[value])
+                    else:
+                        self.__setattr__(key, value)
+            return True
             def get_parameter_value(parameter_name, default_value=None):
                 return data[parameter_name] if parameter_name in data else default_value
             self.ProjectName = get_parameter_value('ProjectName', self.ProjectName)
