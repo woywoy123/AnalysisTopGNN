@@ -1,5 +1,5 @@
-from AnalysisG.Events import Event
 from AnalysisG.Events import GraphTops, GraphChildren, GraphTruthJet, GraphJet
+from AnalysisG.Events import Event
 from AnalysisG.Templates import ApplyFeatures
 from AnalysisG.Model import ModelWrapper
 from AnalysisG import Analysis
@@ -21,7 +21,7 @@ def _MakeSample():
     Ana.InputSample(None, Files)
     Ana.Event = Event
     Ana.EventCache = True
-    Ana.Launch
+    Ana.Launch()
     return Ana
 
 
@@ -30,7 +30,7 @@ def _MakeGraph(Ana, Graph, mode):
     Ana.EventGraph = Graph
     Ana.EventCache = False
     Ana.DataCache = True
-    Ana.Launch
+    Ana.Launch()
     return Ana
 
 
@@ -140,25 +140,17 @@ def test_truthjets():
         for c1 in particles:
             for c2 in particles:
                 p1, p2 = [], []
-                try:
-                    p1 += c1.Parent
-                except:
-                    pass
+                try: p1 += c1.Parent
+                except: pass
 
-                try:
-                    p1 += c1.Tops
-                except:
-                    pass
+                try: p1 += c1.Tops
+                except: pass
 
-                try:
-                    p2 += c2.Parent
-                except:
-                    pass
+                try: p2 += c2.Parent
+                except: pass
 
-                try:
-                    p2 += c2.Tops
-                except:
-                    pass
+                try: p2 += c2.Tops
+                except: pass
                 p1, p2 = [p for p in set(p1) if p.FromRes == 1], [
                     p for p in set(p2) if p.FromRes == 1
                 ]
@@ -170,25 +162,17 @@ def test_truthjets():
         for c1 in particles:
             for c2 in particles:
                 p1, p2 = [], []
-                try:
-                    p1 += c1.Parent
-                except:
-                    pass
+                try: p1 += c1.Parent
+                except: pass
 
-                try:
-                    p1 += c1.Tops
-                except:
-                    pass
+                try: p1 += c1.Tops
+                except: pass
 
-                try:
-                    p2 += c2.Parent
-                except:
-                    pass
+                try: p2 += c2.Parent
+                except: pass
 
-                try:
-                    p2 += c2.Tops
-                except:
-                    pass
+                try: p2 += c2.Tops
+                except: pass
                 p1, p2 = set(p1), set(p2)
                 sc = len([t for t in p1 if t in p2]) > 0
                 sc *= len([t for t in p2 if t in p1]) > 0
@@ -203,12 +187,15 @@ def test_truthjets():
 
         res_tj = []
         for t in i.Tops:
-            res_tj += t.TruthJets if t.FromRes == 1 else []
+            if t.FromRes != 1: continue
+            res_tj += t.TruthJets
+
         for l in i.TopChildren:
             if not l.is_lep and not l.is_nu:
                 continue
-            if len([x for x in l.Parent if x.FromRes == 1]) == 0:
-                continue
+
+            l_ = [x for x in l.Parent if x.FromRes == 1]
+            if len(l_) == 0: continue
             res_tj += [l]
         res_mass += [sum(res_tj).Mass / 1000]
 
@@ -279,25 +266,17 @@ def test_jets():
         for c1 in particles:
             for c2 in particles:
                 p1, p2 = [], []
-                try:
-                    p1 += c1.Parent
-                except:
-                    pass
+                try: p1 += c1.Parent
+                except: pass
 
-                try:
-                    p1 += c1.Tops
-                except:
-                    pass
+                try: p1 += c1.Tops
+                except: pass
 
-                try:
-                    p2 += c2.Parent
-                except:
-                    pass
+                try: p2 += c2.Parent
+                except: pass
 
-                try:
-                    p2 += c2.Tops
-                except:
-                    pass
+                try: p2 += c2.Tops
+                except: pass
                 p1, p2 = [p for p in set(p1) if p.FromRes == 1], [
                     p for p in set(p2) if p.FromRes == 1
                 ]
@@ -309,25 +288,17 @@ def test_jets():
         for c1 in particles:
             for c2 in particles:
                 p1, p2 = [], []
-                try:
-                    p1 += c1.Parent
-                except:
-                    pass
+                try: p1 += c1.Parent
+                except: pass
 
-                try:
-                    p1 += c1.Tops
-                except:
-                    pass
+                try: p1 += c1.Tops
+                except: pass
 
-                try:
-                    p2 += c2.Parent
-                except:
-                    pass
+                try: p2 += c2.Parent
+                except: pass
 
-                try:
-                    p2 += c2.Tops
-                except:
-                    pass
+                try: p2 += c2.Tops
+                except: pass
                 p1, p2 = set(p1), set(p2)
                 sc = len([t for t in p1 if t in p2]) > 0
                 sc *= len([t for t in p2 if t in p1]) > 0
@@ -346,8 +317,9 @@ def test_jets():
         for l in i.TopChildren:
             if not l.is_lep and not l.is_nu:
                 continue
-            if len([x for x in l.Parent if x.FromRes == 1]) == 0:
-                continue
+
+            l_ = [x for x in l.Parent if x.FromRes == 1]
+            if len(l_) == 0: continue
             res_tj += [l]
         res_mass += [sum(res_tj).Mass / 1000]
 
@@ -356,8 +328,7 @@ def test_jets():
             top = []
             top += t.Jets
             top += [c for c in t.Children if c.is_lep or c.is_nu]
-            if len(top) < 3:
-                continue
+            if len(top) < 3: continue
             top_d[t.index] = sum(top).Mass / 1000
         top_mass.append(list(top_d.values()))
 
@@ -397,8 +368,7 @@ def test_jets():
         found = []
         for l in low:
             x_i, x_j = chi[l]
-            if x_j in found:
-                continue
+            if x_j in found: continue
             found.append(x_j)
         assert len(found) == len(top_mass[it])
         found.sort()
@@ -419,5 +389,3 @@ if __name__ == "__main__":
     test_truth_children()
     test_truthjets()
     test_jets()
-
-    pass

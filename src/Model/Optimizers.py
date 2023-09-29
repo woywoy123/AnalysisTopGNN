@@ -12,7 +12,6 @@ class OptimizerWrapper(Settings):
         self._sc = None
         self._mod = None
 
-    @property
     def SetOptimizer(self):
         self._pth = self.OutputDirectory + "/" + self.RunName
         if len(self.OptimizerParams) == 0:
@@ -25,7 +24,6 @@ class OptimizerWrapper(Settings):
             return False
         return True
 
-    @property
     def dump(self):
         dct = {}
         dct["epoch"] = self.Epoch
@@ -34,7 +32,6 @@ class OptimizerWrapper(Settings):
             dct["sched"] = self._sc.state_dict()
         torch.save(dct, self._pth + "/" + str(self.Epoch) + "/TrainingState.pth")
 
-    @property
     def load(self):
         v = torch.load(self._pth + "/" + str(self.Epoch) + "/TrainingState.pth")
         self.Epoch = v["epoch"]
@@ -43,19 +40,16 @@ class OptimizerWrapper(Settings):
             self._sc.load_state_dict(v["sched"])
         return self._pth + " @ " + str(self.Epoch)
 
-    @property
     def step(self):
         if not self.train:
             return
         self._op.step()
 
-    @property
     def zero(self):
         if not self.train:
             return
         self._op.zero_grad()
 
-    @property
     def SetScheduler(self):
         self.SchedulerParams["optimizer"] = self._op
         if self.Scheduler == "ExponentialLR":
@@ -68,7 +62,6 @@ class OptimizerWrapper(Settings):
             return False
         return True
 
-    @property
     def stepsc(self):
         if self._sc is None:
             return

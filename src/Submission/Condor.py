@@ -10,7 +10,6 @@ class CondorScript(Settings):
         self.Caller = "CONDORSCRIPT"
         Settings.__init__(self)
         self._config = []
-        self.TransferFiles = "Analysis"
 
     def __Memory(self):
         if self.Memory == None:
@@ -30,27 +29,18 @@ class CondorScript(Settings):
             "executable = " + self.ExecPath + "/" + self.ScriptName + ".sh"
         )
         self.__AddConfig("error = " + self.ExecPath + "/results.error.$(ClusterID)")
-        self.__AddConfig("log = " + self.ExecPath + "/results.log.$(ClusterID)")
-        self.__AddConfig("output = " + self.ExecPath + "/results.out.$(ClusterID)")
-        # self.__AddConfig('Requirements = OpSysAndVer == "' + self.OpSysAndVer + '"')
+        self.__AddConfig('Requirements = OpSysAndVer == "' + self.OpSysAndVer + '"')
 
     def __Hardware(self):
         string = "Request_GPUs = 1" if self.Device == "cuda" else False
-        if string:
-            return self.__AddConfig(string)
+        if string: return self.__AddConfig(string)
         self.__AddConfig("Request_Cpus = " + str(self.Threads))
-
-    def __TransferFiles(self):
-        self.__AddConfig("should_transfer_files = YES")
-        self.__AddConfig("when_to_transfer_output = ON_EXIT")
-        self.__AddConfig(f"transfer_output_files = {self.TransferFiles}")
 
     def Compile(self):
         self.__Exec()
         self.__Hardware()
         self.__Memory()
         self.__Time()
-        self.__TransferFiles()
         self.__AddConfig("queue 1")
 
     def Shell(self):
@@ -91,13 +81,8 @@ class AnalysisScript(AnalysisG.Tools.General.Tools, Settings):
 
         script = ["<*Analysis*> = Analysis()"]
         for i in self.Config:
-            if i == "OutputDirectory":
-                continue
-            if i.startswith("_"):
-                continue
-            if i in self.Code:
-                continue
-            print(i, self.Config[i])
+            if i.startswith("_"): continue
+            if i in self.Code: continue
             if isinstance(self.Config[i], str):
                 script += [
                     "<*Analysis*>." + i + " = " + "'" + str(self.Config[i]) + "'"
@@ -193,7 +178,7 @@ class AnalysisScript(AnalysisG.Tools.General.Tools, Settings):
             f = open(fname, "w")
             f.write("\n".join(shared["code"][i]))
             f.close()
-        script = shared["imports"] + [""] + script + ["<*Analysis*>.Launch"]
+        script = shared["imports"] + [""] + script + ["<*Analysis*>.Launch()"]
         self.__Build("\n".join(script).replace("<*Analysis*>", "Ana"), self.Name)
 
 
@@ -201,32 +186,29 @@ class JobSpecification(AnalysisG.Tools.General.Tools, Settings):
     def __init__(self):
         self.Caller = "JOBSPECS"
         Settings.__init__(self)
-        self.TransferFiles = "Analysis"
 
     def __Build(self, txt, name, pth, exe=True):
         f = open(pth + "/" + name, "w")
         f.write("\n".join(txt))
         f.close()
-        if exe:
-            os.chmod(pth + "/" + name, stat.S_IRWXU)
+        if exe: os.chmod(pth + "/" + name, stat.S_IRWXU)
 
-    @property
     def Launch(self):
-        self.Job.Launch
+        self.Job.Launch()
 
     def DumpConfig(self):
-        self.Job.__build__
+        self.Job.__build__()
         pth = self.Job.OutputDirectory + "/CondorDump/" + self.Name
         self.mkdir(pth)
         self.mkdir(pth + "/../_SharedCode")
 
         self.Job.OutputDirectory = "/".join(self.Job.OutputDirectory.split("/")[:-1])
-        conf = self.Job.DumpSettings
+        conf = self.Job.DumpSettings()
 
         Ana = AnalysisScript()
         Ana.Name = "main"
         Ana.OutDir = pth
-        Ana.Code.update(self.Job.Launch)
+        Ana.Code.update(self.Job.Launch())
         Ana.Config.update(conf)
         Ana.Compile()
 
@@ -237,7 +219,6 @@ class JobSpecification(AnalysisG.Tools.General.Tools, Settings):
         Con.ExecPath = pth
         Con.Device = self.Device
         Con.Threads = self.Job.Threads
-        Con.TransferFiles = self.TransferFiles
         Con.Compile()
 
         self.__Build(Con._config, self.Name + ".submit", pth)
@@ -263,7 +244,6 @@ class Condor(AnalysisG.Tools.General.Tools, _Condor, Settings):
             self._Jobs[name].Job = instance
             self._Jobs[name].Job._condor = True
             self._Jobs[name].Name = name
-            self._Jobs[name].TransferFiles = self.ProjectName
             if self.EventCache is not None:
                 self._Jobs[name].Job.EventCache = self.EventCache
             if self.DataCache is not None:
@@ -303,41 +283,35 @@ class Condor(AnalysisG.Tools.General.Tools, _Condor, Settings):
         for i in self._wait:
             self._Complete[i] = False
 
-    @property
     def LocalRun(self):
         self.__Sequencer
         self._sequence = {j: [j] + self._sequence[j] for j in self._sequence}
         for t in self._sequence:
             for j in reversed(self._sequence[t]):
-                if self._Complete[j]:
-                    continue
+                if self._Complete[j]: continue
                 self.RunningJob(j)
                 self._Jobs[j].Job._condor = False
-                self._Jobs[j].Launch
+                self._Jobs[j].Launch()
                 self._Complete[j] = True
                 del self._Jobs[j]
                 self._Jobs[j] = None
         self.FinishExit()
 
-    @property
     def TestCondorShell(self):
-        pwd = self.pwd
+        pwd = self.pwd()
         self.cd(self.abs(self.OutputDirectory + "/" + self.ProjectName + "/CondorDump"))
         subprocess.call(["sh", "RunAsBash.sh"])
         self.cd(pwd)
 
-    @property
     def SubmitToCondor(self):
-        if self._dumped == False:
-            self.DumpCondorJobs
-        pwd = self.pwd
+        if self._dumped == False: self.DumpCondorJobs()
+        pwd = self.pwd()
         self.cd(self.abs(self.OutputDirectory + "/" + self.ProjectName + "/CondorDump"))
         subprocess.Popen(["condor_submit_dag", "DAGSUBMISSION.submit"])
         self.cd(pwd)
 
-    @property
     def DumpCondorJobs(self):
-        self._CheckEnvironment
+        self._CheckEnvironment()
         self.__Sequencer
         outDir = self.abs(self.OutputDirectory)
         self.mkdir(outDir + "/" + self.ProjectName + "/CondorDump")

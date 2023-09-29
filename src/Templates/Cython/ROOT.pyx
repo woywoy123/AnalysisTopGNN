@@ -6,31 +6,47 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.map cimport map, pair
 from libcpp cimport bool
+from typing import Union, Dict, List
+from AnalysisG.Tools import Code, Threading
+from AnalysisG.Notification.Notification import Notification
+from torch_geometric.loader import DataListLoader
+from torch_geometric.data import Batch
+from tqdm import tqdm
+import torch
 import h5py
 import os
 import sys
 import shutil
 import pickle
 import codecs
-from tqdm import tqdm
-from typing import Union, Dict, List
-from AnalysisG.Tools import Code, Threading
-from AnalysisG.Notification.Notification import Notification
-from torch_geometric.loader import DataListLoader
-from torch_geometric.data import Batch
-import torch
 
 cdef class Event:
     cdef CyEvent* ptr
     cdef public list _instance
     cdef public bool _demanded
+    cdef public int _index
+    cdef public str _Tree
+    cdef public str _hash
+    cdef public str _ROOT
+
     def __cinit__(self):
         self.ptr = NULL
         self._demanded = False
+        self._index = -1
 
     def __init__(self): self._instance = []
-    def _wrap(self, val): self._instance.append(val)
-    def __setstate__(self, inpt): setattr(self, "_instance", inpt["_instance"])
+
+    def _wrap(self, val) -> None:
+        self._instance.append(val)
+        if self.index != -1: return
+        self.index = self.ptr.EventIndex
+        self.Tree = self.ptr.Tree.decode("UTF-8")
+        self.hash = self.ptr.hash.decode("UTF-8")
+        self.ROOT = self.ptr.ROOT.decode("UTF-8")
+
+    def __setstate__(self, inpt):
+        for i in inpt: setattr(self, i, inpt[i])
+
     def __getattr__(self, attr):
         self.demand()
         try: return getattr(self._instance[0], attr)
@@ -39,9 +55,13 @@ cdef class Event:
         except: pass
         raise AttributeError
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         out = {}
         out["_instance"] = self._instance
+        out["_index"] = self.index
+        out["_Tree"] = self.Tree
+        out["_hash"] = self.hash
+        out["_ROOT"] = self.ROOT
         return out
 
     def __eq__(self, other) -> bool:
@@ -62,10 +82,34 @@ cdef class Event:
         return
 
     @property
-    def index(self) -> int: return self.ptr.EventIndex
+    def index(self) -> int: return self._index
+
+    @index.setter
+    def index(self, int val): self._index = val
 
     @property
-    def Tree(self) -> str: return self.ptr.Tree.decode("UTF-8")
+    def Tree(self) -> str: return self._Tree
+
+    @Tree.setter
+    def Tree(self, str val): self._Tree = val
+
+    @property
+    def hash(self) -> str: return self._hash
+
+    @hash.setter
+    def hash(self, str val): self._hash = val
+
+    @property
+    def ROOT(self) -> str: return self._ROOT
+
+    @ROOT.setter
+    def ROOT(self, str val): self._ROOT = val
+
+    @property
+    def TrainMode(self) -> str: return self.ptr.TrainMode.decode("UTF-8")
+
+    @TrainMode.setter
+    def TrainMode(self, str val) -> str: self.ptr.TrainMode = val.encode("UTF-8")
 
     @property
     def Graph(self) -> bool: return self.ptr.Graph
@@ -74,19 +118,7 @@ cdef class Event:
     def Event(self) -> bool: return self.ptr.Event
 
     @property
-    def hash(self) -> str: return self.ptr.hash.decode("UTF-8")
-
-    @property
-    def ROOT(self) -> str: return self.ptr.ROOT.decode("UTF-8")
-
-    @property
     def CachePath(self) -> str: return self.ptr.ROOTFile.CachePath.decode("UTF-8")
-
-    @property
-    def TrainMode(self) -> str: return self.ptr.TrainMode.decode("UTF-8")
-
-    @TrainMode.setter
-    def TrainMode(self, val) -> str: self.ptr.TrainMode = val.encode("UTF-8")
 
     @property
     def CachedGraph(self) -> bool: return self.ptr.CachedGraph
@@ -163,8 +195,8 @@ cdef class SampleTracer:
         if key.endswith(".root"): key = os.path.abspath(key)
         if key in self.HashMeta:
             for daod in self.HashMeta[key].Files:
-                try: out += self[self.HashMeta[key].thisSet + daod]
-                except: continue
+                out += self[self.HashMeta[key].thisSet + daod]
+            if len(out) == 0: out += [ i for i in self if i.ROOTName == key ]
             return out
         return out
 
@@ -175,21 +207,23 @@ cdef class SampleTracer:
         self.ptr.length = self._itv.size()
         return self.ptr.length
 
-    def __add__(self, other) -> SampleTracer:
-        if isinstance(other, int): return self
-        if isinstance(self, int): return other
-        cdef SampleTracer s = self
-        cdef SampleTracer o = other
+    def __add__(SampleTracer self, SampleTracer other) -> SampleTracer:
         cdef SampleTracer t = self.clone
         del t.ptr
-        t.ptr = s.ptr[0] + o.ptr
-        t.HashMeta.update(s.HashMeta)
-        t.HashMeta.update(o.HashMeta)
-        t._Codes.update(s._Codes)
-        t._Codes.update(o._Codes)
+        t.ptr = self.ptr[0] + other.ptr
+        t.HashMeta.update(self.HashMeta)
+        t._Codes.update(self._Codes)
+
+        t.HashMeta.update(other.HashMeta)
+        t._Codes.update(other._Codes)
         return t
 
-    def __iadd__(self, other):
+    def __radd__(self, other) -> SampleTracer:
+        if not issubclass(other.__class__, SampleTracer):
+            return self.__add__(self.clone)
+        return self.__add__(other)
+
+    def __iadd__(self, other) -> SampleTracer:
         cdef SampleTracer s = self
         cdef SampleTracer o = other
         s.ptr = s.ptr[0] + o.ptr
@@ -212,13 +246,11 @@ cdef class SampleTracer:
 
     def HashToROOT(self, str key) -> str: return self._HashMeta[key.encode("UTF-8")].decode("UTF-8")
 
-    @property
     def GetDataCacheHashes(self) -> list:
         cdef string i
         cdef vector[string] v = self.ptr.GetCacheType(False, True)
         return [i.decode("UTF-8") for i in v]
 
-    @property
     def GetEventCacheHashes(self) -> list:
         cdef string i
         cdef vector[string] v = self.ptr.GetCacheType(True, False)
@@ -230,18 +262,22 @@ cdef class SampleTracer:
     @property
     def EventCacheLen(self) -> int: return self.ptr.GetCacheType(True, False).size()
 
-    def _decoder(self, str inpt): return pickle.loads(codecs.decode(inpt.encode("UTF-8"), "base64"))
+    @staticmethod
+    def _decoder(str inpt): return pickle.loads(codecs.decode(inpt.encode("UTF-8"), "base64"))
 
-    def _encoder(self, inpt) -> str: return codecs.encode(pickle.dumps(inpt), "base64").decode()
+    @staticmethod
+    def _encoder(inpt) -> str: return codecs.encode(pickle.dumps(inpt), "base64").decode()
 
     def _rebuild_code(self, str pth, ref) -> None:
         cdef str k
+        cdef list its
         try: os.makedirs(pth)
-        except FileExistsError: sys.path.append(pth); return
-        for k in ref["code"].attrs:
-            Code = self._decoder(ref["code"].attrs[k])
-            k = Code._File.split("/")[-1]
-            mk = open(pth + k, "w")
+        except FileExistsError: pass
+        if isinstance(ref, str): its = [ref]
+        else: its = [ref["code"].attrs[k] for k in ref["code"].attrs]
+        for k in its:
+            Code = self._decoder(k)
+            mk = open(pth + Code._File.split("/")[-1], "w")
             mk.write(Code._FileCode)
             mk.close()
         sys.path.append(pth)
@@ -282,10 +318,8 @@ cdef class SampleTracer:
     @SampleName.setter
     def SampleName(self, str val): self._SampleName = val
 
-    @property
     def todict(self) -> dict: return {i.hash : i for i in self}
 
-    @property
     def tolist(self) -> list: return [i for i in self]
 
     @property
@@ -304,9 +338,9 @@ cdef class SampleTracer:
         if len(self._Codes) == 0 and len(hashes) != 0:
             p = hashes[0]
             cl = Code(pickle.loads(Events[p]["pkl"]))
-            x = cl.clone.Objects
-            self._Codes.update({t._Name : t.purge for t in [Code(x[p]) for p in x]})
-            self._Codes[cl._Name] = cl.purge
+            x = cl.clone().Objects
+            self._Codes.update({t._Name : t.purge() for t in [Code(x[p]) for p in x]})
+            self._Codes[cl._Name] = cl.purge()
             del cl
 
         x = self.FastHashSearch(hashes)
@@ -335,9 +369,7 @@ cdef class SampleTracer:
             event.num_nodes = num_nodes
             event.pkl = codecs.encode(evnt, "base64")
 
-    @property
     def DumpTracer(self):
-
         cdef pair[string, CyROOT*] root
         cdef pair[string, CyEvent*] event
         cdef CyROOT* r
@@ -379,7 +411,6 @@ cdef class SampleTracer:
 
             f.close()
 
-    @property
     def DumpEvents(self):
 
         cdef CyEvent* e
@@ -425,16 +456,14 @@ cdef class SampleTracer:
                 except ValueError: ref = f["code"]
                 for l in self._Codes: ref.attrs[l] = self._encoder(self._Codes[l])
                 f.close()
-        self.DumpTracer
+        self.DumpTracer()
 
-    @property
     def RestoreTracer(self):
         cdef str i, k
         cdef CyROOT* R
         cdef CyEvent* E
         cdef dict maps
         cdef list get
-
         try: get = [self.OutDir + "/Tracer/" + i for i in os.listdir(self.OutDir + "/Tracer/")]
         except FileNotFoundError: return
         get = [i + "/" + k for i in get for k in os.listdir(i) if k.endswith(".hdf5")]
@@ -470,7 +499,6 @@ cdef class SampleTracer:
                 E.Hash()
                 self.ptr.AddEvent(E)
 
-    @property
     def RestoreEvents(self) -> None:
 
         cdef pair[string, CyROOT*] c
@@ -509,6 +537,7 @@ cdef class SampleTracer:
                 if not e_.CachedGraph and not e_.CachedEvent: continue
                 e_.pkl = f[e.first.decode("UTF-8")].attrs["Event"].encode("UTF-8")
                 e_.Event = EventCache; e_.Graph = DataCache
+            bar = None
 
     def RestoreTheseHashes(self, list hashes = []) -> None:
         self.ptr.length = 0
@@ -553,7 +582,6 @@ cdef class SampleTracer:
             ev = self.ptr.HashToEvent(_i)
             ev.TrainMode = lab
 
-    @property
     def SortNumNodes(self):
         cdef map[int, vector[string]] nodes_hash
         cdef pair[int, vector[string]] _n
@@ -567,7 +595,6 @@ cdef class SampleTracer:
         cdef tuple v = torch.cuda.mem_get_info()
         return (1 - v[0]/v[1])*100
 
-    @property
     def FlushBatchCache(self):
         cdef str key
         cdef dict tmp = {}
@@ -620,7 +647,7 @@ cdef class SampleTracer:
         self.ptr.length = self._ite
         return self
 
-    def __next__(self):
+    def __next__(self) -> Event:
         if self._its == self._ite: raise StopIteration
         cdef str i, meta
         cdef string _hash, _meta
@@ -631,8 +658,7 @@ cdef class SampleTracer:
         if _hash.size() != 0: event = self.ptr.HashToEvent(_hash)
         else: return self.__next__()
         if event == NULL: return self.__next__()
-
-        ev = Event()
+        cdef Event ev = Event()
         ev.ptr = event
         ev._wrap(ev.ptr.pkl)
 

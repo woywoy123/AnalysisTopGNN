@@ -7,7 +7,6 @@ class _Analysis(Notification):
     def __init__(self):
         pass
 
-    @property
     def _WarningPurge(self):
         self.Warning("'PurgeCache' enabled! You have 10 seconds to cancel.")
         self.Warning("Directory (DataCache/EventCache): " + self.OutputDirectory)
@@ -20,7 +19,6 @@ class _Analysis(Notification):
         self.rm(self.OutputDirectory + "/Tracer")
         self.rm(self.OutputDirectory + "/Training/DataSets")
 
-    @property
     def _BuildingCache(self):
         if self.EventCache:
             self.mkdir(self.OutputDirectory + "/EventCache")
@@ -29,7 +27,6 @@ class _Analysis(Notification):
             self.mkdir(self.OutputDirectory + "/DataCache")
             self.Success("Created DataCache under: " + self.OutputDirectory)
 
-    @property
     def _CheckForTracer(self):
         f = self.ls(self.OutputDirectory + "/Tracer/")
         if len(f) == 0 and (self.EventCache or self.DataCache):
@@ -65,7 +62,6 @@ class _Analysis(Notification):
         self.WhiteSpace()
         return len(tracers) > 0
 
-    @property
     def EmptySampleList(self):
         if self.len != 0:
             return False
@@ -75,7 +71,6 @@ class _Analysis(Notification):
         self.Failure("=" * len(string))
         return True
 
-    @property
     def StartingAnalysis(self):
         string1 = "---" + " Starting Project: " + self.ProjectName + " ---"
         string = ""

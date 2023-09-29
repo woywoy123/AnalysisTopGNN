@@ -25,10 +25,8 @@ class GraphTemplate:
 
     def Escape(self, ev):
         new_self = self.__new__(self.__class__)
-        try:
-            new_self.__init__()
-        except:
-            pass
+        try: new_self.__init__()
+        except: pass
         return new_self
 
     @property
@@ -37,10 +35,8 @@ class GraphTemplate:
 
     @Event.setter
     def Event(self, val):
-        if val is not None:
-            self._Event = val
-        else:
-            self._Event = NoneEvent()
+        if val is not None: self._Event = val
+        else: self._Event = NoneEvent()
 
     def CreateParticleNodes(self):
         self.G = nx.Graph()
@@ -132,7 +128,6 @@ class GraphTemplate:
         setattr(self.Data, "i", torch.tensor(self.index))
         setattr(self.Data, "weight", torch.tensor(self.Event.weight))
 
-    @property
     def purge(self):
         self.__Clean(self.Particles)
         self.__Clean(self.Event.__dict__)

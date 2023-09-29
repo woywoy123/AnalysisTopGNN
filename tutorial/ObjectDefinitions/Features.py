@@ -1,33 +1,20 @@
-def TruthNodeFromRes(a):
-    return a.FromResonance
+# node feature
+def pt(a): return a.pt/1000
+def eta(a): return a.eta
+def phi(a): return a.phi
+def energy(a): return a.e/1000
+def Mass(a): return a.Mass/1000
 
-def TruthResonancePair(particle1, particle2):
-    if particle1.FromResonance == particle2.FromResonance:
-        return 1
-    else:
-        return 0
+# edge feature
+def delta_pt(a, b): return abs(a.pt - b.pt)/1000
+def delta_eta(a, b): return abs(a.eta - b.eta)
+def delta_phi(a, b): return abs(a.phi - b.phi)
+def delta_energy(a, b): return abs(a.e - b.e)/1000
+def deltaR(a, b): return a.DeltaR(b)
+def EdgeMass(a, b): return (a+b).Mass/1000
 
-def SignalEvent(ev):
-    sig = [t.FromResonance for t in ev.Tops]
-    if len(sig) > 0:
-        return 1
-    return 0
-        
-def nJets(ev):
-    return ev.nJets 
+# graph feature
+def nJets(ev): return len(ev.Out)
 
-def Energy(particle):
-    return particle.e
-
-def Phi(particle):
-    return particle.phi
-
-def Eta(particle):
-    return particle.eta
-
-def PT(particle):
-    return particle.pt
-
-def EdgeMass(a1, a2):
-    p = a1 + a2
-    return p.Mass
+# graph truth
+def signal(ev): return ev.signal

@@ -5,15 +5,12 @@ class _UpROOT(Notification):
     def __init__(self):
         pass
 
-    @property
     def InvalidROOTFileInput(self):
         self.Failure("Invalid Input. Provide either a string/list of ROOT file/s")
 
-    @property
     def FailedAMI(self):
         self.Warning("PyAMI not available... Skipping...")
 
-    @property
     def NoVOMSAuth(self):
         self.Failure(
             "No VOMS session was found. Make sure you authenticate. Skipping MetaData"
@@ -32,15 +29,11 @@ class _UpROOT(Notification):
         self.Success("!!!(Reading) -> " + Name.split("/")[-1] + " (" + x + ")")
 
     def CheckValidKeys(self, requested, found, Type):
-        if len(requested) == 0:
-            return
-
+        if len(requested) == 0: return
         for i in requested:
             if len([k for k in found if i in k]) > 0:
                 continue
-
-            if Type not in self._missed:
-                self._missed[Type] = []
+            if Type not in self._missed: self._missed[Type] = []
             self._missed[Type].append(i)
             self.Warning("SKIPPED: " + Type + "::" + i)
 

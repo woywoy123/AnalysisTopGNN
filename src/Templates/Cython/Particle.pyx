@@ -26,15 +26,16 @@ cdef class ParticleTemplate(object):
     def __dealloc__(self):
         del self.ptr
 
-    def __add__(self, other) -> ParticleTemplate:
-        if isinstance(self, int): return other
-        if isinstance(other, int): return self
+    def __add__(ParticleTemplate self, ParticleTemplate other) -> ParticleTemplate:
+        cdef ParticleTemplate _p = self.clone()
+        _p.ptr[0] += self.ptr[0]
+        _p.ptr[0] += other.ptr[0]
+        return _p
 
-        cdef ParticleTemplate s = self
-        cdef ParticleTemplate o = other
-        cdef ParticleTemplate p = self.clone
-        p.ptr[0] = s.ptr[0] + o.ptr[0]
-        return p
+    def __radd__(ParticleTemplate self, other) -> ParticleTemplate:
+        if not issubclass(other.__class__, ParticleTemplate):
+            return self.__add__(self.clone())
+        return self.__add__(other)
 
     def __eq__(self, other) -> bool:
         if not issubclass(other.__class__, ParticleTemplate): return False
@@ -78,9 +79,8 @@ cdef class ParticleTemplate(object):
 
     @property
     def __interpret__(self):
-        if self._init: return self._leaves
-
         cdef str i
+        if self._init: return self._leaves
         for i, v in zip(self.__dict__, self.__dict__.values()):
             if isinstance(v, list): continue
             if isinstance(v, dict): continue
@@ -91,25 +91,40 @@ cdef class ParticleTemplate(object):
     def __interpret__(self, dict inpt):
         cdef str k
         cdef dict x
+        cdef bool get
 
         try:
+            inpt = {k.split("/")[-1] : inpt[k] for k in inpt}
             inpt = {k : inpt[self._leaves[k]] for k in self._leaves}
-            inpt = {k : inpt[k].tolist() for k in inpt}
-        except:
-            try: inpt = {k : inpt[k].tolist() for k in inpt}
-            except: pass
+        except KeyError: pass
 
         while True:
-            try: self.__interpret__ = {k : inpt[k].pop() for k in inpt}
-            except AttributeError:
-                p = self.clone
-                x = { k : setattr(p, k, inpt[k]) for k in inpt }
+            x = {}
+            get = False
+            for k in list(inpt):
+                try: inpt[k] = inpt[k].tolist()
+                except AttributeError: pass
+
+                try: x[k] = inpt[k].pop()
+                except AttributeError: x[k] = inpt[k]
+                except IndexError: pass
+
+                if k not in x: continue
+
+                try: x[k] = x[k].item()
+                except AttributeError: pass
+
+                try: len(x[k])
+                except TypeError: get = True
+
+            if len(x) == 0: break
+            if not get: self.__interpret__ = x
+            else:
+                p = self.clone()
+                p.__setstate__(x)
                 p._init = True
                 self.Children.append(p)
-                break
-            except IndexError: break
 
-    @property
     def clone(self):
         v = self.__new__(self.__class__)
         v.__init__()
@@ -192,7 +207,7 @@ cdef class ParticleTemplate(object):
     def phi(self, val: Union[str, float]):
         if isinstance(val, float): self.ptr.phi(<double> val)
         elif isinstance(val, str): self._leaves["phi"] = val
- 
+
     @property
     def e(self) -> double:
         return self.ptr.e()
@@ -211,7 +226,7 @@ cdef class ParticleTemplate(object):
         if isinstance(val, float): self.ptr.Mass(<double>val)
         elif isinstance(val, str): self._leaves["Mass"] = val
 
-    def DeltaR(ParticleTemplate self, ParticleTemplate other) -> double:
+    def DeltaR(self, ParticleTemplate other) -> float:
         return self.ptr.DeltaR(other.ptr[0])
 
     @property
@@ -279,7 +294,8 @@ cdef class ParticleTemplate(object):
         return self._state
 
     @_init.setter
-    def _init(self, bool val): self._state = val
+    def _init(self, bool val): 
+        self._state = val
 
     @property
     def LeptonicDecay(self):

@@ -1,0 +1,66 @@
+name: Building Torch-Extensions (pyc)
+on: 
+  pull_request:
+      branches:
+        - "master"
+        - "dev"
+
+      paths-ignore:
+        - '**.md'
+        - '**.txt'
+        - '.readthedocs.yaml'
+        - 'docs'
+        - 'models'
+        - 'setup-scripts'
+        - 'tutorial'
+        - 'Dockerfile'
+
+  push:
+      branches:
+        - "master"
+        - "dev"
+
+      paths-ignore:
+        - '**.md'
+        - '**.txt'
+        - '.readthedocs.yaml'
+        - 'docs'
+        - 'models'
+        - 'setup-scripts'
+        - 'tutorial'
+        - 'Dockerfile'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+    build:
+        name: "Python ${{ matrix.python-version }} on ${{ matrix.os }}"
+        runs-on: "${{ matrix.os }}"
+        strategy: 
+                fail-fast: false
+                matrix:
+                    os:
+                        - ubuntu-20.04
+                        - ubuntu-22.04
+                        - ubuntu-latest
+
+                    python-version:
+                        - "3.7"
+                        - "3.8"
+                        - "3.9"
+                        - "3.10"
+                        - "3.11"
+
+        steps:      
+            - name: "Checkout the repo"
+              uses: "actions/checkout@v3"
+
+            - name: "Configuring Python - ${{ matrix.python-version }}"
+              uses: "actions/setup-python@v4"
+              with: 
+                python-version: "${{ matrix.python-version }}"
+           
+            - name: "build pytorch-extensions"
+              run: python -m pip install -e torch-extensions/ 

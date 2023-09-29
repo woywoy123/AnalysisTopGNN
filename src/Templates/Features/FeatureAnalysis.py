@@ -29,7 +29,7 @@ class FeatureAnalysis(_FeatureAnalysis, Settings):
         for c_name in self.GraphAttribute:
             try:
                 self.TestGraphFeature(
-                    Event, Code(EventGraph).clone, self.GraphAttribute[c_name]
+                    Event, Code(EventGraph).clone(), self.GraphAttribute[c_name]
                 )
                 self.PassedTest(c_name, "GRAPH")
             except AttributeError:
@@ -39,7 +39,7 @@ class FeatureAnalysis(_FeatureAnalysis, Settings):
         for c_name in self.NodeAttribute:
             try:
                 self.TestNodeFeature(
-                    Event, Code(EventGraph).clone, self.NodeAttribute[c_name]
+                    Event, Code(EventGraph).clone(), self.NodeAttribute[c_name]
                 )
                 self.PassedTest(c_name, "NODE")
             except AttributeError:
@@ -49,7 +49,7 @@ class FeatureAnalysis(_FeatureAnalysis, Settings):
         for c_name in self.EdgeAttribute:
             try:
                 self.TestEdgeFeature(
-                    Event, Code(EventGraph).clone, self.EdgeAttribute[c_name]
+                    Event, Code(EventGraph).clone(), self.EdgeAttribute[c_name]
                 )
                 self.PassedTest(c_name, "EDGE")
             except AttributeError:

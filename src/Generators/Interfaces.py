@@ -7,6 +7,9 @@ class _Interface(Tools):
     def __init__(self):
         pass
 
+    def InputSelection(self, val: Union[str]):
+        self.Files = self.ListFilesInDir(val, ".hdf5")
+
     def InputSamples(self, val: Union[Dict, List, str, None]):
         self.Files = self.ListFilesInDir(val, ".root")
 
@@ -85,3 +88,8 @@ class _Interface(Tools):
 
     def MergeSelection(self, name: Union[str]):
         self.Merge[name] = []
+
+    def This(self, path: Union[str], tree: Union[str]):
+        if tree not in self._DumpThis: self._DumpThis[tree] = []
+        if path in self._DumpThis[tree]: return self.Warning("'" + path + "' is already in list")
+        self._DumpThis[tree].append(path)

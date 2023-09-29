@@ -9,13 +9,11 @@ class _GraphGenerator(Notification):
         if issubclass(type(inpt), SampleTracer):
             self += inpt
         else:
-            self.WrongInput
+            self.WrongInput()
 
-    @property
     def WrongInput(self):
         self.Warning("Input instance is of wrong type. Skipping...")
 
-    @property
     def CheckGraphImplementation(self):
         if self.EventGraph != None:
             return True
@@ -28,7 +26,6 @@ class _GraphGenerator(Notification):
         self.Failure("=" * len(ex))
         return False
 
-    @property
     def CheckSettings(self):
         if self._condor:
             return True

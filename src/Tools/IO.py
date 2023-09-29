@@ -17,6 +17,7 @@ class Code:
         self._File = None
         self._subclass = ""
         self._Instance = Instance
+        self._params = {}
         self.DumpCode(Instance)
 
     def DumpCode(self, Instance):
@@ -25,46 +26,60 @@ class Code:
         from AnalysisG.Templates import GraphTemplate
         from AnalysisG.Templates import SelectionTemplate
 
-        try:
-            self._Name = Instance.__qualname__
+        try: self._Name = Instance.__qualname__
         except AttributeError:
-            try:
-                self._Name = Instance.__name__
-            except AttributeError:
-                self._Name = type(Instance).__name__
-        try:
-            self._Module = Instance.__module__
-        except AttributeError:
-            self._Module = Instance.__package__
+            try: self._Name = Instance.__class__.__name__
+            except AttributeError: self._Name = type(Instance).__name__
+        try: self._Module = Instance.__module__
+        except AttributeError: self._Module = Instance.__package__
 
-        self._subclass = ""
-        cl = self.clone
-        try:
-            cl = cl()
-        except:
-            pass
-        if cl == None:
-            try:
-                cl = Instance()
-            except:
-                pass
-        if issubclass(type(cl), ParticleTemplate):
-            self._subclass += "from AnalysisG.Templates import ParticleTemplate"
-        elif issubclass(type(cl), EventTemplate):
-            self._subclass += "from AnalysisG.Templates import EventTemplate"
-        elif issubclass(type(cl), GraphTemplate):
-            self._subclass += "from AnalysisG.Templates import GraphTemplate"
-        elif issubclass(type(cl), SelectionTemplate):
-            self._subclass += "from AnalysisG.Templates import SelectionTemplate"
-
+        try: self._params.update(self._Instance.__params__)
+        except AttributeError: pass
+        # print(self._Module, self._Name)
         self._Path = self._Module + "." + self._Name
+
+        cl = self.clone()
+        try: cl = cl()
+        except: pass
+        if cl is None:
+            try: cl = Instance()
+            except: pass
+
+        keys = {
+                "ParticleTemplate" : ParticleTemplate,
+                "EventTemplate" : EventTemplate,
+                "GraphTemplate" : GraphTemplate,
+                "SelectionTemplate" : SelectionTemplate
+        }
+
+        for i in keys:
+            if not issubclass(type(cl), keys[i]): continue
+            self._subclass += "from AnalysisG.Templates import "
+            self._subclass += i
+            break
+
         self._Code = GetSourceCode(Instance)
+        self._Code = self.ChangeParams(self._Code)
         self._Hash = Hash(self._Code)
+
         self._File = GetSourceFileDirectory(Instance)
         self._FileCode = "".join(open(self._File, "r").readlines())
-        self._Get, self._Import = self.checkdependency
+        self._FileCode = self.ChangeParams(self._FileCode)
+        self._Get, self._Import = self.checkdependency()
 
-    @property
+    def ChangeParams(self, inpt):
+        if not len(self._params): return inpt
+
+        modify = []
+        for x in inpt.split("\n"):
+            if "__params__" not in x:
+                modify.append(x)
+                continue
+            tmp = x.split("__params__")
+            if "=" in tmp[1]: x = tmp[0] + "__params__ = " + str(self._params)
+            modify.append(x)
+        return "\n".join(modify)
+
     def checkdependency(self):
         imports = {}
         cur = ""
@@ -74,28 +89,20 @@ class Code:
             if "AnalysisG" in i or "PyC" in i:
                 continue
             for t in i.split(" "):
-                if t == "from":
-                    cur = t
-                if t == "import":
-                    cur = t
-                if cur not in imports:
-                    imports[cur] = []
-                elif cur == t:
-                    continue
+                if t == "from": cur = t
+                if t == "import": cur = t
+                if cur not in imports: imports[cur] = []
+                elif cur == t: continue
                 else:
-                    if "," in t:
-                        imports[cur] += t.split(",")
-                    else:
-                        imports[cur].append(t)
-        if "from" not in imports:
-            return [], []
+                    if "," in t: imports[cur] += t.split(",")
+                    else: imports[cur].append(t)
+        if "from" not in imports: return [], []
         files = {}
         for i in set(imports["from"]):
             files[i] = "/".join(self._File.split("/")[:-1]) + "/" + i + ".py"
         get = []
         for i in files:
-            if not os.path.isfile(files[i]):
-                continue
+            if not os.path.isfile(files[i]): continue
             for j in list(imports["import"]):
                 found = j in "".join(
                     [
@@ -104,27 +111,19 @@ class Code:
                         if "class" in k or "def" in k
                     ]
                 )
-                if found:
-                    imports["import"].pop(imports["import"].index(j))
-                try:
-                    imports["from"].pop(imports["from"].index(i))
-                except:
-                    pass
+                if found: imports["import"].pop(imports["import"].index(j))
+                try: imports["from"].pop(imports["from"].index(i))
+                except: pass
             get.append(files[i])
         return get, imports["from"]
 
-    @property
     def clone(self):
         Instance = self._Instance
-        if callable(Instance):
-            try:
-                Inst = Instance()
-            except:
-                Inst = Instance
+        para = self._params
         _, inst = StringToObject(self._Module, self._Name)
+        inst.__params__ = para
         return inst
 
-    @property
     def purge(self):
         self._Instance = None
         return self
@@ -148,19 +147,15 @@ class IO(String, _IO):
             else glob(directory + "/*" + extension)
         )
         srch = [i for i in srch]
-        if len(srch) == 0:
-            self.EmptyDirectoryWarning(directory)
+        if len(srch) == 0: self.EmptyDirectoryWarning(directory)
         return srch
 
     def ls(self, directory):
-        try:
-            return os.listdir(directory)
-        except OSError:
-            return []
+        try: return os.listdir(directory)
+        except OSError: return []
 
     def IsFile(self, directory):
-        if os.path.isfile(directory):
-            return True
+        if os.path.isfile(directory): return True
         self.FileNotFoundWarning(self.path(directory), directory.split("/")[-1])
         return False
 
@@ -206,7 +201,6 @@ class IO(String, _IO):
             return Out
         return F
 
-    @property
     def pwd(self):
         return os.getcwd()
 
@@ -226,18 +220,15 @@ class IO(String, _IO):
             pass
 
     def rm(self, directory):
-        try:
-            os.remove(self.abs(directory))
+        try: os.remove(self.abs(directory))
         except IsADirectoryError:
             import shutil
-
             shutil.rmtree(self.abs(directory))
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError: pass
 
     def cd(self, directory):
         os.chdir(directory)
-        return self.pwd
+        return self.pwd()
 
     def Hash(self, string):
         return Hash(string)

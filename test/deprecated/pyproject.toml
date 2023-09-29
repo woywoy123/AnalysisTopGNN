@@ -1,9 +1,0 @@
-[build-system]
-requires = ["pip", "setuptools", "wheel", "cython"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "AnalysisTopGNN"
-version = "2.1"
-readme = "README.md"
-authors = [{name = "woywoy123"}]

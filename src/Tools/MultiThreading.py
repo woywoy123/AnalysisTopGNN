@@ -21,17 +21,14 @@ class TemplateThreading:
 
     def _Prg(self):
         _l = list(self._f.__code__.co_varnames)[:2]
-        if "_prgbar" not in _l:
-            return {_l[0]: None}
+        if "_prgbar" not in _l: return {_l[0]: None}
 
         self._dct["desc"] = f"MultiThreading {self.i}"
         self._dct["position"] = self.i
         self._dct["leave"] = False
         self._dct["colour"] = "GREEN"
         self._dct["dynamic_ncols"] = True
-        with self.lock:
-            bar = tqdm(**self._dct)
-
+        with self.lock: bar = tqdm(**self._dct)
         return {_l[0]: None, "_prgbar": (self.lock, bar)}
 
     def _Prc(self, _v):
@@ -41,27 +38,26 @@ class TemplateThreading:
 
         _r = self._f(**_l)
 
-        if "_prgbar" not in _l:
-            return _r
+        if "_prgbar" not in _l: return _r
         lock, bar = _l["_prgbar"]
-        with lock:
-            bar.close()
+        with lock: bar.close()
         return _r
 
     def Exec(self, q):
-        while True:
+        _v = False
+        while _v is not True:
             _v = q.recv()
-            if _v == True:
+            if _v is True:
                 q.close()
-                break
+                continue
 
-            try:
-                q.send(self._Prc(_v))
-            except:
-                q.send(False)
+            # Send back the result
+            try: q.send(self._Prc(_v))
+            except: q.send(False)
 
-            for i in _v:
-                del i
+            # Remove input
+            for i in _v: del i
+
         del self
 
     def MainThread(self):
@@ -69,8 +65,7 @@ class TemplateThreading:
 
     def Purge(self):
         for i in self._i:
-            for j in i:
-                del j
+            for j in i: del j
 
 
 class Threading(_MultiThreading):
@@ -90,26 +85,18 @@ class Threading(_MultiThreading):
         self._dct = {}
 
         self.AlertOnEmptyList()
-        if chnk_size != None:
-            _quant = int(len(lists) / chnk_size) + 1
-        else:
-            _quant = self._threads
+        if chnk_size is not None:
+            _quant = int(chnk_size)
+        else: _quant = int(self._threads)
 
-        _quant = int(512 / self._threads) if _quant >= 512 else _quant
-        cpu_ev = math.ceil(len(lists) / _quant)
-        if cpu_ev == 0:
-            cpu_ev = 1
-
-        self._chnk = [lists[i : i + cpu_ev] for i in range(0, len(lists), cpu_ev)]
-        self._indx = [[i, i + cpu_ev] for i in range(0, len(lists), cpu_ev)]
+        self._chnk = [lists[i : i + _quant] for i in range(0, len(lists), _quant)]
+        self._indx = [[i, i + _quant] for i in range(0, len(lists), _quant)]
         self.__lists = {i: None for i in range(len(lists))}
 
-    @property
     def Start(self):
-        if len(self.__lists) == 0:
-            return self._lists
-        self._Progress
-
+        if len(self.__lists) == 0: return self._lists
+        self._Progress()
+        
         self._exc = {}
         for i in range(self._threads):
             T = TemplateThreading(self._function)
@@ -144,10 +131,8 @@ class Threading(_MultiThreading):
             it = iter(running) if running[-1] == f else it
             f = next(it)
 
-            if self._exc[f][1] == None:
-                continue
-            if not self._exc[f][1].poll():
-                continue
+            if self._exc[f][1] == None: continue
+            if not self._exc[f][1].poll(): continue
 
             _v = self._exc[f][1].recv()
             _v = (
@@ -167,7 +152,7 @@ class Threading(_MultiThreading):
 
             self._exc[f][2].started = False
             self._exc[f][2].Purge()
-            self._Update
+            self._Update()
 
             tmp = [f] if len(self._chnk) > 0 else []
             running = tmp + [r for r in running if r != f]
@@ -179,7 +164,7 @@ class Threading(_MultiThreading):
             it = iter(running)
             f = next(it)
         del self._exc
-        self._Close
+        self._Close()
         return self.__lists
 
     @property
@@ -190,10 +175,8 @@ class Threading(_MultiThreading):
             else list(self.__lists.values())
         )
 
-    @property
     def _Progress(self):
-        if self.Verbose == 0:
-            return
+        if self.Verbose == 0: return
         self._dct["desc"] = self.Title
         self._dct["position"] = 0
         self._dct["leave"] = False
@@ -201,23 +184,16 @@ class Threading(_MultiThreading):
         self._dct["dynamic_ncols"] = True
         self._dct["total"] = len(self._chnk)
         lock = torch.multiprocessing.Manager().Lock()
-        with lock:
-            bar = tqdm(**self._dct)
+        with lock: bar = tqdm(**self._dct)
 
         self._dct["obj"] = (lock, bar)
 
-    @property
     def _Update(self):
-        if len(self._dct) == 0:
-            return
+        if len(self._dct) == 0: return
         lock, bar = self._dct["obj"]
-        with lock:
-            bar.update(1)
+        with lock: bar.update(1)
 
-    @property
     def _Close(self):
-        if len(self._dct) == 0:
-            return
+        if len(self._dct) == 0: return
         lock, bar = self._dct["obj"]
-        with lock:
-            bar.close()
+        with lock: bar.close()

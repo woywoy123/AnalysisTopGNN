@@ -338,23 +338,27 @@ def test_event_particle_template_populate():
     n_children = 0
     n_tops = 0
     for i in io:
-        x = ev.clone
-        Trees = x.__compiler__(i)
-        assert len(Trees) == 2
-        assert sum([sum([k.index >= 0, k.weight != 0]) for k in Trees]) == 4
+        Trees = ev.__compiler__(i)
+        if "nominal/eventNumber" in i:
+            assert len(Trees) == 2 
+            assert sum([sum([k.index >= 0, k.weight != 0]) for k in Trees]) == 4
+            t1, t2 = Trees
+            t1.hash, t2.hash = root1, root1
 
-        t1, t2 = Trees
-        t1.hash, t2.hash = root1, root1
+            c = sum([len(k) for k in i["nominal/children_e"]])
+            x = [float(k) for j in i["nominal/children_e"] for k in j]
+            assert len(t1.Children) == c
+            assert sum(x) == sum([t.e for t in t1.Children.values()])
+            n_children += len(t1.Children)
+            n_tops += len(t1.top)
 
-        n_children += len(t1.Children)
-        n_tops += len(t1.top)
+            lst.append(t1)
+            lstc += [t for t in t1.Children.values()]
 
-        lst.append(t1)
-        lstc += [t for t in t1.Children.values()]
-
-        lstt += [t for t in t1.top.values()]
-        assert len(t1.hash) == 18
-        assert t1 != t2
+            lstt += [t for t in t1.top.values()]
+            assert len(t1.hash) == 18
+            assert t1 != t2
+        else: pass
 
     n_events = len(lst)
     assert n_events != 0
@@ -364,10 +368,10 @@ def test_event_particle_template_populate():
     assert n_children == len(set(lstc))
     assert n_tops == len(set(lstt))
 
-
 def test_event_othersample():
     from examples.Belle import EventBelle
 
+    # Still need to implement a proper test
     return
     smple = ""
 
@@ -384,12 +388,12 @@ def test_event_othersample():
 
 
 if __name__ == "__main__":
-    # test_particle_template()
-    # test_particle_template_assign()
+    test_particle_template()
+    test_particle_template_assign()
 
-    # test_event_template()
+    test_event_template()
 
-    # test_event_particle_template()
-    # test_event_particle_template_populate()
+    test_event_particle_template()
+    test_event_particle_template_populate()
 
     test_event_othersample()

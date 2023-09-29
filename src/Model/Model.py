@@ -4,8 +4,8 @@ from torch_geometric.data import Data
 import torch
 
 try:
-    import PyC.Transform.Tensors as PT
-    import PyC.Physics.Tensors.Cartesian as CT
+    import pyc.Transform as PT
+    import pyc.Physics.Cartesian as CT
 except:
     pass
 
@@ -33,8 +33,8 @@ class ModelWrapper(_ModelWrapper):
         self._truth = True
         self._train = True
 
-        self._GetModelInputs
-        self._build
+        self._GetModelInputs()
+        self._build()
 
     def __call__(self, data):
         self._Model(**{k: getattr(data, k) for k in self.i_mapping})
@@ -67,25 +67,20 @@ class ModelWrapper(_ModelWrapper):
             if k.startswith(key) and "O" + k[3:] in self._outputs
         }
 
-    @property
     def _inject_tools(self):
         self._Model.MassEdgeFeature = self.MassEdgeFeature
         self._Model.MassNodeFeature = self.MassNodeFeature
 
-    @property
     def _GetModelInputs(self):
-        if self.TruthMode:
-            return
+        if self.TruthMode: return
         code = self._Model.forward.__code__
         self._inputs = {
             key: None for key in code.co_varnames[: code.co_argcount] if key != "self"
         }
         return self._inputs
 
-    @property
     def _build(self):
-        if self.TruthMode:
-            return
+        if self.TruthMode: return
         self._outputs = self._scan(self._Model.__dict__, "O_")
         mod = self._Model.__dict__["_modules"]
         mod = {i: mod[i] for i in mod}
@@ -108,13 +103,10 @@ class ModelWrapper(_ModelWrapper):
         self.o_mapping.update(self._mapping(smpl, "N_T_"))
         self.o_mapping.update(self._mapping(smpl, "G_T_"))
 
-        try:
-            self._inject_tools
-        except:
-            pass
+        try: self._inject_tools()
+        except: pass
 
-        if not self._iscompatible:
-            return False
+        if not self._iscompatible(): return False
         return True
 
     @property
@@ -124,28 +116,22 @@ class ModelWrapper(_ModelWrapper):
     @train.setter
     def train(self, val):
         self._train = val
-        if self._train:
-            self._Model.train()
-        else:
-            self._Model.eval()
+        if self._train: self._Model.train()
+        else: self._Model.eval()
 
-    @property
     def dump(self):
         out = {"epoch": self.Epoch, "model": self._Model.state_dict()}
         torch.save(out, self._pth + "/" + str(self.Epoch) + "/TorchSave.pth")
 
-    @property
     def load(self):
         lib = torch.load(self._pth + "/" + str(self.Epoch) + "/TorchSave.pth")
         self._Model.load_state_dict(lib["model"])
         self._Model.eval()
         return self._pth + " @ " + str(self.Epoch)
 
-    @property
     def backward(self):
         loss = sum([self._l[x]["loss"] for x in self._l])
-        if self._train:
-            loss.backward()
+        if self._train: loss.backward()
         return loss
 
     @property
@@ -158,8 +144,7 @@ class ModelWrapper(_ModelWrapper):
 
     def _switch(self, sample, pred):
         shape = pred.size()
-        if shape[1] > 1:
-            pred = pred.max(1)[1]
+        if shape[1] > 1: pred = pred.max(1)[1]
         pred = pred.view(-1)
         if shape[0] == sample.edge_index.size()[1]:
             return self.MassEdgeFeature(sample, pred).tolist()
@@ -183,15 +168,13 @@ class ModelWrapper(_ModelWrapper):
             for i, j in zip(pred, sample)
         ]
 
-    @property
     def __SummingNodes(self):
         try:
             Pmu = {i: self._data[self.Keys[i]] for i in self.Keys}
         except TypeError:
             Pmu = {i: getattr(self._data, self.Keys[i]) for i in self.Keys}
-        Pmu = torch.cat(
-            [PT.PxPyPz(Pmu["pt"], Pmu["eta"], Pmu["phi"]), Pmu["e"]], dim=-1
-        )
+        Pmu = torch.cat(list(Pmu.values()), dim= -1)
+        Pmu = PT.PxPyPzE(Pmu)
 
         # Get the prediction of the sample and extract from the topology the number of unique classes
         edge_index = self._data.edge_index
@@ -212,7 +195,7 @@ class ModelWrapper(_ModelWrapper):
         Pmu_n = (Pmu_n / 1000).to(dtype=torch.long)
         Pmu_n = torch.unique(Pmu_n, dim=0)
 
-        Pmu_n = CT.Mass(Pmu_n).view(-1)
+        Pmu_n = CT.M(Pmu_n).view(-1)
         return Pmu_n[Pmu_n > 0]
 
     def MassNodeFeature(self, Sample, pred, excl_zero=True):
@@ -225,26 +208,23 @@ class ModelWrapper(_ModelWrapper):
             self._mask = (
                 pred[self._data.edge_index[0]] == pred[self._data.edge_index[1]]
             )
-        return self.__SummingNodes
+        return self.__SummingNodes()
 
     def MassEdgeFeature(self, Sample, pred):
         self._data = Sample
         self._mask = pred == 1
-        return self.__SummingNodes
+        return self.__SummingNodes()
 
     def ClosestParticle(self, tru, pred):
         res = []
-        if len(tru) == 0:
-            return res
-        if len(pred) == 0:
-            return pred
+        if len(tru) == 0: return res
+        if len(pred) == 0: return pred
         p = pred.pop(0)
         max_tru, min_tru = max(tru), min(tru)
         col = True if p <= max_tru and p >= min_tru else False
 
         if col == False:
-            if len(pred) == 0:
-                return res
+            if len(pred) == 0: return res
             return self.ClosestParticle(tru, pred)
 
         diff = [abs(p - t) for t in tru]
@@ -253,7 +233,6 @@ class ModelWrapper(_ModelWrapper):
         res.append(p)
         return res
 
-    @property
     def ParticleEfficiency(self):
         tmp = self.TruthMode
         self.TruthMode = True

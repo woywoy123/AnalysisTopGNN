@@ -2,9 +2,9 @@ import torch
 from torch_geometric.nn import MessagePassing
 from torch.nn import Sequential as Seq, Linear, ReLU, Sigmoid, Tanh
 import torch.nn.functional as F
-import PyC.Transform.Tensors as Tt
-import PyC.Physics.Tensors.Polar as PtP
-import PyC.Physics.Tensors.Cartesian as PtC
+import pyc.Transform as Tt
+import pyc.Physics.Polar as PtP
+import pyc.Physics.Cartesian as PtC
 from torch_geometric.utils import (
     to_dense_adj,
     add_remaining_self_loops,
@@ -69,7 +69,7 @@ class BasicBaseLineRecursion(MessagePassing):
 
     def message(self, edge_index, Pmc_i, Pmc_j, Pmu_i, Pmu_j, Mass_i, Mass_j, E_T_edge):
         e_dr = PtP.DeltaR(Pmu_i[:, 1], Pmu_j[:, 1], Pmu_i[:, 2], Pmu_j[:, 2])
-        e_mass = PtC.Mass(Pmc_i + Pmc_j)
+        e_mass = PtC.M(Pmc_i + Pmc_j)
 
         e_mass_mlp = self._isMass(e_mass / 1000)
         ni_mass = self._isMass(Mass_i / 1000)
@@ -125,5 +125,5 @@ class BasicBaseLineRecursion(MessagePassing):
         return (
             edge_index,
             torch.cat([Pmu, Pmc_i[:, 3].view(-1, 1)], dim=-1),
-            PtC.Mass(Pmc_i),
+            PtC.M(Pmc_i),
         )

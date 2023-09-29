@@ -34,7 +34,7 @@ class GraphGenerator(_GraphGenerator, Settings, SampleTracer, _Interface):
                     bar.update(1)
 
             try:
-                gr_ = gr_.purge
+                gr_ = gr_.purge()
                 num_nodes = gr_.num_nodes.item()
                 gr_ = pickle.dumps(gr_)
             except:
@@ -50,11 +50,10 @@ class GraphGenerator(_GraphGenerator, Settings, SampleTracer, _Interface):
         if len(x) != 0:
             self._Code[key] = x
 
-    @property
     def MakeGraphs(self):
-        if not self.CheckGraphImplementation:
+        if not self.CheckGraphImplementation():
             return False
-        if not self.CheckSettings:
+        if not self.CheckSettings():
             return False
 
         self._Code["EventGraph"] = Code(self.EventGraph)
@@ -76,7 +75,7 @@ class GraphGenerator(_GraphGenerator, Settings, SampleTracer, _Interface):
             if ev.Graph:
                 continue
 
-            gr = self._Code["EventGraph"].clone
+            gr = self._Code["EventGraph"].clone()
             try:
                 gr = gr(ev)
             except AttributeError:
@@ -94,7 +93,7 @@ class GraphGenerator(_GraphGenerator, Settings, SampleTracer, _Interface):
         if self.Threads > 1:
             th = Threading(inpt, self._CompileGraph, self.Threads, self.chnk)
             th.Title = self.Caller
-            th.Start
+            th.Start()
         out = (
             th._lists
             if self.Threads > 1

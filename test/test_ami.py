@@ -4,7 +4,7 @@ from conftest import clean_dir
 
 def test_pyami():
     smpl = UpROOT("samples/dilepton/")
-    meta = smpl.GetAmiMeta
+    meta = smpl.GetAmiMeta()
     assert len(meta) == 1
     f = next(iter(meta))
     assert meta[f].isMC

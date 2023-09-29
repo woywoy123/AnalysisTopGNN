@@ -106,9 +106,8 @@ class Jet(Particle):
 
     @property
     def FromRes(self):
-        if len(self.Tops) == 0:
-            return False
-        return len([t for t in self.Tops if t.FromRes == 1]) > 0
+        if len(self.Tops) == 0: return False
+        return sum([t.FromRes for t in self.Tops]) > 0
 
 
 class JetParton(Particle):

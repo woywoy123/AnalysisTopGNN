@@ -3,7 +3,11 @@
 CyTemplate::CyEventTemplate::CyEventTemplate(){}
 CyTemplate::CyEventTemplate::~CyEventTemplate(){}
 
-std::string CyTemplate::CyEventTemplate::Hash(){ return this -> _hash; }
+std::string CyTemplate::CyEventTemplate::Hash()
+{ 
+    return this -> _hash; 
+}
+
 void CyTemplate::CyEventTemplate::Hash(std::string inpt)
 {
     if (this -> _hash != ""){return;}
@@ -12,8 +16,8 @@ void CyTemplate::CyEventTemplate::Hash(std::string inpt)
     this -> _hash = Tools::Hashing(inpt); 
 }
 
-
 CyTemplate::CyParticleTemplate::CyParticleTemplate(){}
+
 CyTemplate::CyParticleTemplate::CyParticleTemplate(double px, double py, double pz, double e)
 {
     this -> _px = px; 

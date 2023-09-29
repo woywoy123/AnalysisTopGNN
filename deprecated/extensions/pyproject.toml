@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools", "torch"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "AnalysisG-Extensions"
+version = "1.1"
+authors = [{name = "woywoy123"}]
+readme = "README.md"
+
+

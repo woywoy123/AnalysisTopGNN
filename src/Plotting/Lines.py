@@ -166,7 +166,7 @@ class CombineTLine(Functions):
             i.Compile(False)
 
         if self.LegendOn:
-            self.PLT.legend()
+            self.PLT.legend(loc=self.LegendLoc)
         if self.Logarithmic:
             self.PLT.yscale("log")
 

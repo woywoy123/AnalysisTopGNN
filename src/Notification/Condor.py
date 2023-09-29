@@ -26,7 +26,7 @@ class _Condor(Notification):
             self.OutputDirectory = self.abs("./")
             self.Warning(
                 "Variable OutputDirectory undefined, assuming current working directory; "
-                + self.pwd
+                + self.pwd()
             )
 
     def RunningJob(self, name):
@@ -35,7 +35,6 @@ class _Condor(Notification):
     def DumpedJob(self, name, direc):
         self.Success("Dumped Job: " + name + " to: " + direc)
 
-    @property
     def _CheckEnvironment(self):
         if self.PythonVenv is not None:
             return

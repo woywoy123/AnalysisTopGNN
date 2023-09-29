@@ -6,40 +6,34 @@ class _Optimizer(Notification):
     def __init__(self):
         pass
 
-    @property
     def _NoModel(self):
         if self.Model is not None:
             return False
         self.Warning("No Model was given.")
         return True
 
-    @property
     def _NoSampleGraph(self):
-        hashes = self.GetDataCacheHashes
+        hashes = self.GetDataCacheHashes()
         l = len(hashes)
         self.RestoreTheseHashes(hashes[: self.BatchSize])
         if l == 0:
             return self.Warning("No Sample Graphs found")
         self.Success("Found " + str(l) + " Sample Graphs")
-        return False
+        return hashes
 
-    @property
     def _notcompatible(self):
         return self.Failure("Model not compatible with given input graph sample.")
 
-    @property
     def _setoptimizer(self):
-        if not self._op.SetOptimizer:
+        if not self._op.SetOptimizer():
             return self.Failure("Invalid Optimizer.")
         return not self.Success("Set the optimizer to: " + self._op.Optimizer)
 
-    @property
     def _setscheduler(self):
-        if not self._op.SetScheduler:
+        if not self._op.SetScheduler():
             return
         self.Success("Set the scheduler to: " + self._op.Scheduler)
 
-    @property
     def _searchtraining(self):
         self.Epoch = 0
         pth = self._outDir + "/" + self.RunName
@@ -71,16 +65,15 @@ class _Optimizer(Notification):
                 self._kModels[i].Epoch = ""
                 continue
             try:
-                self.Success("Model loaded: " + self._kModels[i].load)
+                self.Success("Model loaded: " + self._kModels[i].load())
             except KeyError:
                 return not self.Warning("Loading Model Failed. Skipping loading...")
             try:
-                self.Success("Optimizer loaded: " + self._kOp[i].load)
+                self.Success("Optimizer loaded: " + self._kOp[i].load())
             except KeyError:
                 return not self.Warning("Loading Optimizer Failed. Skipping loading...")
         return True
 
-    @property
     def _searchdatasplits(self):
         pth = self._outDir + "/DataSets/"
         ls = self.ls(pth)
@@ -122,7 +115,6 @@ class _Optimizer(Notification):
         self.Success("Found the training sample: " + self.TrainingName)
         self.Success("Training Sets Detected: " + "\n-> ".join([""] + list(self.kFold)))
 
-    @property
     def _showloss(self):
         string = ["Epoch-kFold: " + self._ep.Epoch]
         if self._op._sc is not None:

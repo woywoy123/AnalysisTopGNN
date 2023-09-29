@@ -38,11 +38,11 @@ def test_import_tools():
 
 
 def test_import_pyc():
-    import PyC
-    import PyC.Physics.Tensors.Cartesian as TC
-    import PyC.Physics.Tensors.Polar as TP
-    import PyC.Operators.Tensors as TO
-    import PyC.NuSol.Tensors as NuT
+    import pyc
+    import pyc.Physics.Cartesian as TC
+    import pyc.Physics.Polar as TP
+    import pyc.Operators as TO
+    import pyc.NuSol as NuT
 
 
 def test_import_events():
@@ -51,3 +51,13 @@ def test_import_events():
     from AnalysisG.Events import GraphChildren
     from AnalysisG.Events import GraphTruthJet
     from AnalysisG.Events import GraphJet
+
+if __name__ == "__main__":
+    test_import_anaG()
+    test_import_events()
+    test_import_generator()
+    test_import_io()
+    test_import_model()
+    test_import_pyc()
+    test_import_templates()
+    test_import_tools()

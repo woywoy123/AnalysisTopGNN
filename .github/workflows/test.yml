@@ -1,14 +1,17 @@
 # https://nedbatchelder.com/blog/202209/making_a_coverage_badge.html
 
-name: Building-Tox-Testing
+name: Tox/PyTest Unit Tests
 on:
     pull_request:
         branches:
             - "master"
+            - "dev"
 
         paths-ignore:
             - '**.md'
             - '**.txt'
+            - '.readthedocs.yaml'
+            - 'docs'
             - 'models'
             - 'setup-scripts'
             - 'tutorial'
@@ -32,7 +35,7 @@ defaults:
 
 jobs:
     build:
-        name: "Python ${{ matrix.python-version }} on ${{ matrix.os }} with ${{ matrix.cuda }}"
+        name: "Python ${{ matrix.python-version }} on ${{ matrix.os }}"
         runs-on: "${{ matrix.os }}"
         strategy: 
                 fail-fast: false
@@ -49,35 +52,15 @@ jobs:
                         - "3.10"
                         - "3.11"
 
-                    cuda:
-                        - 'cpu'
-                        - '11.8.0'
-                        #- '11.7.1'
-                        #- '11.7.0'
         steps:      
             - name: "Checkout the repo"
               uses: "actions/checkout@v3"
-
-            - name: "Config-CUDA"
-              if: ${{ matrix.cuda != 'cpu' }}
-              uses: Jimver/cuda-toolkit@v0.2.10
-              id: cuda-toolkit
-              with:
-                cuda: ${{ matrix.cuda }}
-                method: 'network'
 
             - name: "Configuring Python - ${{ matrix.python-version }}"
               uses: "actions/setup-python@v4"
               with: 
                 python-version: "${{ matrix.python-version }}"
            
-            - name: "Purge ubuntu image"
-              run: |
-                sudo apt autoremove -y 
-                sudo apt clean
-                sudo rm -rf "/usr/local/share/boost"
-                sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-
             - name: "Installing dependencies"
               run: |
                 python -m pip install --upgrade pip
@@ -128,8 +111,8 @@ jobs:
               filename: covbadge.json
               label: Coverage
               message: ${{ env.total }}%
-              minColorRange: 50
-              maxColorRange: 90
+              minColorRange: 0
+              maxColorRange: 100
               valColorRange: ${{ env.total }}
 
 

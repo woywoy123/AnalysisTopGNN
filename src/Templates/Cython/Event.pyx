@@ -14,6 +14,7 @@ cdef class EventTemplate:
     cdef list _Branches
     cdef list _Leaves
     cdef dict _Objects
+    cdef str _name
 
     def __cinit__(self):
         self.ptr = new CyEventTemplate()
@@ -23,7 +24,11 @@ cdef class EventTemplate:
         self._Objects = {}
         self._leaves = {"event" : {}}
 
-    def __init__(self): pass
+    def __init__(self):
+        self._name = self.__class__.__name__
+
+    def __name__(self) -> str:
+        return self._name
 
     def __dealloc__(self): del self.ptr
 
@@ -31,6 +36,7 @@ cdef class EventTemplate:
 
     def __eq__(self, other) -> bool:
         if not issubclass(other.__class__, EventTemplate): return False
+        if self.__name__() != other.__name__(): return False
         return self.hash == other.hash
 
     def __getstate__(self) -> dict:
@@ -89,11 +95,11 @@ cdef class EventTemplate:
         cdef list out = []
 
         for tr in self._Trees:
-            ev = self.clone
+            _inpt = {k.split(tr + "/")[-1] : inpt[k] for k in inpt if tr in k}
+            if len(_inpt) == 0: continue
+            ev = self.clone()
             ev.__interpret__
             ev.Tree = tr
-            _inpt = {k.split(tr + "/")[-1] : inpt[k] for k in inpt if tr in k}
-
             for i in Obj:
                 val = ev._leaves[i] if i == "event" else ev._Objects[i].__interpret__
                 val = {k : _inpt[val[k]] for k in val if val[k] in _inpt}
@@ -122,65 +128,64 @@ cdef class EventTemplate:
 
     def CompileEvent(self): pass
 
-    @property
     def clone(self):
         v = self.__new__(self.__class__)
         v.__init__()
         return v
 
-    @property 
+    @property
     def index(self) -> int: return self.ptr.index
-    
+
     @index.setter
     def index(self, val: Union[int, str]):
         if isinstance(val, int): self.ptr.index = val
         elif isinstance(val, str): self._leaves["event"]["index"] = val
-    
+
     @property
     def weight(self) -> float: return self.ptr.weight
 
     @weight.setter
     def weight(self, val: Union[str, float]):
         if isinstance(val, str): self._leaves["event"]["weight"] = val
-        else: self.ptr.weight = <double> val
+        else: self.ptr.weight = <double>val
 
     @property
     def Tree(self) -> str: return self.ptr.tree.decode("UTF-8")
 
     @property
     def Trees(self) -> list: return self._Trees
- 
+
     @property
     def Branches(self) -> list: return self._Branches
-  
+
     @property
     def Leaves(self) -> list: return self._Leaves
- 
+
     @property
     def Objects(self) -> dict: return self._Objects
 
     @Tree.setter
-    def Tree(self, str val): 
+    def Tree(self, str val):
         self.ptr.tree = val.encode("UTF-8")
 
     @Trees.setter
     def Trees(self, val: Union[str, list]):
         if isinstance(val, str): val = [val]
-        self._Trees += val 
-   
+        self._Trees += val
+
     @Branches.setter
     def Branches(self, val: Union[str, list]):
         if isinstance(val, str): val = [val]
-        self._Branches += val 
-   
+        self._Branches += val
+
     @Leaves.setter
     def Leaves(self, val: Union[str, list]):
         if isinstance(val, str): val = [val]
-        self._Leaves += val 
+        self._Leaves += val
 
-    @property 
+    @property
     def hash(self) -> str: return self.ptr.Hash().decode("UTF-8")
-    
+
     @hash.setter
     def hash(self, str val): self.ptr.Hash(val.encode("UTF-8"))
 
@@ -195,5 +200,5 @@ cdef class EventTemplate:
 
     @Objects.setter
     def Objects(self, val: Union[dict]): self._Objects = val
-    
+
 

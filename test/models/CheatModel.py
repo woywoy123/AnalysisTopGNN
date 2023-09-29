@@ -2,9 +2,9 @@ import torch
 from torch_geometric.nn import MessagePassing
 from torch.nn import Sequential as Seq, Linear, ReLU, Sigmoid, Tanh
 import torch.nn.functional as F
-import PyC.Transform.Tensors as Tt
-import PyC.Physics.Tensors.Polar as PtP
-import PyC.Physics.Tensors.Cartesian as PtC
+import pyc.Transform as Tt
+import pyc.Physics.Polar as PtP
+import pyc.Physics.Cartesian as PtC
 from torch_geometric.utils import (
     to_dense_adj,
     add_remaining_self_loops,
@@ -40,9 +40,9 @@ class CheatModel(MessagePassing):
             Pmu_j[:, 2].view(-1, 1),
         )
         e_mass, i_mass, j_mass = (
-            PtC.Mass(Pmc_i + Pmc_j),
-            PtC.Mass(Pmc_i),
-            PtC.Mass(Pmc_j),
+            PtC.M(Pmc_i + Pmc_j),
+            PtC.M(Pmc_i),
+            PtC.M(Pmc_j),
         )
 
         e_mass_mlp = self._isMass(e_mass / 1000)

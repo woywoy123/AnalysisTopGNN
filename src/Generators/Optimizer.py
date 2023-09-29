@@ -23,22 +23,21 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
         if issubclass(type(inpt), Settings):
             self.ImportSettings(inpt)
 
-    @property
     def GetCode(self):
         if "Model" in self._Code:
             return self._Code["Model"]
         self._Code["Model"] = Code(self.Model)
-        return self.GetCode
+        return self.GetCode()
 
-    @property
     def Launch(self):
         self.DataCache = True
-        if self._NoModel:
+        if self._NoModel():
             return False
-        if self._NoSampleGraph:
+        hashes = self._NoSampleGraph()
+        if isinstance(hashes, bool):
             return False
         self._outDir = self.OutputDirectory + "/Training"
-        self.Model = ModelWrapper(self.GetCode.clone)
+        self.Model = ModelWrapper(self.GetCode().clone())
         self.Model.OutputDirectory = self._outDir
         self.Model.RunName = self.RunName
 
@@ -46,15 +45,15 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
             break
         smpl = self.BatchTheseHashes([smpl.hash], "test", self.Device)
         if not self.Model.SampleCompatibility(smpl):
-            return self._notcompatible
+            return self._notcompatible()
 
         self._op = OptimizerWrapper()
         self._op.ImportSettings(self)
         self._op._mod = self.Model._Model
-        if self._setoptimizer:
+        if self._setoptimizer():
             return
-        self._setscheduler
-        self._searchdatasplits
+        self._setscheduler()
+        self._searchdatasplits()
         self._op = None
         self.Model = None
 
@@ -63,9 +62,9 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
         self._DataLoader = {}
         self._nsamples = {}
         if self.kFold is None:
-            self.kFold = {"train": {"all": self.GetDataCacheHashes}}
+            self.kFold = {"train": {"all": hashes}}
         for k in self.kFold:
-            self._kModels[k] = ModelWrapper(self._Code["Model"].clone)
+            self._kModels[k] = ModelWrapper(self._Code["Model"].clone())
             self._kModels[k].OutputDirectory = self._outDir
             self._kModels[k].RunName = self.RunName
             self._kModels[k].SampleCompatibility(smpl)
@@ -75,18 +74,17 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
             self._kOp[k].ImportSettings(self)
             self._kOp[k].OutputDirectory = self._outDir
             self._kOp[k]._mod = self._kModels[k]._Model
-            self._kOp[k].SetOptimizer
-            self._kOp[k].SetScheduler
+            self._kOp[k].SetOptimizer()
+            self._kOp[k].SetScheduler()
             self._nsamples[k] = {}
             self._DataLoader[k] = {}
 
-        if not self._searchtraining:
+        if not self._searchtraining():
             return
         self._threads = []
-        self.__train__
+        self.__train__()
         self.__dump_plots__()
 
-    @property
     def __train__(self):
         def ApplyMode(k_):
             try:
@@ -137,26 +135,25 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
                 self._ep.i_model = self.Model.i_mapping
                 self._ep.RunName = self.RunName
                 self._ep.OutputDirectory = self._outDir
-                self._ep.init
+                self._ep.init()
                 self._ep.Epoch = _ep
 
                 ApplyMode(k)
                 Train(True)
-                self.__this_epoch__
+                self.__this_epoch__()
 
                 if ApplyMode(k):
                     Train(False)
                 else:
                     self._len = 0
-                self.__this_epoch__
+                self.__this_epoch__()
 
-                self._op.stepsc
-                self._op.dump
-                self.Model.dump
+                self._op.stepsc()
+                self._op.dump()
+                self.Model.dump()
                 if not self.DebugMode:
                     self.__dump_plots__(self._ep)
 
-    @property
     def __this_epoch__(self):
         if self._len == 0:
             return
@@ -170,21 +167,21 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
         kF = "-" + str(kF) + "-" + self.mode
         for smpl, index in zip(self._dl, range(len(self._dl))):
             smpl = self.BatchTheseHashes(smpl, str(index) + kF, self.Device)
-            self._op.zero
-            self._ep.start
+            self._op.zero()
+            self._ep.start()
             pred, loss = self.Model(smpl)
-            self._ep.end
-            self.Model.backward
-            self._op.step
+            self._ep.end()
+            self.Model.backward()
+            self._op.step()
 
             if not self.DebugMode:
                 bar.update(1)
             if not self.DebugMode:
                 self._ep.Collect(smpl, pred, loss)
             if self.DebugMode:
-                self._showloss
+                self._showloss()
             if self.Device != "cpu" and self.GPUMemory > 80:
-                self.FlushBatchCache
+                self.FlushBatchCache()
             if not self.EnableReconstruction:
                 continue
             self.Model.TruthMode = True
@@ -193,7 +190,7 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
             self.Model.TruthMode = False
             pred = self.Model.mass
 
-            eff = self.Model.ParticleEfficiency
+            eff = self.Model.ParticleEfficiency()
             dc = self._ep._train if self._ep.train else self._ep._val
             for b in range(len(truth)):
                 for f in truth[b]:
@@ -215,7 +212,7 @@ class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
             self._threads = [t for t in self._threads if t.is_alive()]
 
         def func(inpt):
-            inpt.dump
+            inpt.dump()
 
         th = Process(target=func, args=(inpt,))
         th.start()

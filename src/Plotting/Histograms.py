@@ -242,9 +242,7 @@ class CombineTH1F(Functions):
     def ConsistencyCheck(self):
         H = [self.Histogram] if self.Histogram != None else []
         H += self.Histograms
-        for i in H:
-            self.xData += i.xData
-
+        for i in H: self.xData += i.xData
         self.DefineRange("x")
 
         reorder = {}
@@ -260,7 +258,7 @@ class CombineTH1F(Functions):
         bins = set([i.xBins for i in self.Histograms if i.xBins != None])
         # if self.xBinCentering and len(bins) == 0: self.xBins -= 1
         bins = self.xBins if len(bins) == 0 else max(bins)
-        for i in self.Histograms:
+        for i in H:
             i.xBins = bins
             i.xMin = self.xMin
             i.xMax = self.xMax
@@ -283,7 +281,10 @@ class CombineTH1F(Functions):
             Sum = self.Histogram.NPHisto[0].sum() * 0.01
             self.Normalize = False
         elif self.Normalize and self.Histogram != None:
-            Sum = self.Histogram.NPHisto[0].sum()
+            try: Sum = self.Histogram.NPHisto[0].sum()
+            except AttributeError: 
+                self.Histogram.Compile()
+                Sum = self.Histogram.NPHisto[0].sum()
         elif self.Normalize == True:
             Sum = sum([i.NPHisto[0].sum() for i in self.Histograms]) / len(
                 self.Histograms
@@ -311,8 +312,7 @@ class CombineTH1F(Functions):
             Labels.append(i.Title)
             i.NPHisto = (i.NPHisto[0] / Sum, i.NPHisto[1])
             Numpies.append(i.NPHisto)
-            if self.Stack:
-                continue
+            if self.Stack: continue
             i.ApplyFormat()
 
         if self.Stack:
@@ -326,18 +326,24 @@ class CombineTH1F(Functions):
                 binticks=True,
             )
 
-        self.PLT.legend()
+        self.PLT.legend(loc=self.LegendLoc)
         if self.xMin == self.xMax:
             self.xStep = 0.1
             self.xMax = self.xBins / self.xStep
-        if self.Logarithmic:
-            self.PLT.yscale("log")
-        if self.xBinCentering:
-            self.Axis.set_xticks(self.xData)
-        if self.xStep != None:
-            self.Axis.set_xticks(
-                [self.xMin + self.xStep * i for i in range(self.xBins)]
-            )
+
+        if self.Logarithmic: self.PLT.yscale("log")
+
+        if self.xBinCentering: self.Axis.set_xticks(self.xData)
+
+        if self.xStep != None and self.xMax is None:
+            tiks = [self.xMin + self.xStep * i for i in range(self.xBins)]
+            self.Axis.set_xticks(tiks)
+
+        if self.xStep != None and self.xMax is not None:
+            r = int( (self.xMax - self.xMin) / self.xStep)
+            tiks = [self.xMin + self.xStep *i for i in range(r)]
+            self.Axis.set_xticks(tiks)
+
         if isinstance(self.xTickLabels, list):
             self.Axis.set_xticks(self.xData)
             self.Axis.set_xticklabels(self.xTickLabels)

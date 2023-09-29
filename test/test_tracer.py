@@ -4,6 +4,7 @@ from AnalysisG.IO import UpROOT
 from AnalysisG.Tracer import SampleTracer
 import pickle
 import shutil
+import psutil
 import os
 
 
@@ -54,11 +55,13 @@ def test_tracer_addEvent():
 
     hashes = {}
     roothashes = {}
+    len_nom, len_tru = 0, 0
     for i in io:
+        if "nominal/eventNumber" in i: len_nom += 1
+        if "truth/eventNumber" in i: len_tru += 1
         root, index, meta = i["ROOT"], i["EventIndex"], i["MetaData"]
         trees = ev.__compiler__(i)
-        for i in trees:
-            i.CompileEvent()
+        for i in trees: i.CompileEvent()
         root = meta.thisSet + "/" + meta.thisDAOD
         inpt = {
             i.hash: {
@@ -72,14 +75,13 @@ def test_tracer_addEvent():
         }
         tr.AddEvent(inpt)
         hashes.update({p.hash: p for p in trees})
-        if root not in roothashes:
-            roothashes[root] = []
+        if root not in roothashes: roothashes[root] = []
         roothashes[root] += [p.hash for p in trees]
-    assert len(io) * 2 == len(tr)
+
+    assert len_tru + len_nom == len(tr)
 
     # Test iterator
-    for i in tr:
-        assert i.hash == hashes[i.hash].hash
+    for i in tr: assert i.hash == hashes[i.hash].hash
 
     # Test Getter Functions
     for i in hashes:
@@ -87,8 +89,7 @@ def test_tracer_addEvent():
         assert tr[i].hash == hashes[i].hash
 
     # Test if hashes are in tracer
-    for i in hashes:
-        assert i in tr
+    for i in hashes: assert i in tr
 
     assert "hello" not in tr
     assert root1 in tr
@@ -96,7 +97,7 @@ def test_tracer_addEvent():
 
     for r in roothashes:
         for hsh in roothashes[r]:
-            assert r == tr.HashToROOT(hsh)
+            assert tr[hsh].ROOTName == tr.HashToROOT(hsh)
     lst = [i for j in range(1000) for i in hashes]
 
     assert len(hashes) > 0
@@ -175,45 +176,36 @@ def test_tracer_hdf5():
     tr2.AddEvent(EventMaker(root2))
     l2 = len(tr2)
 
-    tr1.DumpEvents
-    tr2.DumpEvents
+    tr1.DumpEvents()
+    tr2.DumpEvents()
 
     s = SampleTracer()
     s.OutputDirectory = "Project"
     s.EventCache = True
-    s.RestoreTracer
-    s.RestoreEvents
+    s.RestoreTracer()
+    s.RestoreEvents()
 
-    for i in tr1:
-        break
+    for i in tr1: break
     assert len(s[i.ROOT]) == len(tr1)
 
-    for i in tr2:
-        break
+    for i in tr2: break
     assert len(s[i.ROOT]) == len(tr2)
 
-    for i in tr1:
-        assert s[i.hash]
-    for i in tr2:
-        assert s[i.hash]
+    for i in tr1: assert s[i.hash]
+    for i in tr2: assert s[i.hash]
 
     trsum = tr1 + tr2
-    for i in s:
-        assert trsum[i.hash]
+    for i in s: assert trsum[i.hash]
 
     del s
     del trsum
 
-    for i in tr1:
-        assert i.hash
-    for i in tr2:
-        assert i.hash
+    for i in tr1: assert i.hash
+    for i in tr2: assert i.hash
 
     try:
-        for i in tr2:
-            i.cross_section
-        for i in tr2:
-            assert i.cross_section
+        for i in tr2: i.cross_section
+        for i in tr2: assert i.cross_section
     except AttributeError:
         pass
 
@@ -221,14 +213,17 @@ def test_tracer_hdf5():
     del tr2
 
     # Check for memory leaks
+    mem = 0
     for i in range(10):
         s = SampleTracer()
         s.OutputDirectory = "Project"
         s.EventCache = True
-        s.RestoreTracer
-        s.RestoreEvents
-
+        s.RestoreTracer()
+        s.RestoreEvents()
         k = sum([s for l in range(1000)])
+        if mem == 0:
+            mem = psutil.virtual_memory().percent
+        assert psutil.virtual_memory().percent - mem < 0.5
         del s
 
     try:

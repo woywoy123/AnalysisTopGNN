@@ -5,7 +5,6 @@ class _EventGenerator(Notification):
     def __init__(self):
         pass
 
-    @property
     def CheckEventImplementation(self):
         if self.Event != None:
             return True
@@ -18,7 +17,6 @@ class _EventGenerator(Notification):
         self.Failure("=" * len(ex))
         return False
 
-    @property
     def CheckROOTFiles(self):
         if len(self.MergeListsInDict(self.Files)) != 0:
             return True
@@ -28,7 +26,6 @@ class _EventGenerator(Notification):
         self.Failure("=" * len(mes))
         return False
 
-    @property
     def ObjectCollectFailure(self):
         mess = "Can't Collect Particle Objects in event.Objects..."
         self.Failure("=" * len(mess))
@@ -36,7 +33,6 @@ class _EventGenerator(Notification):
         self.Failure("=" * len(mess))
         return False
 
-    @property
     def CheckVariableNames(self):
         if len(self.Event.Trees) != 0:
             return True
@@ -47,7 +43,6 @@ class _EventGenerator(Notification):
         self.Failure("=" * len(ex))
         return False
 
-    @property
     def CheckSpawnedEvents(self):
         if len(self) == 0:
             self.Warning("No Events were generated...")
@@ -55,7 +50,6 @@ class _EventGenerator(Notification):
             return not self.Warning("Your event implementation.")
         return True
 
-    @property
     def CheckSettings(self):
         if self.EventStop == None:
             return

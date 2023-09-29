@@ -22,15 +22,11 @@ class EventGenerator(_EventGenerator, Settings, SampleTracer, _Interface):
         for i in range(len(inpt)):
             vals, ev = inpt[i]
             ev = pickle.loads(ev)
-
             inpt[i] = {}
             try:
                 res = ev.__compiler__(vals)
-                for k in res:
-                    k.CompileEvent()
-            except:
-                continue
-
+                for k in res: k.CompileEvent()
+            except: continue
             for k in list(res):
                 inpt[i][k.hash] = {}
                 inpt[i][k.hash]["pkl"] = pickle.dumps(k)
@@ -45,15 +41,13 @@ class EventGenerator(_EventGenerator, Settings, SampleTracer, _Interface):
             if lock is None:
                 bar.update(1)
                 continue
-            with lock:
-                bar.update(1)
+            with lock: bar.update(1)
         return inpt
 
-    @property
     def MakeEvents(self):
-        if not self.CheckEventImplementation:
+        if not self.CheckEventImplementation():
             return False
-        self.CheckSettings
+        self.CheckSettings()
 
         self._Code["Event"] = Code(self.Event)
         try:
@@ -65,16 +59,13 @@ class EventGenerator(_EventGenerator, Settings, SampleTracer, _Interface):
         except TypeError:
             self.Event = self.Event()
         except:
-            return self.ObjectCollectFailure
+            return self.ObjectCollectFailure()
         self._Code["Particles"] = {
             i: Code(self.Event.Objects[i]) for i in self.Event.Objects
         }
-        if self._condor:
-            return self._Code
-        if not self.CheckROOTFiles:
-            return False
-        if not self.CheckVariableNames:
-            return False
+        if self._condor: return self._Code
+        if not self.CheckROOTFiles(): return False
+        if not self.CheckVariableNames(): return False
 
         ev = self.Event
         ev.__interpret__
@@ -83,19 +74,19 @@ class EventGenerator(_EventGenerator, Settings, SampleTracer, _Interface):
         io.Verbose = self.Verbose
         io.Trees = ev.Trees
         io.Leaves = ev.Leaves
+        io.DisablePyAMI = self.DisablePyAMI
 
         inpt = []
         ev = pickle.dumps(ev)
-        for v, i in zip(io, range(len(io))):
-            if self._StartStop(i) == False:
-                continue
-            if self._StartStop(i) == None:
-                break
+        i = -1
+        for v in io:
+            i += 1
+            if self._StartStop(i) == False: continue
+            if self._StartStop(i) == None: break
             inpt.append([v, ev])
-
         if self.Threads > 1:
             th = Threading(inpt, self._CompileEvent, self.Threads, self.chnk)
-            th.Start
+            th.Start()
         out = (
             th._lists
             if self.Threads > 1
@@ -105,4 +96,4 @@ class EventGenerator(_EventGenerator, Settings, SampleTracer, _Interface):
         for i in out:
             ev.update(i)
         self.AddEvent(ev)
-        return self.CheckSpawnedEvents
+        return self.CheckSpawnedEvents()

@@ -16,9 +16,9 @@ def test_random_sampling():
     Ana.Event = Event
     Ana.EventGraph = GraphChildren
     ApplyFeatures(Ana, "TruthChildren")
-    Ana.Launch
+    Ana.Launch()
 
-    smpls = Ana.todict
+    smpls = Ana.todict()
     r = RandomSamplers()
     x = r.RandomizeEvents(smpls, 74)
     assert len(x) == len(smpls)
@@ -63,7 +63,7 @@ def test_feature_analysis():
     ApplyFeatures(Ana, "TruthChildren")
     Ana.nEvents = 10
     Ana.TestFeatures = True
-    assert Ana.Launch
+    assert Ana.Launch()
 
     def fx(a):
         return a.NotAFeature
@@ -77,7 +77,7 @@ def test_feature_analysis():
     Ana.nEvents = 10
     Ana.TestFeatures = True
     Ana.AddGraphTruth(fx, "NotAFeature")
-    assert Ana.Launch == False
+    assert Ana.Launch() == False
 
     clean_dir()
 
@@ -95,7 +95,7 @@ def test_optimizer():
     Ana.kFolds = 4
     Ana.DataCache = True
     Ana.PurgeCache = True
-    Ana.Launch
+    Ana.Launch()
 
     op = Optimizer(Ana)
     op.ProjectName = "TestOptimizer"
@@ -107,7 +107,7 @@ def test_optimizer():
     op.EnableReconstruction = True
     op.Batch = 1
     op.Epochs = 20
-    op.Launch
+    op.Launch()
 
     clean_dir()
 
@@ -136,7 +136,7 @@ def test_optimizer_analysis():
     Ana.Model = CheatModel
     Ana.EnableReconstruction = True
     Ana.BatchSize = 1
-    Ana.Launch
+    Ana.Launch()
     clean_dir()
 
 
@@ -150,14 +150,14 @@ def test_parallel_analysis():
     Ana.EventGraph = GraphChildren
     ApplyFeatures(Ana, "TruthChildren")
     Ana.DataCache = True
-    Ana.Launch
+    Ana.Launch()
 
     Ana = Analysis()
     Ana.ProjectName = "Project"
     Ana.DataCache = True
     Ana.TrainingSize = 50
     Ana.kFolds = 10
-    Ana.Launch
+    Ana.Launch()
 
     Ana = Analysis()
     Ana.ProjectName = "Project"
@@ -169,7 +169,7 @@ def test_parallel_analysis():
     Ana.Model = CheatModel
     Ana.ContinueTraining = True
     Ana.BatchSize = 1
-    Ana.Launch
+    Ana.Launch()
 
     Ana = Analysis()
     Ana.ProjectName = "Project"
@@ -181,15 +181,15 @@ def test_parallel_analysis():
     Ana.Device = "cpu"
     Ana.Model = CheatModel
     Ana.BatchSize = 1
-    Ana.Launch
+    Ana.Launch()
 
     clean_dir()
 
 
 if __name__ == "__main__":
-    # test_random_sampling()
-    # test_feature_analysis()
-    # test_optimizer()
+    test_random_sampling()
+    test_feature_analysis()
+    test_optimizer()
     test_optimizer_analysis()
     test_parallel_analysis()
     pass

@@ -51,7 +51,9 @@ std::string CyTracer::CyEvent::ReturnCachePath()
 void CyTracer::CyEvent::Hash()
 {
     if (this -> hash != ""){return;}
-    this -> hash = this -> ROOT + "/" + Tools::ToString(this -> EventIndex) + "/" + (this -> Tree); 
+    this -> hash = this -> ROOT; 
+    this -> hash += "/" + Tools::ToString(this -> EventIndex); 
+    this -> hash += "/" + (this -> Tree); 
     this -> hash = Tools::Hashing(this -> hash); 
 }
 

@@ -6,7 +6,7 @@ class ExampleGNN(MessagePassing):
 
     def __init__(self):
         super().__init__()
-        
+
         # Declare outputs of GNN: O_<truth attribute> 
         self.O_ResPairs = None
 

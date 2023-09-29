@@ -21,7 +21,6 @@ class _ModelWrapper(Notification):
             return "(Edge): " + inpt[2:]
         return inpt
 
-    @property
     def _iscompatible(self):
         run = 0
         inpt = len(self._inputs) == len(self.i_mapping)

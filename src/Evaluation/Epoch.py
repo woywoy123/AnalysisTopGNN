@@ -147,15 +147,12 @@ class Epoch:
         self.o_model = {}
         self.i_model = {}
 
-    @property
     def start(self):
         self._t1 = time()
 
-    @property
     def end(self):
         self._timer.append(time() - self._t1)
 
-    @property
     def init(self):
         self._train = {
             i[2:]: {
@@ -251,7 +248,6 @@ class Epoch:
             return
         th.SaveFigure()
 
-    @property
     def dump(self):
         try:
             train = self._makehists(self._train, "train")
