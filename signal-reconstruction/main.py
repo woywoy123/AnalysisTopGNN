@@ -10,7 +10,33 @@ from Strategy import Common
 import uproot
 import numpy as np
 import os
+from AnalysisG.IO import nTupler
 
+def do_test():
+    root_dir = "/nfs/dust/atlas/user/sitnikov/signal-comparison/common-fw_tag212120/final"
+    mc_cpgn = {
+                "mc16a" : root_dir + "/mc16a/2lss3lge1DL1r/BSM4tops.root"
+    }
+    Quant = 1
+
+    # Create the event cache.
+    # waitforme = []
+    for mc in mc_cpgn:
+        this_pth = mc_cpgn[mc]
+        ana = Analysis()
+        ana.Event = Event
+        # ana.EventCache = True
+        # ana.EventStart = 950
+        ana.EventStop = 1
+        ana.InputSample(mc, this_pth)
+        ana.AddSelection("bsm", Common)
+        ana.MergeSelection("bsm")
+        ana.Launch()
+    n = nTupler("UNTITLED/Selections/Merged")
+    n.This("bsm -> ", "nominal_Loose")
+    for i in n:
+        filename = list(i.masses.keys())[0]
+        print(i.mcChannelNumbers[filename], i.masses[filename])
 
 def submit_jobs():
     # direc = "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000"#"/atlasgpfs01/usatlas/data/eleboulicaut/ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root"
@@ -286,8 +312,8 @@ def process():
     for i in no_selection:
         print(i)
 
-
-make_plots()
+do_test()
+# make_plots()
 # submit_jobs()
 #process()
 

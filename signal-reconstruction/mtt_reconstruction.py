@@ -50,11 +50,10 @@ class MatchingBase:
     def __init__(self, lst=None, tops=None, allow_assignment_to_one_top=True, override_tops=None):
         self.tops = tops if tops is not None else [i for i in range(len(lst))] if lst is not None else [i for i in range(4)]
         self.allow_assignment_to_one_top = allow_assignment_to_one_top
-        self.override_tops = override_tops if override_tops != None else {itop : itop for itop in range(-1, 4)}
+        self.override_tops = override_tops if override_tops is not None else {itop : itop for itop in range(-1, 5)}
         self.is_jet = False
 
     def __getitem__(self, key):
-        print(self.assignments[key])
         return {self.override_tops[itop] : [self.lst[i] for i, j in enumerate(self.assignments[key]) if j == itop] for itop in set(self.assignments[key])}
 
     def __iter__(self):
@@ -102,7 +101,6 @@ class Matching(MatchingBase):
         import itertools 
         self.assignments = [list(perm) for perm in itertools.permutations(self.tops, len(self.lst))]
 
-
     def _get_comb_assignment_template(self):
         n = len(self.lst)
         msk = torch.pow(2, torch.arange(n))
@@ -138,7 +136,7 @@ class Matching(MatchingBase):
                 self.assignments += [[tops[k] for k in template] for template in self.assignments_template if self.allow_assignment_to_one_top or len(set(template)) == 2]
 
 class NuMatching(MatchingBase):
-    def __init__(self, bs=None, leps=None, nus=None, matching_type='truth', tops=None, met=None, met_phi=None, allow_assignment_to_one_top=True, override_tops=None):
+    def __init__(self, bs=None, leps=None, nus=None, matching_type='truth', tops=None, event=None, allow_assignment_to_one_top=True, override_tops=None):
         super().__init__(tops=tops, allow_assignment_to_one_top=allow_assignment_to_one_top, override_tops=override_tops)
         self.matching_type = matching_type
         sorted_tops = sorted(list(leps.keys()), key=lambda x: leps.get(x)[0].pt, reverse=True)
@@ -154,22 +152,11 @@ class NuMatching(MatchingBase):
             if None in self.bs or None in self.leps or len(self.bs) != 2 or len(self.leps) != 2:
                 self.assignments = []
             else:
-                # bs_vec = [self._convert_to_vector(b) for b in self.bs]
-                # leps_vec = [self._convert_to_vector(lep) for lep in self.leps]
                 nus_result = None
-                try:
-                    # NeutrinoReconstructionOriginal
-                    # nu_solutions = doubleNeutrinoSolutions((bs_vec[0], bs_vec[1]), (leps_vec[0], leps_vec[1]), (met/1000*np.cos(met_phi), met/1000*np.sin(met_phi)))
-                    # nus_result += self._convert_to_particles(nu_solutions.nunu_s)
-
-                    #Tom's neutrino reconstruction
-                    nus_result = getNeutrinoSolutions(self.bs[0], self.bs[1], self.leps[0], self.leps[1], met, met_phi)
-
-                except np.linalg.LinAlgError:
-                    pass
-
+                nus_result = getNeutrinoSolutions(self.bs[0], self.bs[1], self.leps[0], self.leps[1], event)
                 if nus_result is None or len(nus_result) == 0:
                     self.assignments = []
+                    print('failed after all')
                 else:
                     self.lst = self._match(nus_result)
                     self.assignments = [self.tops]
@@ -250,11 +237,15 @@ class Filter:
         return self.obj[obj_type]
 
 
-    def get_b(self, pt_cut=None):
-        return self.get_obj('b', pt_cut)
+    def get_b(self, pt_cut=None, limit_b_number=None):
+        result = self.get_obj('b', pt_cut)
+        result = sorted(result, key=lambda x: x.pt, reverse=True)[:limit_b_number]
+        return result
 
-    def get_add(self, pt_cut=None):
-        result = self.get_obj('add', pt_cut)
+    def get_add(self, pt_cut=None, limit_b_number=None):
+        bs = self.get_obj('b', pt_cut)
+        bs = sorted(bs, key=lambda x: x.pt, reverse=True)[limit_b_number:]
+        result = self.get_obj('add', pt_cut) + bs
         return sorted(result, reverse=True, key=lambda elem: elem.pt)[:11]
 
     def get_lep(self, pt_cut=None):
@@ -323,8 +314,8 @@ class MttReconstructor:
         self.lep = children.get_lep()
         tj = TruthJetMatcher(event.TruthJets, event.Jets).truthjets if data_type == 'TruthJet' else []
         jets = Filter(event.TopChildren if data_type == 'Children' else tj if data_type == 'TruthJet' else event.Jets, pt_cut=jet_pt_cut, eta_cut=jet_eta_cut)
-        self.b = jets.get_b()
-        self.add = jets.get_add()
+        self.b = jets.get_b(limit_b_number=4)
+        self.add = jets.get_add(limit_b_number=4)
         self.loss_calc = LossCalculator()
         self.compare_add_to_w = False if self.data_type =='Children' else True
         self._mtt = -1
@@ -400,7 +391,7 @@ class MttReconstructor:
             lep_matching = Matching(self.lep, is_truth=True) if self.case_num in [0, 1, 2, 3] else \
             Matching(self.lep,
                      is_truth=False,
-                     tops=None,
+                     tops=b_matching.tops,
                      allow_assignment_to_one_top=False)
 
             for self.leps in lep_matching:
@@ -414,12 +405,13 @@ class MttReconstructor:
                                nus=None,
                                matching_type='truth' if self.case_num in [0, 1, 4, 7] else 'reco_truth' if self.case_num in [2, 5, 8] else 'reco_loss',
                                tops=list(self.leps.keys()),
-                               met=self.event.met if self.data_type == 'Jet' else sum(self.nu).pt,
-                               met_phi=self.event.met_phi if self.data_type == 'Jet' else sum(self.nu).phi,
+                               event=self.event,
                                allow_assignment_to_one_top=False,
                                override_tops=override_tops)
 
                 for self.nus in nu_matching:
+                    print('Here is the nu matching')
+                    print(self.nus)
                     tops = [i for i in range(4) if i not in self.nus]
                     add_matching.update_tops(tops)
                     for self.adds in add_matching:
