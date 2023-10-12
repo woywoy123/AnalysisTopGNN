@@ -1,5 +1,6 @@
 from AnalysisG import Analysis
 from AnalysisG.Events.Events.CommonSM4topEvent import Event
+from AnalysisG.Events.Events.Event import Event as TruthEvent
 from Strategy import Common
 from AnalysisG.Submission import Condor
 from AnalysisG.IO import UnpickleObject
@@ -7,12 +8,13 @@ from plotting import PlotEfficiency
 import copy
 from mtt_reconstruction import MttReconstructor
 from Strategy import Common
+from StrategyTruth import Common as CommonTruth
 import uproot
 import numpy as np
 import os
 from AnalysisG.IO import nTupler
 
-def do_test():
+def do_test_post_prod():
     root_dir = "/nfs/dust/atlas/user/sitnikov/signal-comparison/common-fw_tag212120/final"
     mc_cpgn = {
                 "mc16a" : root_dir + "/mc16a/2lss3lge1DL1r/BSM4tops.root"
@@ -26,8 +28,8 @@ def do_test():
         ana = Analysis()
         ana.Event = Event
         # ana.EventCache = True
-        # ana.EventStart = 950
-        ana.EventStop = 1
+        ana.EventStart = 8
+        ana.EventStop = 8
         ana.InputSample(mc, this_pth)
         ana.AddSelection("bsm", Common)
         ana.MergeSelection("bsm")
@@ -37,6 +39,70 @@ def do_test():
     for i in n:
         filename = list(i.masses.keys())[0]
         print(i.mcChannelNumbers[filename], i.masses[filename])
+
+def do_test_truth():
+    root_dir = "/nfs/dust/atlas/user/sitnikov/ntuples_for_classifier/"
+    files = {
+                "1000" : root_dir + "ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root"
+    }
+    Quant = 1
+    for file in files:
+        this_pth = files[file]
+        ana = Analysis()
+        ana.Event = TruthEvent
+        ana.ProjectName = "AnalysisTruthMeV"
+        ana.EventCache = True
+        # ana.EventStart = 950
+        # ana.EventStop = 1
+        # ana.EventStart = 7
+        # ana.EventStop = 10
+        ana.InputSample(file, this_pth)
+        # ana.AddSelection("bsm", CommonTruth)
+        # ana.MergeSelection("bsm")
+        ana.Launch()
+        for i,event in enumerate(ana):
+            print('\n')
+            if i < 2:
+                continue
+            if i > 2:
+                break
+            cases = [2]#range(10)
+            for icase in cases:
+                mtt_reconstructor = MttReconstructor(event, icase, 'Children')
+                print(icase, mtt_reconstructor.event_type, mtt_reconstructor.mtt)
+
+    # n = nTupler("AnalysisTruthMeV/Selections/Merged")
+    # n.This("bsm -> ", "nominal")
+    # cases = [9, 10]
+    # counts = {'None' : {'Children' : {i : 0 for i in cases}, 'TruthJet' : {i : 0 for i in cases}, 'Jet' : {i : 0 for i in cases}},
+    #           'number' : {'Children' : {i : 0 for i in cases}, 'TruthJet' : {i : 0 for i in cases}, 'Jet' : {i : 0 for i in cases}}}
+    # count_by_types = {obj : {} for obj in ['Children', 'TruthJet', 'Jet']}
+    # count = 0
+    # is_None_found = False
+    # for i in n:
+    #     print(count)
+    #     count += 1
+    #     if is_None_found:
+    #         break
+    #     filename = list(i.masses.keys())[0]
+    #     for obj_type in ['Children']:#i.masses:
+    #         for case_num in i.masses[obj_type]:
+    #             if i.masses[obj_type][case_num][0] is None:
+    #                 is_None_found = True
+    #                 counts['None'][obj_type][case_num] += 1
+    #                 event_type = i.event_types[obj_type][case_num][0]
+    #                 if event_type not in count_by_types[obj_type]:
+    #                     count_by_types[obj_type][event_type] = 0
+    #                 count_by_types[obj_type][event_type] += 1
+    #             else:
+    #                 counts['number'][obj_type][case_num] += 1
+    #             if case_num == 9:
+    #                 counts['None'][obj_type][10] += 1
+    #                 counts['number'][obj_type][10] += 1
+    #     # print(i.masses)
+    # import json
+    # print(json.dumps(counts, indent=1))
+    # print(json.dumps(count_by_types, indent=1))
 
 def submit_jobs():
     # direc = "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000"#"/atlasgpfs01/usatlas/data/eleboulicaut/ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root"
@@ -312,7 +378,7 @@ def process():
     for i in no_selection:
         print(i)
 
-do_test()
+do_test_truth()
 # make_plots()
 # submit_jobs()
 #process()
