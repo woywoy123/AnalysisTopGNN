@@ -60,7 +60,6 @@ namespace pyc
                 torch::Tensor Mt (torch::Tensor pz, torch::Tensor e);
                 torch::Tensor Theta(torch::Tensor px, torch::Tensor py, torch::Tensor pz); 
                 torch::Tensor DeltaR(torch::Tensor px1, torch::Tensor px2, torch::Tensor py1, torch::Tensor py2, torch::Tensor pz1, torch::Tensor pz2);
-
             }
 
             namespace combined 
@@ -226,6 +225,9 @@ namespace pyc
         std::vector<std::vector<torch::Tensor>> node_aggregation(
                 torch::Tensor edge_index, torch::Tensor prediction, 
                 torch::Tensor node_feature, const bool include_zero); 
+
+        torch::Tensor unique_aggregation(torch::Tensor cluster_map, torch::Tensor features); 
+
 
 
         namespace polar

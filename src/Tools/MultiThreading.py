@@ -1,12 +1,12 @@
 from AnalysisG.Notification import _MultiThreading
-import torch.multiprocessing
 from torch.multiprocessing import Process, Pipe
 
+import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy("file_system")
-import multiprocessing
+
+from typing import Union
 from tqdm import tqdm
 import math
-from typing import Union
 
 
 class TemplateThreading:
@@ -67,7 +67,6 @@ class TemplateThreading:
         for i in self._i:
             for j in i: del j
 
-
 class Threading(_MultiThreading):
     def __init__(
         self,
@@ -85,8 +84,7 @@ class Threading(_MultiThreading):
         self._dct = {}
 
         self.AlertOnEmptyList()
-        if chnk_size is not None:
-            _quant = int(chnk_size)
+        if chnk_size is not None: _quant = int(chnk_size)
         else: _quant = int(self._threads)
 
         self._chnk = [lists[i : i + _quant] for i in range(0, len(lists), _quant)]
@@ -96,7 +94,7 @@ class Threading(_MultiThreading):
     def Start(self):
         if len(self.__lists) == 0: return self._lists
         self._Progress()
-        
+
         self._exc = {}
         for i in range(self._threads):
             T = TemplateThreading(self._function)

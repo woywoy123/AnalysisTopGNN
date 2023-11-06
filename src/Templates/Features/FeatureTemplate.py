@@ -154,7 +154,6 @@ def Jets():
     # Node: Truth
     NT = {
         "res_node": J.Node.res_node,
-        "one_top": J.Node.one_top,  # <-- non merged top truth jets
         "top_node": J.Node.top_node,  # <-- including merged top truth jets
     }
 
@@ -199,46 +198,27 @@ def AddFeature(Prefix, dic):
 
 
 def ApplyFeatures(A, Level=None):
-    if Level is not None:
-        pass
-    else:
-        name = A.EventGraph.__name__
-        if "Tops" in name:
-            Level = "TruthTops"
-        elif "Children" in name:
-            Level = "TruthChildren"
-        elif "TruthJet" in name:
-            Level = "TruthJets"
-        elif "GraphJet" in name or "Detector" in name:
-            "Jets"
-        else:
-            Level = ""
+    if Level is None:
+        name = A.Graph.__name__
+        if "Tops" in name: Level = "TruthTops"
+        elif "Children" in name: Level = "TruthChildren"
+        elif "TruthJet" in name: Level = "TruthJets"
+        elif "GraphJet" in name or "Detector" in name: Level = "Jets"
+        else: Level = ""
 
-    if Level == "TruthTops":
-        Features = TruthTops()
-    elif Level == "TruthChildren":
-        Features = TruthChildren()
-    elif Level == "TruthJets":
-        Features = TruthJets()
-    elif Level == "Jets":
-        Features = Jets()
+    if Level == "TruthTops": Features = TruthTops()
+    elif Level == "TruthChildren": Features = TruthChildren()
+    elif Level == "TruthJets": Features = TruthJets()
+    elif Level == "Jets": Features = Jets()
     else:
-        print("INVALID CHOICE!")
+        print("ApplyFeatures::INVALID CHOICE!")
         exit()
-
     for i in Features:
         base = "_".join(i.split("_")[1:])
         fx = Features[i]
-
-        if "EF" in i:
-            A.AddEdgeFeature(fx, base)
-        elif "NF" in i:
-            A.AddNodeFeature(fx, base)
-        elif "GF" in i:
-            A.AddGraphFeature(fx, base)
-        elif "ET" in i:
-            A.AddEdgeTruth(fx, base)
-        elif "NT" in i:
-            A.AddNodeTruth(fx, base)
-        elif "GT" in i:
-            A.AddGraphTruth(fx, base)
+        if "EF" in i: A.AddEdgeFeature(fx, base)
+        elif "NF" in i: A.AddNodeFeature(fx, base)
+        elif "GF" in i: A.AddGraphFeature(fx, base)
+        elif "ET" in i: A.AddEdgeTruthFeature(fx, base)
+        elif "NT" in i: A.AddNodeTruthFeature(fx, base)
+        elif "GT" in i: A.AddGraphTruthFeature(fx, base)

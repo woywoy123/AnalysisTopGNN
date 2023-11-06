@@ -24,12 +24,9 @@ def __router__(
     comb = cmb if len(inpt) == trig_cmb else sgl
     comb += get
     fx = {}
-    if len([i for i in inpt if torch.is_tensor(i)]) == 0: 
-        fx = torch.ops.pyc_float
-    elif len([i for i in inpt if i.is_cuda]) == 0:
-        fx = torch.ops.pyc_tensor
-    else:
-        fx = torch.ops.pyc_cuda
+    if len([i for i in inpt if torch.is_tensor(i)]) == 0: fx = torch.ops.pyc_float
+    elif len([i for i in inpt if i.is_cuda]) == 0: fx = torch.ops.pyc_tensor
+    else: fx = torch.ops.pyc_cuda
 
     try: return fx.__dict__[comb], inpt
     except KeyError: pass
@@ -49,8 +46,7 @@ def edge(*args):
     ]
 
     out = {}
-    for i in range(len(res)):
-        out[i] = { n : res[i][k] for k, n in keys }
+    for i in range(len(res)): out[i] = { n : res[i][k] for k, n in keys }
     return out
 
 def node(*args):
@@ -67,6 +63,5 @@ def node(*args):
     ]
 
     out = {}
-    for i in range(len(res)):
-        out[i] = { n : res[i][k] for k, n in keys }
+    for i in range(len(res)): out[i] = { n : res[i][k] for k, n in keys }
     return out

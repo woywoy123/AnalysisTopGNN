@@ -12,6 +12,7 @@ Ana1.Event = ExampleEvent # < link the event definition to the framework
 Ana1.EventCache = False # < Don't create a cache
 Ana1.Threads = 1 # < how many CPU threads to utilize 
 Ana1.EventStop = 100 # < how many events to generate 
+Ana1.Tree = "nominal"
 Ana1.Launch() # < launches the Analysis 
 
 # Sample 2: 
@@ -22,8 +23,8 @@ Ana2.Event = ExampleEvent
 Ana2.EventCache = False
 Ana2.Threads = 1
 Ana2.EventStop = 100
-Ana2.DisablePyAMI = True # Disables the pyami search
-Ana2.DisablePyAMI = False
+Ana2.Tree = "nominal"
+Ana2.EnablePyAMI = True # Enables the pyami search
 
 for i in Ana2:
     # return the absolute path of the ROOT file 
@@ -33,15 +34,7 @@ for i in Ana2:
     # and any other details e.g. total events, cross section etc.
     try:
         print(i.DatasetName)
-        print(i.nFiles)
         print(i.total_events)
-        print(i.short)
-        print(i.DAOD)
-        print(i.cross_section)
-        print(i.Files)
-        print(i.generator_tune)
-        print(i.keywords)
-        print(i.isMC)
         print(i.version)
     except AttributeError:
         print(i.ROOT)
@@ -73,13 +66,11 @@ for i in Ana1:
     ROOT = i.ROOT
     break
 
+AnotherAnalysis.EventName = "ExampleEvent"
 events = AnotherAnalysis[ROOT] # < will scan for all events associated with this ROOT
-print(events)
 
 # What if we want to check if a ROOT or event is in some analysis instance?
 val = hash_ in Ana2
 assert val == False # shouldnt have the event
 assert hash_ in AnotherAnalysis # This should because it is the sum of Ana1 and Ana2
 assert hash_ in Ana1
-
-

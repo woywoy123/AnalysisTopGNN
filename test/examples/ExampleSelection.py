@@ -10,7 +10,7 @@ class Example(SelectionTemplate):
     def Strategy(self, event):
         self.Top["Truth"] += [t.Mass for t in event.Tops]
         self.Children["Truth"] += [c.Mass for c in event.Children]
-        return "Success->Example"
+        return "Example::Passed"
 
 
 class Example2(SelectionTemplate):
@@ -26,4 +26,4 @@ class Example2(SelectionTemplate):
         self.Children["Test"] = {}
         self.Children["Test"]["t"] = [1]
         self.Out # call missing attribute.
-        return "Success->Example"
+        return "Example::Passed"

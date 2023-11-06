@@ -148,8 +148,7 @@ static const std::tuple<torch::Tensor, torch::Tensor> _DotMatrix(
     return {Operators::CUDA::Mul(X, dNu), dNu}; 
 }
 
-torch::Tensor _Base_Matrix(
-        torch::Tensor pmc_b, torch::Tensor pmc_mu, torch::Tensor masses_W_top_nu)
+torch::Tensor _Base_Matrix(torch::Tensor pmc_b, torch::Tensor pmc_mu, torch::Tensor masses_W_top_nu)
 {
     const unsigned int threads = 1024; 
     const unsigned int len_i = pmc_b.size(0); 

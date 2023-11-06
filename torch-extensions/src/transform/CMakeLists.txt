@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(transform VERSION ${SKBUILD_PROJECT_VERSION} LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 add_subdirectory(cartesian-floats)
 add_subdirectory(polar-floats)
 

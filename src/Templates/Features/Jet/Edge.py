@@ -1,60 +1,30 @@
 def res_edge(a, b):
     p1, p2 = [], []
-    try:
-        p1 += a.Parent
-    except:
-        pass
+    try: p1 += a.Tops
+    except AttributeError: p1 += a.Parent
 
-    try:
-        p1 += a.Tops
-    except:
-        pass
+    try: p2 += b.Tops
+    except AttributeError: p2 += b.Parent
 
-    try:
-        p2 += b.Parent
-    except:
-        pass
-
-    try:
-        p2 += b.Tops
-    except:
-        pass
-
-    p1, p2 = [p for p in set(p1) if p.FromRes == 1], [
-        p for p in set(p2) if p.FromRes == 1
-    ]
-    return len(p1) > 0 and len(p2) > 0
-
+    p1 = set([i for i in p1 if i.FromRes])
+    p2 = set([i for i in p2 if i.FromRes])
+    if not len(p1): return 0
+    if not len(p2): return 0
+    return 1
 
 def top_edge(a, b):
     p1, p2 = [], []
-    try:
-        p1 += a.Parent
-    except:
-        pass
+    try: p1 += a.Tops
+    except AttributeError: p1 += a.Parent
+    try: p2 += b.Tops
+    except AttributeError: p2 += b.Parent
 
-    try:
-        p1 += a.Tops
-    except:
-        pass
-
-    try:
-        p2 += b.Parent
-    except:
-        pass
-
-    try:
-        p2 += b.Tops
-    except:
-        pass
     p1, p2 = set(p1), set(p2)
-    if len(p1) == 0:
-        return False
-    if len(p2) == 0:
-        return False
+    if not len(p1): return 0
+    if not len(p2): return 0
     sc = len([t for t in p1 if t in p2]) > 0
     sc *= len([t for t in p2 if t in p1]) > 0
-    return sc
+    return int(sc)
 
 
 def lep_edge(a, b):

@@ -2,109 +2,301 @@
 #include "pyc_cuda.h"
 
 // ======= Transform ========= //
-torch::Tensor pyc::transform::separate::Pt(torch::Tensor px, torch::Tensor py){ return Transform::CUDA::Pt(px, py); }
-torch::Tensor pyc::transform::separate::Eta(torch::Tensor px, torch::Tensor py, torch::Tensor pz){ return Transform::CUDA::Eta(px, py, pz); }
-torch::Tensor pyc::transform::separate::Phi(torch::Tensor px, torch::Tensor py){ return Transform::CUDA::Phi(px, py); }
-torch::Tensor pyc::transform::separate::PtEtaPhi(torch::Tensor px, torch::Tensor py, torch::Tensor pz){ return Transform::CUDA::PtEtaPhi(px, py, pz); }
-torch::Tensor pyc::transform::separate::PtEtaPhiE(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){ return Transform::CUDA::PtEtaPhiE(px, py, pz, e); }
+torch::Tensor pyc::transform::separate::Pt(torch::Tensor px, torch::Tensor py){ 
+    return Transform::CUDA::Pt(px, py); 
+}
 
-torch::Tensor pyc::transform::separate::Px(torch::Tensor pt, torch::Tensor phi){ return Transform::CUDA::Px(pt, phi); }
-torch::Tensor pyc::transform::separate::Py(torch::Tensor pt, torch::Tensor phi){ return Transform::CUDA::Py(pt, phi); }
-torch::Tensor pyc::transform::separate::Pz(torch::Tensor pt, torch::Tensor eta){ return Transform::CUDA::Pz(pt, eta); }
-torch::Tensor pyc::transform::separate::PxPyPz(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){ return Transform::CUDA::PxPyPz(pt, eta, phi); }
-torch::Tensor pyc::transform::separate::PxPyPzE(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){ return Transform::CUDA::PxPyPzE(pt, eta, phi, e); }
+torch::Tensor pyc::transform::separate::Eta(torch::Tensor px, torch::Tensor py, torch::Tensor pz){ 
+    return Transform::CUDA::Eta(px, py, pz); 
+}
 
-torch::Tensor pyc::transform::combined::Pt(torch::Tensor pmc){ return Transform::CUDA::Pt(pmc); }
-torch::Tensor pyc::transform::combined::Eta(torch::Tensor pmc){ return Transform::CUDA::Eta(pmc); }
-torch::Tensor pyc::transform::combined::Phi(torch::Tensor pmc){ return Transform::CUDA::Phi(pmc); }
-torch::Tensor pyc::transform::combined::PtEtaPhi(torch::Tensor pmc){ return Transform::CUDA::PtEtaPhi(pmc); }
-torch::Tensor pyc::transform::combined::PtEtaPhiE(torch::Tensor pmc){ return Transform::CUDA::PtEtaPhiE(pmc); }
+torch::Tensor pyc::transform::separate::Phi(torch::Tensor px, torch::Tensor py){ 
+    return Transform::CUDA::Phi(px, py); 
+}
 
-torch::Tensor pyc::transform::combined::Px(torch::Tensor pmu){ return Transform::CUDA::Px(pmu); }
-torch::Tensor pyc::transform::combined::Py(torch::Tensor pmu){ return Transform::CUDA::Py(pmu); }
-torch::Tensor pyc::transform::combined::Pz(torch::Tensor pmu){ return Transform::CUDA::Pz(pmu); }
-torch::Tensor pyc::transform::combined::PxPyPz(torch::Tensor pmu){ return Transform::CUDA::PxPyPz(pmu); }
-torch::Tensor pyc::transform::combined::PxPyPzE(torch::Tensor pmu){ return Transform::CUDA::PxPyPzE(pmu); }
+torch::Tensor pyc::transform::separate::PtEtaPhi(torch::Tensor px, torch::Tensor py, torch::Tensor pz){ 
+    return Transform::CUDA::PtEtaPhi(px, py, pz); 
+}
+
+torch::Tensor pyc::transform::separate::PtEtaPhiE(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){ 
+    return Transform::CUDA::PtEtaPhiE(px, py, pz, e); 
+}
+
+torch::Tensor pyc::transform::separate::Px(torch::Tensor pt, torch::Tensor phi){ 
+    return Transform::CUDA::Px(pt, phi); 
+}
+
+torch::Tensor pyc::transform::separate::Py(torch::Tensor pt, torch::Tensor phi){ 
+    return Transform::CUDA::Py(pt, phi); 
+}
+
+torch::Tensor pyc::transform::separate::Pz(torch::Tensor pt, torch::Tensor eta){ 
+    return Transform::CUDA::Pz(pt, eta); 
+}
+
+torch::Tensor pyc::transform::separate::PxPyPz(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){ 
+    return Transform::CUDA::PxPyPz(pt, eta, phi); 
+}
+
+torch::Tensor pyc::transform::separate::PxPyPzE(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){ 
+    return Transform::CUDA::PxPyPzE(pt, eta, phi, e); 
+}
+
+torch::Tensor pyc::transform::combined::Pt(torch::Tensor pmc){
+    return Transform::CUDA::Pt(pmc);
+}
+
+torch::Tensor pyc::transform::combined::Eta(torch::Tensor pmc){
+    return Transform::CUDA::Eta(pmc);
+}
+
+torch::Tensor pyc::transform::combined::Phi(torch::Tensor pmc){
+    return Transform::CUDA::Phi(pmc);
+}
+
+torch::Tensor pyc::transform::combined::PtEtaPhi(torch::Tensor pmc){
+    return Transform::CUDA::PtEtaPhi(pmc);
+}
+
+torch::Tensor pyc::transform::combined::PtEtaPhiE(torch::Tensor pmc){
+    return Transform::CUDA::PtEtaPhiE(pmc);
+}
+
+torch::Tensor pyc::transform::combined::Px(torch::Tensor pmu){
+    return Transform::CUDA::Px(pmu);
+}
+
+torch::Tensor pyc::transform::combined::Py(torch::Tensor pmu){
+    return Transform::CUDA::Py(pmu);
+}
+
+torch::Tensor pyc::transform::combined::Pz(torch::Tensor pmu){
+    return Transform::CUDA::Pz(pmu);
+}
+
+torch::Tensor pyc::transform::combined::PxPyPz(torch::Tensor pmu){
+    return Transform::CUDA::PxPyPz(pmu);
+}
+
+torch::Tensor pyc::transform::combined::PxPyPzE(torch::Tensor pmu){
+    return Transform::CUDA::PxPyPzE(pmu);
+}
 
 // ======= Physics ========= //
-torch::Tensor pyc::physics::cartesian::separate::P2(torch::Tensor px, torch::Tensor py, torch::Tensor pz){return Physics::CUDA::Cartesian::P2(px, py, pz);}
-torch::Tensor pyc::physics::cartesian::combined::P2(torch::Tensor pmc){return Physics::CUDA::Cartesian::P2(pmc);}
-torch::Tensor pyc::physics::cartesian::separate::P(torch::Tensor px, torch::Tensor py, torch::Tensor pz){return Physics::CUDA::Cartesian::P(px, py, pz);}
-torch::Tensor pyc::physics::cartesian::combined::P(torch::Tensor pmc){return Physics::CUDA::Cartesian::P(pmc);}
+torch::Tensor pyc::physics::cartesian::separate::P2(torch::Tensor px, torch::Tensor py, torch::Tensor pz){
+    return Physics::CUDA::Cartesian::P2(px, py, pz); 
+}
 
-torch::Tensor pyc::physics::polar::separate::P2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){return Physics::CUDA::Polar::P2(pt, eta, phi);}
-torch::Tensor pyc::physics::polar::combined::P2(torch::Tensor pmu){return Physics::CUDA::Polar::P2(pmu);}
-torch::Tensor pyc::physics::polar::separate::P(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){return Physics::CUDA::Polar::P(pt, eta, phi);}
-torch::Tensor pyc::physics::polar::combined::P(torch::Tensor pmu){return Physics::CUDA::Polar::P(pmu);}
+torch::Tensor pyc::physics::cartesian::combined::P2(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::P2(pmc); 
+}
 
-torch::Tensor pyc::physics::cartesian::separate::Beta2(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){return Physics::CUDA::Cartesian::Beta2(px, py, pz, e);}
-torch::Tensor pyc::physics::cartesian::combined::Beta2(torch::Tensor pmc){return Physics::CUDA::Cartesian::Beta2(pmc);}
-torch::Tensor pyc::physics::cartesian::separate::Beta(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){return Physics::CUDA::Cartesian::Beta(px, py, pz, e);}
-torch::Tensor pyc::physics::cartesian::combined::Beta(torch::Tensor pmc){return Physics::CUDA::Cartesian::Beta(pmc);}
+torch::Tensor pyc::physics::cartesian::separate::P(torch::Tensor px, torch::Tensor py, torch::Tensor pz){
+    return Physics::CUDA::Cartesian::P(px, py, pz); 
+}
 
-torch::Tensor pyc::physics::polar::separate::Beta2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){return Physics::CUDA::Polar::Beta2(pt, eta, phi, e);}
-torch::Tensor pyc::physics::polar::combined::Beta2(torch::Tensor pmu){return Physics::CUDA::Polar::Beta2(pmu);}
-torch::Tensor pyc::physics::polar::separate::Beta(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){return Physics::CUDA::Polar::Beta(pt, eta, phi, e);}
-torch::Tensor pyc::physics::polar::combined::Beta(torch::Tensor pmu){return Physics::CUDA::Polar::Beta(pmu);}
+torch::Tensor pyc::physics::cartesian::combined::P(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::P(pmc); 
+}
 
-torch::Tensor pyc::physics::cartesian::separate::M2(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){ return Physics::CUDA::Cartesian::M2(px, py, pz, e); }
-torch::Tensor pyc::physics::cartesian::combined::M2(torch::Tensor pmc){ return Physics::CUDA::Cartesian::M2(pmc); }
-torch::Tensor pyc::physics::cartesian::separate::M(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){ return Physics::CUDA::Cartesian::M(px, py, pz, e); }
-torch::Tensor pyc::physics::cartesian::combined::M(torch::Tensor pmc){ return Physics::CUDA::Cartesian::M(pmc); }
 
-torch::Tensor pyc::physics::cartesian::separate::Mt2(torch::Tensor pz, torch::Tensor e){ return Physics::CUDA::Cartesian::Mt2(pz, e); }
-torch::Tensor pyc::physics::cartesian::combined::Mt2(torch::Tensor pmc){ return Physics::CUDA::Cartesian::Mt2(pmc); }
-torch::Tensor pyc::physics::cartesian::separate::Mt(torch::Tensor pz, torch::Tensor e){ return Physics::CUDA::Cartesian::Mt(pz, e); }
-torch::Tensor pyc::physics::cartesian::combined::Mt(torch::Tensor pmc){ return Physics::CUDA::Cartesian::Mt(pmc); }
+torch::Tensor pyc::physics::polar::separate::P2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){
+    return Physics::CUDA::Polar::P2(pt, eta, phi); 
+}
 
-torch::Tensor pyc::physics::cartesian::separate::Theta(torch::Tensor px, torch::Tensor py, torch::Tensor pz){ return Physics::CUDA::Cartesian::Theta(px, py, pz); } 
-torch::Tensor pyc::physics::cartesian::combined::Theta(torch::Tensor pmc){ return Physics::CUDA::Cartesian::Theta(pmc); } 
-torch::Tensor pyc::physics::cartesian::separate::DeltaR(torch::Tensor px1, torch::Tensor px2, torch::Tensor py1, torch::Tensor py2, torch::Tensor pz1, torch::Tensor pz2)
-{ 
+torch::Tensor pyc::physics::polar::combined::P2(torch::Tensor pmu){
+    return Physics::CUDA::Polar::P2(pmu); 
+}
+
+torch::Tensor pyc::physics::polar::separate::P(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){
+    return Physics::CUDA::Polar::P(pt, eta, phi); 
+}
+
+torch::Tensor pyc::physics::polar::combined::P(torch::Tensor pmu){
+    return Physics::CUDA::Polar::P(pmu); 
+}
+
+
+torch::Tensor pyc::physics::cartesian::separate::Beta2(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::Beta2(px, py, pz, e); 
+}
+
+torch::Tensor pyc::physics::cartesian::combined::Beta2(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::Beta2(pmc); 
+}
+
+torch::Tensor pyc::physics::cartesian::separate::Beta(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::Beta(px, py, pz, e); 
+}
+
+torch::Tensor pyc::physics::cartesian::combined::Beta(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::Beta(pmc); 
+}
+
+
+torch::Tensor pyc::physics::polar::separate::Beta2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){
+    return Physics::CUDA::Polar::Beta2(pt, eta, phi, e); 
+}
+
+torch::Tensor pyc::physics::polar::combined::Beta2(torch::Tensor pmu){
+    return Physics::CUDA::Polar::Beta2(pmu); 
+}
+
+torch::Tensor pyc::physics::polar::separate::Beta(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){
+    return Physics::CUDA::Polar::Beta(pt, eta, phi, e); 
+}
+
+torch::Tensor pyc::physics::polar::combined::Beta(torch::Tensor pmu){
+    return Physics::CUDA::Polar::Beta(pmu); 
+}
+
+
+torch::Tensor pyc::physics::cartesian::separate::M2(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::M2(px, py, pz, e);
+}
+
+torch::Tensor pyc::physics::cartesian::combined::M2(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::M2(pmc);
+}
+
+torch::Tensor pyc::physics::cartesian::separate::M(torch::Tensor px, torch::Tensor py, torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::M(px, py, pz, e);
+}
+
+torch::Tensor pyc::physics::cartesian::combined::M(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::M(pmc);
+}
+
+torch::Tensor pyc::physics::cartesian::separate::Mt2(torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::Mt2(pz, e);
+}
+
+torch::Tensor pyc::physics::cartesian::combined::Mt2(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::Mt2(pmc);
+}
+
+torch::Tensor pyc::physics::cartesian::separate::Mt(torch::Tensor pz, torch::Tensor e){
+    return Physics::CUDA::Cartesian::Mt(pz, e);
+}
+
+torch::Tensor pyc::physics::cartesian::combined::Mt(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::Mt(pmc);
+}
+
+torch::Tensor pyc::physics::cartesian::separate::Theta(torch::Tensor px, torch::Tensor py, torch::Tensor pz){
+    return Physics::CUDA::Cartesian::Theta(px, py, pz);
+}
+
+torch::Tensor pyc::physics::cartesian::combined::Theta(torch::Tensor pmc){
+    return Physics::CUDA::Cartesian::Theta(pmc);
+}
+
+torch::Tensor pyc::physics::cartesian::separate::DeltaR(torch::Tensor px1, torch::Tensor px2, torch::Tensor py1, torch::Tensor py2, torch::Tensor pz1, torch::Tensor pz2){ 
     return Physics::CUDA::Cartesian::DeltaR(px1, px2, py1, py2, pz1, pz2); 
 }
-torch::Tensor pyc::physics::cartesian::combined::DeltaR(torch::Tensor pmc1, torch::Tensor pmc2){ return Physics::CUDA::Cartesian::DeltaR(pmc1, pmc2); } 
 
-torch::Tensor pyc::physics::polar::separate::M2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){ return Physics::CUDA::Polar::M2(pt, eta, phi, e); } 
-torch::Tensor pyc::physics::polar::combined::M2(torch::Tensor pmu){ return Physics::CUDA::Polar::M2(pmu); } 
-torch::Tensor pyc::physics::polar::separate::M(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){ return Physics::CUDA::Polar::M(pt, eta, phi, e); } 
-torch::Tensor pyc::physics::polar::combined::M(torch::Tensor pmu){ return Physics::CUDA::Polar::M(pmu); } 
-
-torch::Tensor pyc::physics::polar::separate::Mt2(torch::Tensor pt, torch::Tensor eta, torch::Tensor e){ return Physics::CUDA::Polar::Mt2(pt, eta, e); } 
-torch::Tensor pyc::physics::polar::combined::Mt2(torch::Tensor pmu){ return Physics::CUDA::Polar::Mt2(pmu); } 
-torch::Tensor pyc::physics::polar::separate::Mt(torch::Tensor pt, torch::Tensor eta, torch::Tensor e){ return Physics::CUDA::Polar::Mt(pt, eta, e); } 
-torch::Tensor pyc::physics::polar::combined::Mt(torch::Tensor pmu){ return Physics::CUDA::Polar::Mt(pmu); } 
-
-torch::Tensor pyc::physics::polar::separate::Theta(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){ return Physics::CUDA::Polar::Theta(pt, eta, phi); } 
-torch::Tensor pyc::physics::polar::combined::Theta(torch::Tensor pmu){ return Physics::CUDA::Polar::Theta(pmu); } 
-torch::Tensor pyc::physics::polar::separate::DeltaR(torch::Tensor eta1, torch::Tensor eta2, torch::Tensor phi1, torch::Tensor phi2)
-{ 
-    return Physics::CUDA::Polar::DeltaR(eta1, eta2, phi1, phi2); 
+torch::Tensor pyc::physics::cartesian::combined::DeltaR(torch::Tensor pmc1, torch::Tensor pmc2){
+    return Physics::CUDA::Cartesian::DeltaR(pmc1, pmc2);
 } 
-torch::Tensor pyc::physics::polar::combined::DeltaR(torch::Tensor pmu1, torch::Tensor pmu2){ return Physics::CUDA::Polar::DeltaR(pmu1, pmu2); } 
+
+torch::Tensor pyc::physics::polar::separate::M2(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){
+    return Physics::CUDA::Polar::M2(pt, eta, phi, e);
+} 
+
+torch::Tensor pyc::physics::polar::combined::M2(torch::Tensor pmu){
+    return Physics::CUDA::Polar::M2(pmu);
+}
+
+torch::Tensor pyc::physics::polar::separate::M(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi, torch::Tensor e){
+    return Physics::CUDA::Polar::M(pt, eta, phi, e);
+}
+
+torch::Tensor pyc::physics::polar::combined::M(torch::Tensor pmu){
+    return Physics::CUDA::Polar::M(pmu);
+} 
+
+torch::Tensor pyc::physics::polar::separate::Mt2(torch::Tensor pt, torch::Tensor eta, torch::Tensor e){
+    return Physics::CUDA::Polar::Mt2(pt, eta, e);
+}
+
+torch::Tensor pyc::physics::polar::combined::Mt2(torch::Tensor pmu){
+    return Physics::CUDA::Polar::Mt2(pmu);
+}
+
+torch::Tensor pyc::physics::polar::separate::Mt(torch::Tensor pt, torch::Tensor eta, torch::Tensor e){
+    return Physics::CUDA::Polar::Mt(pt, eta, e);
+}
+
+torch::Tensor pyc::physics::polar::combined::Mt(torch::Tensor pmu){
+    return Physics::CUDA::Polar::Mt(pmu);
+} 
+
+torch::Tensor pyc::physics::polar::separate::Theta(torch::Tensor pt, torch::Tensor eta, torch::Tensor phi){
+    return Physics::CUDA::Polar::Theta(pt, eta, phi);
+}
+
+torch::Tensor pyc::physics::polar::combined::Theta(torch::Tensor pmu){
+    return Physics::CUDA::Polar::Theta(pmu);
+}
+
+torch::Tensor pyc::physics::polar::separate::DeltaR(torch::Tensor eta1, torch::Tensor eta2, torch::Tensor phi1, torch::Tensor phi2){ 
+    return Physics::CUDA::Polar::DeltaR(eta1, eta2, phi1, phi2); 
+}
+
+torch::Tensor pyc::physics::polar::combined::DeltaR(torch::Tensor pmu1, torch::Tensor pmu2){
+    return Physics::CUDA::Polar::DeltaR(pmu1, pmu2);
+} 
 
 // Operators
-torch::Tensor pyc::operators::Dot(torch::Tensor v1, torch::Tensor v2){ return Operators::CUDA::Dot(v1, v2); }
-torch::Tensor pyc::operators::Mul(torch::Tensor v1, torch::Tensor v2){ return Operators::CUDA::Mul(v1, v2); }
-torch::Tensor pyc::operators::CosTheta(torch::Tensor v1, torch::Tensor v2){ return Operators::CUDA::CosTheta(v1, v2); }
-torch::Tensor pyc::operators::SinTheta(torch::Tensor v1, torch::Tensor v2){ return Operators::CUDA::SinTheta(v1, v2); }
+torch::Tensor pyc::operators::Dot(torch::Tensor v1, torch::Tensor v2){
+    return Operators::CUDA::Dot(v1, v2);
+}
 
-torch::Tensor pyc::operators::Rx(torch::Tensor angle){ return Operators::CUDA::Rx(angle); }
-torch::Tensor pyc::operators::Ry(torch::Tensor angle){ return Operators::CUDA::Ry(angle); }
-torch::Tensor pyc::operators::Rz(torch::Tensor angle){ return Operators::CUDA::Rz(angle); }
+torch::Tensor pyc::operators::Mul(torch::Tensor v1, torch::Tensor v2){
+    return Operators::CUDA::Mul(v1, v2);
+}
 
-torch::Tensor pyc::operators::CoFactors(torch::Tensor matrix){ return Operators::CUDA::CoFactors(matrix); }
-torch::Tensor pyc::operators::Determinant(torch::Tensor matrix){ return Operators::CUDA::Determinant(matrix); }
-torch::Tensor pyc::operators::Inverse(torch::Tensor matrix){ return Operators::CUDA::Inverse(matrix); }
-torch::Tensor pyc::operators::Cross(torch::Tensor mat1, torch::Tensor mat2){ return Operators::CUDA::Cross(mat1, mat2); }
+torch::Tensor pyc::operators::CosTheta(torch::Tensor v1, torch::Tensor v2){
+    return Operators::CUDA::CosTheta(v1, v2);
+}
 
-torch::Tensor pyc::nusol::BaseMatrix(torch::Tensor pmc_b, torch::Tensor pmc_mu, torch::Tensor masses)
-{ 
+torch::Tensor pyc::operators::SinTheta(torch::Tensor v1, torch::Tensor v2){
+    return Operators::CUDA::SinTheta(v1, v2);
+}
+
+torch::Tensor pyc::operators::Rx(torch::Tensor angle){
+    return Operators::CUDA::Rx(angle);
+}
+
+torch::Tensor pyc::operators::Ry(torch::Tensor angle){
+    return Operators::CUDA::Ry(angle);
+}
+
+torch::Tensor pyc::operators::Rz(torch::Tensor angle){
+    return Operators::CUDA::Rz(angle);
+}
+
+torch::Tensor pyc::operators::CoFactors(torch::Tensor matrix){
+    return Operators::CUDA::CoFactors(matrix);
+}
+
+torch::Tensor pyc::operators::Determinant(torch::Tensor matrix){
+    return Operators::CUDA::Determinant(matrix);
+}
+
+torch::Tensor pyc::operators::Inverse(torch::Tensor matrix){
+    return Operators::CUDA::Inverse(matrix);
+}
+
+torch::Tensor pyc::operators::Cross(torch::Tensor mat1, torch::Tensor mat2){
+    return Operators::CUDA::Cross(mat1, mat2);
+}
+
+torch::Tensor pyc::nusol::BaseMatrix(torch::Tensor pmc_b, torch::Tensor pmc_mu, torch::Tensor masses){ 
     return NuSol::CUDA::BaseMatrix(pmc_b, pmc_mu, masses); 
 }
 
-std::tuple<torch::Tensor, torch::Tensor> pyc::nusol::Intersection(torch::Tensor A, torch::Tensor B, const double null)
-{ 
+std::tuple<torch::Tensor, torch::Tensor> pyc::nusol::Intersection(torch::Tensor A, torch::Tensor B, const double null){ 
     return NuSol::CUDA::Intersection(A, B, null); 
 }
 
@@ -113,8 +305,7 @@ std::vector<torch::Tensor> pyc::nusol::Nu(
         torch::Tensor sigma, const double null)
 { 
     std::map<std::string, torch::Tensor> out; 
-    if (null == -1)
-    {
+    if (null == -1){
         out = NuSol::CUDA::Nu(pmc_b, pmc_mu, met_xy, masses, sigma); 
         return {out["M"]}; 
     }
@@ -281,6 +472,14 @@ std::vector<std::vector<torch::Tensor>> pyc::graph::node_aggregation(
     return pyc::graph::dress(map); 
 }
 
+
+torch::Tensor pyc::graph::unique_aggregation(torch::Tensor cluster_map, torch::Tensor features)
+{
+    return Graph::CUDA::unique_aggregation(cluster_map, features); 
+}
+
+
+
 std::vector<std::vector<torch::Tensor>> pyc::graph::polar::combined::edge_pmu(
         torch::Tensor edge_index, torch::Tensor prediction, 
         torch::Tensor pmu, const bool include_zero)
@@ -355,6 +554,8 @@ std::vector<std::vector<torch::Tensor>> pyc::graph::cartesian::separate::node_pm
     map = Graph::CUDA::Cartesian::node_pmc(edge_index, prediction, px, py, pz, e, include_zero);
     return pyc::graph::dress(map); 
 }
+
+
 
 TORCH_LIBRARY(pyc_cuda, m)
 {
@@ -463,6 +664,7 @@ TORCH_LIBRARY(pyc_cuda, m)
 
     m.def("graph_base_combined_edge_aggregation", &pyc::graph::edge_aggregation); 
     m.def("graph_base_combined_node_aggregation", &pyc::graph::node_aggregation); 
+    m.def("graph_base_combined_unique_aggregation", &pyc::graph::unique_aggregation); 
 
     m.def("graph_polar_combined_edge", &pyc::graph::polar::combined::edge_pmu); 
     m.def("graph_polar_combined_node", &pyc::graph::polar::combined::node_pmu); 

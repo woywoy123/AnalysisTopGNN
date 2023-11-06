@@ -2,7 +2,7 @@ Getting Started
 ===============
 
 Using the Framework with ROOT Samples
-*************************************
+_____________________________________
 To make the framework compatible with your ROOT samples, create a new workspace directory. 
 
 .. code-block:: console 
@@ -20,7 +20,7 @@ Within the **Objects** folder create the following files:
    touch Analysis/Objects/selection.py
 
 The above directory structure does not necessarily need to be followed, but minimizes clutter and provides oversight over what the Analysis is composed of. 
-Alternatively, the following bash command can be run which will mimic the above structure but, pre-populate the templates for you.
+Alternatively, the following bash command can be run, which will mimic the above structure and pre-populate the templates for you.
 
 .. code-block:: console 
 
@@ -29,10 +29,10 @@ Alternatively, the following bash command can be run which will mimic the above 
 .. _particle-start:
 
 Particle Definitions
-********************
+____________________
 To create the particles templates, open the **particles.py** file and import the framework's base **ParticleTemplate** class. 
-This base class interprets the attributes and additional functionalities which will be discussed further in a dedicated advanced section.
-For now, a primitive example, would look like the code below: 
+This base class interprets attributes and introduces additional functionalities that will be discussed further in the advanced section.
+For now, a simple example would look like the code below: 
 
 .. code-block:: python
     
@@ -59,15 +59,15 @@ For now, a primitive example, would look like the code below:
 .. _event-start:
 
 Event Definitions
-*****************
+_________________
 To create an event implementation, simply open the **event.py** file and import the particles defined in the **particles.py** file. 
 Similar to the **particle.py** case, the name of the file can be completely arbitrary. 
-Within the **event.py** file, again the frameworks base class **EventTemplate** and add a few declarations, as shown below:
+Similar to the particle template example, import the base class **EventTemplate** and add a few variable declarations, as shown below:
 
 .. code-block:: python 
 
     from AnalysisG.Templates import EventTemplate
-    from particles import CustomParticle
+    from .particles import CustomParticle # import the particle
 
     class CustomEvent(EventTemplate):
         def __init__(self):
@@ -77,12 +77,12 @@ Within the **event.py** file, again the frameworks base class **EventTemplate** 
             self.runNumber = self.Type + ".Number" # <--- Example event leaf variable
 
             # Specify the trees you want to use for each event.
-            self.Tree = ["nominal", "..."] 
+            self.Trees = ["nominal", "..."]
 
             # Depending where the particles should be read from, either specify the branch 
             # or leave the branch empty and the framework will revert to the tree 
             # If there are any relevant branches add these as well.
-            self.Branches = ["..."] 
+            self.Branches = ["..."]
 
             # Add particles/additional objects constituting the event
             self.Objects = {
@@ -108,17 +108,17 @@ Within the **event.py** file, again the frameworks base class **EventTemplate** 
 
 
 Important Attributes of EventTemplate
-*************************************
+_____________________________________
 Unlike the **ParticleTemplate**, the **EventTemplate** contains much more logic and adjustable parameters.
-Most important to note are the key attributes, **Objects**, **Tree** and **Branches**. 
+Most important to note are the key attributes, **Objects**, **Trees/Tree** and **Branches**. 
 The **Objects** attribute tells the framework to link these particles to the event, if this variable is not populated, the event will simply have no particles. 
-The **Tree** and **Branches** variables are used to control which parts of the ROOT file, the framework should source the particles/event attributes from. 
+The **Trees/Tree** and **Branches** variables are used to control which parts of the ROOT file, the framework should source the particles/event attributes from. 
 Fortunately, if a tree or branch has not been found, a warning will be issued and the associated object attribute will be skipped. 
 
 .. _graph-start:
 
 Graph Definitions
-*****************
+_________________
 Similar to the above examples, to create graph data structures simply open the **graph.py** file inherit the base **GraphTemplate** class as shown below:
 
 .. code-block:: python 
@@ -128,12 +128,12 @@ Similar to the above examples, to create graph data structures simply open the *
     class MyGraph(GraphTemplate):
 
         def __init__(self, Event = None):
-            self.Event = Event 
+            GraphTemplate.__init__(self)
+            self.Event = Event
             self.Particles += self.Event.ArbitraryParticleName
 
 
-A question have occurred here, "where/when do I assign features to the graph?". 
-The answer is during the Analysis object phase, which will be illustrated below: 
+Graph features are not declared within the object class, but rather when launching the framework, as illustrated below: 
 
 .. code-block:: python 
 
@@ -148,23 +148,23 @@ The answer is during the Analysis object phase, which will be illustrated below:
 
     Ana = Analysis()
     Ana.Event = MyEvent
-    Ana.EventGraph = MyGraph
+    Ana.Graph = MyGraph
     Ana.AddEdgeFeature(some_edge, "delta_px")
     Ana.AddNodeFeature(some_node, "px")
     Ana.AddGraphFeature(some_graph, "weight")
-    Ana.AddNodeTruth(some_truth, "attribute")
+    Ana.AddNodeTruthFeature(some_truth, "attribute")
     Ana.Launch()
 
 
 There is a lot going on in the above example, this can be summarized as follows: 
 
-- The first lines are just importing **MyEvent** and **MyGraph** 
+- The first lines are importing **MyEvent** and **MyGraph** 
 - The second block defines the functions defining the attributes to add to the graph.
 - The third block utilizes the **Analysis** module to unify all modules and provides an interface to launch the code. 
 
-Another question might arise, "I havnt defined the attributes **.px**, does the above code work for me?", the answer is yes. 
-The **ParticleTemplate** has several inbuilt functions which allow the user to seamlessly switch between coordinate systems.
-Some of these attributes will be discussed under the **Advanced section**.
+Inspection of the graph features may suggest the code would throw an attribute error, since the variables **.px** etc. were not defined.
+By default, the **ParticleTemplate** module introduces several inbuilt attributes and functions, these include coordinate system transformations and many more.
+These functionalities are discussed under the **Advanced section**.
 
 To access the graph attributes, the graph compiler appends prefixes to the attribute names, corresponding to the graph variable. 
 For instance, a node attribute, would have the format, ``N_px``, where ``N`` corresponds to **Node**. 
@@ -180,13 +180,13 @@ In the example above, to access all of the attributes, this would look like show
         gr.N_T_attribute # - Node Truth (attribute)
 
 One might wonder whether all the ``PyTorch Geometric`` functionality is available, and the answer is absolutely!
-In the ``Graph`` object being interfaced with is in-fact ``PyTorch Geometric``!
+Underneath the **gr** object is a ``Graph`` object which is interfaced with ``PyTorch Geometric``!
 As an example, see ``tutorial/ExampleGraphAnalysis.py``.
 
 .. _selection-start:
 
 Selection Definitions
-*********************
+_____________________
 This module is optional but can be very useful for post-processing ROOT samples. 
 Here events can be filtered according to some event selection criteria and subsequently passed to some clustering strategy. 
 For example, if the aim is to generate mass distributions of a heavy scalar resonance, a strategy method can be defined and used to sum particles together and record the associated mass.
@@ -201,6 +201,7 @@ To implement a selection, open the **selection.py** and inherit the **SelectionT
     class MySelection(SelectionTemplate):
 
         def __init__(self):
+            SelectionTemplate.__init__(self)
             # Public variables, will be saved
             self.ClusterMasses = {}
             self.ParticleMasses = []

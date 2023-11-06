@@ -1,7 +1,7 @@
-from AnalysisG.Templates import SelectionTemplate
 import sys
 sys.path.append("../../test/neutrino_reconstruction/")
 from nusol import (SingleNu, DoubleNu)
+from AnalysisG.Templates import SelectionTemplate
 
 class NeutrinoReconstruction(SelectionTemplate):
 
@@ -47,13 +47,13 @@ class NeutrinoReconstruction(SelectionTemplate):
         mW = (l1 + nu1).Mass
         tvl = [nu+b1+l1 for nu in self.Nu(b1, l1, event, mT = mT, mW = mW)]
         self.num_sols["mev"] += [len(tvl)]
-        for t in tvl: 
+        for t in tvl:
             self.top_mass_r1l["mev"] += [t.Mass/1000]
             self.kinCollector(self.top_kin_r1l, "mev", t, t1)
 
         tvl = [nu+b1+l1 for nu in self.Nu(b1, l1, event, mT = mT, mW = mW, gev = True)]
         self.num_sols["gev"] += [len(tvl)]
-        for t in tvl: 
+        for t in tvl:
             self.top_mass_r1l["gev"] += [t.Mass/1000]
             self.kinCollector(self.top_kin_r1l, "gev", t, t1)
 
@@ -106,7 +106,6 @@ class NeutrinoReconstruction(SelectionTemplate):
 
     def Strategy(self, event):
         leptops = [t for t in event.Tops if t.LeptonicDecay]
-
         if self.leps == 2:
             t1, t2 = leptops
             self.DileptonNeutrino(event, t1, t2)

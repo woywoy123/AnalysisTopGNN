@@ -1,7 +1,10 @@
-from .Settings import Settings
-import subprocess
 from subprocess import Popen, PIPE, STDOUT
+from AnalysisG.Tools import Tools
+from threading import Thread
 from pwinput import pwinput
+import subprocess
+import pathlib
+import sys
 
 def _getcmd(cmd):
 
@@ -38,13 +41,7 @@ def AUTH_PYAMI():
 
 def POST_INSTALL_PYC():
     def stdout():
-        for line in p.stdout:
-            print(line.decode("UTF-8").replace("\n", ""))
-
-    import subprocess
-    import sys
-    from threading import Thread
-    import pathlib
+        for line in p.stdout: print(line.decode("UTF-8").replace("\n", ""))
 
     print("------- CONFIGURING TORCH-EXTENSIONS (PYC) -------")
     p = subprocess.Popen(
@@ -59,9 +56,8 @@ def POST_INSTALL_PYC():
     print("------- DONE CONFIGURING TORCH-EXTENSIONS (PYC) -------")
 
 def make_analysis():
-    from AnalysisG.Tools import Tools
     tool = Tools()
-    this_dir = tool.pwd
+    this_dir = tool.pwd()
     tool.mkdir("Analysis")
     tool.mkdir("Analysis/Objects")
 
@@ -152,7 +148,7 @@ def make_analysis():
             "",
             "Ana = Analysis()",
             "Ana.Event = MyEvent", 
-            "Ana.EventGraph = MyGraph", 
+            "Ana.Graph = MyGraph", 
             "Ana.EventCache = True # Creates hdf5 files", 
             "Ana.DataCache = True # Creates hdf5 files for graphs", 
             "Ana.Launch()"

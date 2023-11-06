@@ -50,22 +50,26 @@ __________
 Figures
 _______
 
+Top Quark Reconstruction:
+*************************
+
 - **Figure 1.a:** 
   This figure illustrates the reconstructed top masses which were chosen as part of the selection criteria. 
   The resulting tops were constructed from the two most hardest b-tagged jets/children.
 
-- **Figure 1.b:**
-  This figure illustrates the resulting mass distribution of the reconstructed resonance, but segmented into processes contributing to the signal.
 
+Resonance Reconstruction:
+*************************
 
+- **Figure 2.a:**
+  This figure illustrates the resulting mass distribution of the reconstructed resonance, given that one of the resonance tops decayed leptonically and the other hardonically (Lep-Had).
 
+- **Figure 2.b:**
+  This figure illustrates the resulting mass distribution of the reconstructed resonance, given that one of the resonance tops decayed leptonically and the other hardonically (Had-Had).
 
+- **Figure 2.c:**
+  This figure illustrates the resulting mass distribution of the reconstructed resonance, given that one of the resonance tops decayed leptonically and the other hardonically (Lep-Lep).
 
-.. ## Single Leptonic (Bruce's Suggestion):
-   ### Selection criteria:
-    - Assume that the leptonically decaying top is the spectator.
-    - Assume that the two hardest b-tagged jets (PT) are the Z' resonant tops.
-    - Match two additional jets to each using $\Delta$R.
-    - Throw away any remaining jets, these are considered to belong to the second spectator top.
-
-
+- **Figure 3.[a-c]:**
+  A collection of figures which illustrate the mass distribution according to the non/single and dileptonic decay modes, partitioned by signed lepton.
+  This is effectively the projection of along the n-jet axis.

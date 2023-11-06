@@ -11,19 +11,19 @@ GNN = "BasicGraphNeuralNetwork"
 kFolds = 10
 Quant = 5
 Names = {
-    # "other" : "other",
-    "t": "t",
-    # "tt"    : "tt",
-    # "ttbar" : "ttbar",
-    # "ttH"   : "ttH",
-    # "SM4t"  : "tttt",
-    # "ttX"   : "ttX",
-    # "ttXll" : "ttXll",
-    # "ttXqq" : "ttXqq",
-    "ttZ-1000": "ttZ-1000",
-    "V": "V",
-    # "Vll"   : "Vll",
-    # "Vqq"   : "Vqq"
+    # "other"    : "other",
+    # "t"        : "t",
+    # "tt"       : "tt",
+    # "ttbar"    : "ttbar",
+    # "ttH"      : "ttH",
+    # "SM4t"     : "tttt",
+    # "ttX"      : "ttX",
+    # "ttXll"    : "ttXll",
+    # "ttXqq"    : "ttXqq",
+     "ttZ-1000" : "ttZ-1000",
+    # "V"        : "V",
+    # "Vll"      : "Vll",
+    # "Vqq"      : "Vqq"
 }
 
 

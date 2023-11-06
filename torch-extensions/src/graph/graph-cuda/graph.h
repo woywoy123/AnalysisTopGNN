@@ -10,6 +10,8 @@ std::map<std::string, std::vector<torch::Tensor>> _node_aggregation(
                 torch::Tensor edge_index, torch::Tensor prediction, 
                 torch::Tensor node_feature, const bool include_zero); 
 
+torch::Tensor _unique_aggregation(torch::Tensor cluster_map, torch::Tensor features); 
+
 std::map<std::string, std::vector<torch::Tensor>> _polar_edge_aggregation(
                 torch::Tensor edge_index, torch::Tensor prediction, 
                 torch::Tensor pmu, const bool include_zero); 
@@ -63,6 +65,14 @@ namespace Graph
         {
             return _node_aggregation(edge_index, prediction, node_feature, include_zero); 
         }
+
+
+        inline torch::Tensor unique_aggregation(torch::Tensor cluster_map, torch::Tensor features)
+        {
+            return _unique_aggregation(cluster_map, features); 
+        }
+
+
 
         namespace Polar
         {

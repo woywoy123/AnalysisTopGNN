@@ -14,14 +14,14 @@ Ana = Analysis()
 Ana.ProjectName = "ExampleGraphs"
 Ana.InputSample("sample1", example_sample)
 Ana.Event = ExampleEvent # < link the event definition to the framework
-Ana.EventGraph = SimpleGraph # < link the graph implementation tom the framework
+Ana.Graph = SimpleGraph # < link the graph implementation tom the framework
 Ana.EventCache = False # < Don't create a cache
 Ana.DataCache = True # <Optional, but saves the graphs and allows for much faster loading
 Ana.Threads = 1 # < how many CPU threads to utilize 
 Ana.EventStop = 100 # < how many events to generate 
 
 # Add Truth to the Graph 
-Ana.AddGraphTruth(signal) # <- If no name has been specified, the function name will be used
+Ana.AddGraphTruthFeature(signal) # <- If no name has been specified, the function name will be used
 
 # Add Observable Attributes to Graph, i.e. things we train the GNN on.
 # Graph Feature

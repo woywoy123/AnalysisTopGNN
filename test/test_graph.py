@@ -27,8 +27,8 @@ def test_edge_feature_aggregation():
 
             # aggregate the incoming edges
             pmu_i = torch.zeros_like(pmu)
-            for this, j in zip(range(p), pair_m):
-                pmu_i[this] += pmu[j[j > -1], :].sum(0)
+            for this, j in zip(range(p), pair_m): pmu_i[this] += pmu[j[j > -1], :].sum(0)
+
             # find the unique node aggregation
             clusters, revert = pair_m.unique(dim = 0, return_inverse = True)
             pmu_u = torch.zeros(len(clusters), pmu.size(1))
@@ -72,15 +72,14 @@ def test_edge_feature_aggregation():
     dic = {cls : {n : nodes[n].clone() for n in range(n_nodes)} for cls in range(n_cls)}
     for i, src, dst in zip(edges_t, edge_i, edge_j):
         if src == dst: continue
-        i = i.item()
-        dic[i][src.item()] += nodes[dst]
+        dic[i.item()][src.item()] += nodes[dst]
 
     res = {}
     for cls in dic:
         res[cls] = []
-        for node in dic[cls]:
-            res[cls].append(dic[cls][node].view(1, -1))
+        for node in dic[cls]: res[cls].append(dic[cls][node].view(1, -1))
         res[cls] = torch.cat(res[cls], dim = 0)
+
     out = aggregation(edge_index, edges_t, nodes, True)
     for i in out:
         nodes_ = res[i]
@@ -97,7 +96,6 @@ def test_edge_feature_aggregation():
     nodes = nodes.to(device = dev)
     cu = pyc.Graph.Base.edge_aggregation(edge_index, edges_t, nodes, True)
     compare(out, cu)
-
 
     a, b, c, d = [nodes[:, i] for i in range(4)]
     x = pyc.Graph.Cartesian.edge(edge_index, edges_t, a, b, c, d, True)
@@ -128,9 +126,49 @@ def test_edge_feature_aggregation():
     x1 = pyc.Graph.Cartesian.node(edge_index, node_t, nodes, True)
     compare(x1, x)
 
+def test_edge_aggregation_nodupl():
+
+    # create a node feature of length 10
+    n_nodes = 100
+    dim = 100
+    nodes = torch.tensor([[float(random()) for _ in range(dim)] for t in range(n_nodes)])
+
+    # create some fake truth connections 
+    n_cls = 2 # classifications
+    p_ = 0.4 # probability that nodes are always connected with the same class, i.e. more equal clusters
+    edges_t = torch.tensor([[(random() > p_)*int(random()*n_cls)] for _ in range(n_nodes**2)])
+
+    # create the edge index
+    edge_i = torch.tensor([t for t in range(n_nodes) for _ in range(n_nodes)])
+    edge_j = torch.tensor([t for _ in range(n_nodes) for t in range(n_nodes)])
+    edge_index = torch.cat([edge_i.view(1, -1), edge_j.view(1, -1)], dim = 0)
+
+    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    edge_index = edge_index.to(device = dev)
+    nodes = nodes.to(device = dev)
+    edges_t = edges_t.to(device = dev)
+    edge_index = torch.cat([edge_index, edge_index], -1)
+    edges_t = torch.cat([edges_t, edges_t], 0)
+
+    x = pyc.Graph.Base.edge_aggregation(edge_index, edges_t, nodes.to(dtype = torch.float), True)[1]
+    clust, rev = x["clusters"], x["reverse_clusters"]
+    clust = clust[rev]
+    clust_l, node_l = clust.tolist(), nodes.tolist()
+    non_dupl = []
+    x = 0
+    for i in clust_l:
+        non_dupl.append([sum([node_l[k][f] for k in set(i) if k != -1]) for f in range(dim)])
+
+    try: x = pyc.Graph.Base.unique_aggregation(clust, nodes.to(dtype = torch.float))
+    except AttributeError: return
+    x = x.to(device = "cpu")
+    assert not (x - torch.tensor(non_dupl) > 10e-4).sum(-1).sum(-1)
+
+
+
 if __name__ == "__main__":
     test_edge_feature_aggregation()
-
+    test_edge_aggregation_nodupl()
 
 
 

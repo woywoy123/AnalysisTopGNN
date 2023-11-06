@@ -71,4 +71,7 @@ def node_aggregation(ten1, ten2, ten3, include_zero = False):
         out[i] = { n : res[i][k] for k, n in keys }
     return out
 
-
+def unique_aggregation(cluster_map, features):
+    name = inspect.currentframe().f_code.co_name
+    fn, inpt = __router__([cluster_map, features], name, 2)
+    return fn(*inpt)

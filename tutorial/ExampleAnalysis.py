@@ -46,5 +46,3 @@ Masses.xBins = 100
 Masses.Filename = "SummedJets"
 Masses.OutputDirectory = "ExamplePlots"
 Masses.SaveFigure()
-
-

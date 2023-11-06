@@ -80,7 +80,7 @@ std::map<std::string, std::vector<torch::Tensor>> Graph::Tensors::edge_aggregati
             pmu_u.index_put_({k}, node); 
         }
 
-        output[name] = {clusters, pmu_u, revert, pmu_i};  
+        output[name] = {clusters, pmu_u.to(torch::kFloat), revert, pmu_i.to(torch::kFloat)};  
     }
     return output; 
 }

@@ -8,7 +8,7 @@ class EventNTruthJetAndJets(SelectionTemplate):
                 self.Jets = []
                 self.MET = []
                 self.nLep = []
-                
+
         def Strategy(self, event):
                 self.TruthJets.append(len(event.TruthJets))
                 self.Jets.append( len(event.Jets))
@@ -35,7 +35,7 @@ class EventMETImbalance(SelectionTemplate):
 
                 self.r_NeutrinoET = []
                 self.r_METDelta = []
- 
+
         def Selection(self, event):
                 return len(event.Tops) == 4
 
@@ -55,28 +55,22 @@ class EventMETImbalance(SelectionTemplate):
                 imb_angle = math.atan2(t4.pt, t4.pz)
                 self.PT_4Tops.append(t4.pt/1000)
                 self.Pz_4Tops.append(t4.pz/1000)
-                
+
                 self.Top4_angle.append(imb_angle)
                 self.Rotation(t4, -imb_angle)
                 self.r_Top4_angle.append(math.atan2(t4.pt, t4.pz))
-                
+
                 c4 = sum(event.TopChildren)
                 self.Children_angle.append(math.atan2(c4.pt, c4.pz))
                 self.Rotation(c4, -imb_angle)
                 self.r_Children_angle.append(math.atan2(c4.pt, c4.pz))
-                
+
                 # Missing MET 
                 nuPT = sum([i for i in event.TopChildren if abs(i.pdgid) in [12, 14, 16]])
-                self.NeutrinoET += [nuPT.pt/1000] 
+                self.NeutrinoET += [nuPT.pt/1000]
                 self.MET += [event.met / 1000]
                 self.METDelta += [nuPT.pt/1000 - event.met/1000]
 
                 self.Rotation(nuPT, -imb_angle)
-                self.r_NeutrinoET += [nuPT.pt/1000] 
+                self.r_NeutrinoET += [nuPT.pt/1000]
                 self.r_METDelta += [nuPT.pt/1000 - event.met/1000]
-
-
-
-
-
-

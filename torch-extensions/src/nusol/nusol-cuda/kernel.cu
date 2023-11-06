@@ -125,8 +125,7 @@ __global__ void _Rz_Rx_Ry_dot_K(
 
     scalar_t* val = &Rx[idx][idz][idy3][idy3m]; 
     *val = 0; 
-    for (unsigned int x(0); x < dim_k; ++x)
-    {
+    for (unsigned int x(0); x < dim_k; ++x){
         *val += _Rz[idx][idy3m][x]*_Rx[idx][x][idy3]; 
     }
     *val = _Ry[idx][idz][idy3m]*(*val); 
@@ -149,8 +148,7 @@ __global__ void _dot_K(
     for (unsigned int x(0); x < dim_k; ++x)
     {
         scalar_t _r = 0; 
-        for (unsigned int y(0); y < dim_k; ++y)
-        {
+        for (unsigned int y(0); y < dim_k; ++y){
             _r += _Rx[idx][idy][x][y]; 
         }
         *val += _r * base[idx][x][idz];  
@@ -186,8 +184,7 @@ __global__ void _V0_deltaK(
 
     dNu[idx][idy][idz] = met_xy[idx][idy][2 - idz] - H[idx][idy][idz]; 
     scalar_t dot_ji = 0; 
-    for (unsigned int i(0); i < 3; ++i)
-    {
+    for (unsigned int i(0); i < 3; ++i){
         dot_ji += (met_xy[idx][i][2 - idz] - H[idx][i][idz])*shape[idx][idy][i]; 
     }
     X[idx][idz][idy] = dot_ji; 
@@ -337,16 +334,14 @@ __global__ void _FactorizeK(
     double q01 = Q[idx][id_eig][0][1]; 
     double q11 = Q[idx][id_eig][1][1]; 
 
-    if ( -cq22 <= null)
-    {
+    if ( -cq22 <= null){
         double cq00 = QCoef[idx][id_eig][0][0]; 
         if (-cq00 < 0 ){ return; } 
         
         const unsigned int l = (cq00 == 0) ? 0 : 1; 
         if (idy <= l && idz == 0){ O[idx][id_eig][idy][idz] = q01; return; }
         if (idy <= l && idz == 1){ O[idx][id_eig][idy][idz] = q11; return; }
-        if (idy <= l && idz == 2)
-        { 
+        if (idy <= l && idz == 2){ 
             O[idx][id_eig][idy][idz] = _qsub(Q[idx][id_eig][1][2], cq00, idy);
             return; 
         }
@@ -354,20 +349,17 @@ __global__ void _FactorizeK(
     } 
     if ( -cq22 < 0 ){ return; }
     const unsigned int l = (cq22 == 0) ? 0 : 1;  
-    if (idy <= l && idz == 0)
-    {
+    if (idy <= l && idz == 0){
         O[idx][id_eig][idy][idz] = _qsub(q01, cq22, idy); 
         return; 
     }
 
-    if (idy <= l && idz == 1)
-    {
+    if (idy <= l && idz == 1){
         O[idx][id_eig][idy][idz] = q11; 
         return; 
     }
 
-    if (idy <= l && idz == 2)
-    {
+    if (idy <= l && idz == 2){
         double cq02 = QCoef[idx][id_eig][0][2]; 
         double cq12 = QCoef[idx][id_eig][1][2]; 
         O[idx][id_eig][idy][idz] = _qsub(q01, q11, cq02, cq12, cq22, idy); 

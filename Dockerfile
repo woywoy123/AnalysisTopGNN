@@ -14,8 +14,8 @@ RUN apt-get clean all
 
 RUN pip install --upgrade pip setuptools wheel torch
 RUN pip install -v .
-RUN CONFIG_PYAMI
-RUN POST_INSTALL_PYC
+RUN config_pyami
+RUN install_pyc
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 USER AnalysisG

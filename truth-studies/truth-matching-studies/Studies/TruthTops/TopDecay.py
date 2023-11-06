@@ -1,4 +1,4 @@
-from AnalysisG.Templates import SelectionTemplate 
+from AnalysisG.Templates import SelectionTemplate
 
 class TopDecayModes(SelectionTemplate):
     def __init__(self):
@@ -12,7 +12,7 @@ class TopDecayModes(SelectionTemplate):
         for t in event.Tops:
             if len(t.Children) != 0: continue
             return False
-    
+
     def Strategy(self, event):
         for t in event.Tops:
             self.TopCounter += 1

@@ -7,8 +7,7 @@ class Base:
 
     def Format(self, Color, Message, State):
         Message = self.Verbosity(Message)
-        if Message == False:
-            return False
+        if Message == False: return False
         txt = "\033[0;9" if self.Caller == "" else "\033[1;9"
         txt += str(Color) + "m"
         txt += "" if self.Caller == "" else self.Caller.upper() + "::"
@@ -20,8 +19,7 @@ class Base:
 
     def Verbosity(self, message):
         lvl = len(message) - len(message.lstrip("!"))
-        if lvl > self.Verbose:
-            return False
+        if lvl > self.Verbose: return False
         return message.lstrip("!")
 
     def WhiteSpace(self):

@@ -3,6 +3,7 @@ A Graph Neural Network Analysis Framework for High Energy Physics!
 
 What is Analysis-G:
 *******************
+
 Analysis-G is a Python package which aims to abstract and automate novel High Energy Particle Physics Analyses.
 Since most of HEPP software relies on complicated ROOT files, the framework attempts to minimize the need for writing complicated and inefficient nested for loops to retrieve the content. 
 This is achieved by defining particles and events as Python classes and assigning these attributes which allow the framework to infer and assign particles to events.
@@ -18,6 +19,7 @@ Given the growing trend in machine learning, for instance Graph Neural Networks 
 
 Core Packages in Analysis-G:
 ****************************
+
 - **EventTemplate:** 
   A class which is to be inherited by custom event implementations. 
   This class interprets and retrieves data content found within ROOT files, and translates the ROOT structure in terms of particle content and per event attributes. 
@@ -34,7 +36,7 @@ Core Packages in Analysis-G:
   A class used to define a simplistic selection strategy, where particles and events (derived from **EventTemplates** and **ParticleTemplates**) will be made available for additional processing. 
   This class can be used to output ROOT n-tuples and then passed into some fitting tool, e.g. `TRexFitter` or `PyHF`
 
-- **SamleTracer**
+- **SampleTracer**
   An abstract module which can be utilized as a completely standalone package and can be integrated with your own framework. 
   This module aims to keep track of events and their original ROOT filename, and further permits fast event/graph retrieval. 
   The output of this module is a small HDF5 file, which only holds meta-data and mappings between ROOT files and their associated event indices. 
@@ -42,6 +44,13 @@ Core Packages in Analysis-G:
 - **PyC (Python Custom)** 
   A completely detached package which implements high performance native C++ and CUDA code/kernels, which utilize the **PyTorch** API. 
   Several interfaces are implemented, namely switching from Cartesian to Polar coordinates, computing scalar invariant masses from particles, single/double neutrino reconstruction and many more. 
+
+Work in Progress for DOCS
+*************************
+
+- **Model Docs**: Need to complete the declaration examples.
+- **SampleTracer and Generators**: Need to move from attribute to ivars.
+- **Clean up the docs structure**: pyc and pyc++ 
 
 
 Index and Directories
@@ -53,6 +62,8 @@ Index and Directories
 Advanced Object Definitions
 ***************************
 .. toctree::
+  :maxdepth: 2
+
   quick-start/events.rst
   quick-start/particles.rst
   quick-start/selection.rst
@@ -61,6 +72,8 @@ Advanced Object Definitions
 Analysis and Other Generators
 *****************************
 .. toctree::
+  :maxdepth: 2
+
   generators/analysis.rst
   generators/sampletracer.rst
   generators/eventgenerator.rst
@@ -71,39 +84,57 @@ Analysis and Other Generators
 Read and Writing (IO)
 *********************
 .. toctree::
+  :maxdepth: 2
+
   io/uproot.rst
   io/ntupler.rst
 
 Machine Learning (Graph Neural Network)
 ***************************************
 .. toctree::
+  :maxdepth: 2
+
+  templates/features.rst
   machinelearning/optimizer.rst
   machinelearning/modelwrapper.rst
+  gnn_training/schedule.rst
 
 Condor and DAGMAN Submission Compilers
 **************************************
 .. toctree::
+  :maxdepth: 2
+
   submission/condor.rst
 
 Plotting Functions
 ******************
 .. toctree::
+  :maxdepth: 2
+
   plotting/plotting.rst
 
 Tools Multi-Threading and Code Preservation
 *******************************************
 .. toctree::
+  :maxdepth: 2
+
   tools/tools.rst
   tools/multithreading.rst
   tools/code.rst
 
+Data Types and Dictionary Mapping
+*********************************
+.. toctree::
+  :maxdepth: 2
+
+  cytypes/cytypes.rst
+
 PyC, CUDA and C++ API via PyTorch
 *********************************
 .. toctree::
-  torch-extensions/transform.rst
-  torch-extensions/operators.rst
-  torch-extensions/nusol.rst
-  torch-extensions/graph.rst
+  :maxdepth: 2
+
+  torch-extensions/main.rst
   torch-extensions/interface.rst
 
 Analysis and Truth Studies Documentation
@@ -112,6 +143,12 @@ Analysis and Truth Studies Documentation
   studies/analysis-strategies
   studies/neutrino-reconstruction.rst
   studies/truth-matching-studies.rst
+
+Event Template Classes
+**********************
+.. toctree::
+  events/ssml_event.rst
+  events/bsm_4tops.rst
 
 Documentation and Codebase Status
 *********************************
@@ -140,3 +177,5 @@ Documentation and Codebase Status
    :target: https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/woywoy123/6fee1eff8f987ac756a20133618659a1/raw/covbadge.json
    :alt: Coverage Report
 
+.. image:: https://static.pepy.tech/badge/analysisg/month
+   :target: https://pepy.tech/project/analysisg

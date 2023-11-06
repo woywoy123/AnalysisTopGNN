@@ -14,14 +14,14 @@ def test_uproot_read():
     io.ScanKeys()
 
     root1_, root2_ = list(io.Keys)
-    assert "nominal-1" in io.Keys[root1_]["missed"]["TREE"]
-    assert "nominal-1" in io.Keys[root2_]["missed"]["TREE"]
+    assert "nominal-1" in io.Keys[root1_]["missed"]["Trees"]
+    assert "nominal-1" in io.Keys[root2_]["missed"]["Trees"]
 
-    assert "hello" in io.Keys[root1_]["missed"]["BRANCH"]
-    assert "hello" in io.Keys[root2_]["missed"]["BRANCH"]
+    assert "hello" in io.Keys[root1_]["missed"]["Branches"]
+    assert "hello" in io.Keys[root2_]["missed"]["Branches"]
 
-    assert "nothing" in io.Keys[root1_]["missed"]["LEAF"]
-    assert "nothing" in io.Keys[root2_]["missed"]["LEAF"]
+    assert "nothing" in io.Keys[root1_]["missed"]["Leaves"]
+    assert "nothing" in io.Keys[root2_]["missed"]["Leaves"]
 
     io = UpROOT([root1, root2])
     io.Trees = ["nominal"]
@@ -48,23 +48,6 @@ def test_uproot_read():
     assert len_truth == 2000
     assert len_nom == 165
 
-def test_uproot_write():
-    return
-    x = uproot.recreate("output.root")
-    x["someTree"] = {"test" : np.array([[i for i in range(10)]])}
-    x["someTree"].extend({"test" : np.array([[i*2 for i in range(11)]])})
-    x.close()
-
-    u = UpROOT({"." : "output.root"})
-    u.Trees = ["someTree"]
-    u.Branches = ["test"]
-    for i in u:
-        print(i)
-
-
-
-
 if __name__ == "__main__":
     test_uproot_read()
-    test_uproot_write()
     pass

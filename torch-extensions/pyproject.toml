@@ -1,15 +1,13 @@
 [build-system]
-requires = ["pip", "scikit-build-core", "pybind11[global]"]
+requires = ["pip", "scikit-build-core", "pybind11[global]", "torch<=2.0.1"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "PyC"
-version = "0.1"
+version = "0.4"
 authors = [
     {name = "woywoy123"}
 ]
-readme.content-type = "text/markdown"
-readme.file = "README.md"
 requires-python = ">=3.7"
 
 classifiers = [

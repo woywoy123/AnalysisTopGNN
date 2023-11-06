@@ -1,5 +1,9 @@
 Installing Analysis-G
 =====================
+
+Installing via Github
+_____________________
+
 First clone the project into a target directory. 
 
 .. code-block:: console
@@ -24,7 +28,7 @@ For example, on **lxplus** machines, add the following lines to the bashrc file:
     source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
     lsetup "gcc gcc620_x86_64_slc6"
 
-If making large changes to the .bashrc is not desired, simply add an alias to it and point the **source** command to the **setup-scripts** folder as shown below:
+If making changes to the .bashrc is not desired, simply add an alias to it and point the **source** command to the **setup-scripts** folder as shown below:
 
 .. code-block:: console 
 
@@ -32,9 +36,20 @@ If making large changes to the .bashrc is not desired, simply add an alias to it
 
 This will create a command called **GNN** and when executed will setup the Analysis environment. 
 
+Installing via PyPI (pip)
+_________________________
+
+The framework has also been published to PyPI to simplify the installation process.
+
+.. code-block:: console
+
+   pip install analysisg
+
+
 Additional Software Setup
-=========================
-Analysis-G is partly dependent on **PyC** and can be installed via the command **POST_INSTALL_PYC**.
+_________________________
+
+Analysis-G is partly dependent on **PyC** and can be installed via the command **install_pyc**.
 Unlike most **PyTorch** packages, the installation process is rather seemless. 
 During the build process, the package will scan for **nvcc** (CUDA compiler), and will install the appropriate **PyTorch** version (CUDA/CPU). 
 
@@ -42,13 +57,25 @@ As mentioned in the introduction page of these docs, modules found in this packa
 If CUDA is available, then the package will also proceed to install the native CUDA kernel implementations. 
 This however can be a very long and computationally expensive build process.
 
-Unlike the nominal **PyTorch** setup-tools recommended tutorial, the installation process utilizes an advanced cmake builder called **scikit-build-core**.
+Unlike the recommended setup-tools based tutorial provided by **PyTorch**, the installation process utilizes an advanced cmake builder called **scikit-build-core**.
 This allows for code modifications to be made without having to repetitively recompile unmodified code and wasting computational resources. 
-
 Once installed, the module can be used via: 
 
 .. code-block:: python 
 
    import pyc
 
-More of about this module will be discussed later in the docs. 
+Install via Command-Line
+________________________
+
+.. code-block:: console
+
+   cd torch-extensions
+   pip install -v .
+
+Install via Framework
+_____________________
+
+.. code-block:: console
+
+   install_pyc

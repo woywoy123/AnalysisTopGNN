@@ -35,13 +35,13 @@ To now execute the function above using multiple threads, instantiate the class 
 
 One might wonder why the ``is not None`` condition is required. 
 The threading class will assure that the order of the list is preserved, and this is achieved by creating a list of ``None`` type and injecting the thread results at the associated index. 
-From the above example function, the aim was to merge a very large list into a single number, so naturally the list output would incrementally shrink and could potentially cause issues with classes which are expecting a consistent array length. 
+From the above example function, the aim was to merge a large list into a single number, so naturally the list output would incrementally shrink and could potentially cause issues with classes which are expecting a consistent array length. 
 
 
 Include a Progress Bar to the Threading Function 
 ________________________________________________
 
-One could also modify the above function and add a progress bar. 
+One could also alter the above function and add a progress bar. 
 This would slightly degrade performance, but would inform the user how the processing is progressing. 
 An example would look like this:
 
@@ -60,8 +60,8 @@ An example would look like this:
 Known Issues and Limitations
 _____________________________
 
-The above code works just fine on Linux operating systems, however MacOS and Windows might throw errors regarding EOF. 
-This is because both operating systems require a ``__main__`` to be defined prior to running any multi-threading instances.
+The above code works just fine on Linux operating systems, however MacOS and Windows might throw errors regarding EOF (End Of File). 
+This type of error seems to occur in both operating systems because the ``__main__`` declaration defines the entry point of a program, which is required to launch python multi-threading instances.
 A possible solution would be to implement something like shown below: 
 
 .. code-block:: python

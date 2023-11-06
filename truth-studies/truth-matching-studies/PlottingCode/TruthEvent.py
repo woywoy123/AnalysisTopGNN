@@ -1,28 +1,28 @@
-from AnalysisG.Plotting import TH1F, TH2F, CombineTH1F
+from AnalysisG.Plotting import TH1F, TH2F
 
 def TemplatePlotsTH1F(x):
     Plots = {
-                "NEvents" : x.NEvents, 
-                "ATLASLumi" : x.Luminosity, 
-                "Style" : "ATLAS", 
-                "OutputDirectory" : "./Figures/" + x.__class__.__name__, 
-                "yTitle" : "Entries (a.u.)", 
+                "NEvents" : x.TotalEvents,
+                "ATLASLumi" : x.Luminosity,
+                "Style" : "ATLAS",
+                "OutputDirectory" : "./Figures/" + x.__class__.__name__,
+                "yTitle" : "Entries (a.u.)",
                 "yMin" : 0, "xMin" : 0
             }
     return Plots
 
 def TemplatePlotsTH2F(x):
     Plots = {
-                "NEvents" : x.NEvents, 
-                "ATLASLumi" : x.Luminosity, 
-                "Style" : "ATLAS", 
-                "OutputDirectory" : "./Figures/" + x.__class__.__name__, 
+                "NEvents" : x.TotalEvents,
+                "ATLASLumi" : x.Luminosity,
+                "Style" : "ATLAS",
+                "OutputDirectory" : "./Figures/" + x.__class__.__name__,
                 "yMin" : 0, "xMin" : 0
             }
     return Plots
 
 def EventNTruthJetAndJets(x):
-    
+
     # Njets vs Ntruthjets
     Plots = TemplatePlotsTH2F(x)
     Plots["Title"] = "Number of Truth-Jets vs Reconstructed Jets"
@@ -45,7 +45,7 @@ def EventNTruthJetAndJets(x):
     dic = {}
     for i, j in zip(x.nLep, x.MET):
         if i not in dic: dic[i] = []
-        dic[i].append(j) 
+        dic[i].append(j)
 
     Plots = TemplatePlotsTH1F(x)
     Plots["Title"] = "n-Leptonic Truth Children vs Missing Transverse Momenta"
@@ -59,7 +59,7 @@ def EventNTruthJetAndJets(x):
     Plots["xBins"] = 1000
     Plots["xStep"] = 100
     Plots["Filename"] = "Figure_0.1b"
-    th = CombineTH1F(**Plots)
+    th = TH1F(**Plots)
     th.SaveFigure()
 
 def EventMETImbalance(x):
@@ -80,7 +80,7 @@ def EventMETImbalance(x):
     Plots["Filename"] = "Figure_0.1c"
     th = TH2F(**Plots)
     th.SaveFigure()
-    
+
     Plots = {}
     Plots["Title"] = "4-Tops"
     Plots["xData"] = x.Top4_angle
@@ -95,14 +95,15 @@ def EventMETImbalance(x):
     Plots_["Title"] = "Relative Angle Between 4-Top \nTransverse Momentum System and Beam Pipe"
     Plots_["xTitle"] = "Angle atan(PT/Pz) (Rad)"
     Plots_["Histograms"] = [tht, thc]
-    Plots_["xStep"] = 0.2
+    Plots_["xStep"] = 0.20002
     Plots_["xMin"] = 0
     Plots_["xBins"] = 400
     Plots_["xMax"] = 2
     Plots_["yMax"] = 0.06
+    Plots_["OverFlow"] = True
     Plots_["Normalize"] = True
     Plots_["Filename"] = "Figure_0.1d"
-    tc = CombineTH1F(**Plots_)
+    tc = TH1F(**Plots_)
     tc.SaveFigure()
 
     Plots = {}
@@ -126,9 +127,9 @@ def EventMETImbalance(x):
     Plots_["yMax"] = 0.06
     Plots_["Normalize"] = True
     Plots_["Filename"] = "Figure_0.2d"
-    tc = CombineTH1F(**Plots_)
+    tc = TH1F(**Plots_)
     tc.SaveFigure()
-   
+
     Plots = {}
     Plots["Title"] = "Measured"
     Plots["xData"] = x.MET
@@ -149,7 +150,7 @@ def EventMETImbalance(x):
     Plots_["yMax"] = 0.02
     Plots_["Normalize"] = True
     Plots_["Filename"] = "Figure_0.1e"
-    tc = CombineTH1F(**Plots_)
+    tc = TH1F(**Plots_)
     tc.SaveFigure()
 
     Plots = {}
@@ -174,7 +175,7 @@ def EventMETImbalance(x):
     Plots_["yMax"] = 0.02
     Plots_["Normalize"] = True
     Plots_["Filename"] = "Figure_0.2e"
-    tc = CombineTH1F(**Plots_)
+    tc = TH1F(**Plots_)
     tc.SaveFigure()
 
     Plots = {}
@@ -183,7 +184,7 @@ def EventMETImbalance(x):
     thc1 = TH1F(**Plots)
 
     Plots = {}
-    Plots["Title"] = r"Measured - $\Sigma \nu$ (Rotated)"   
+    Plots["Title"] = r"Measured - $\Sigma \nu$ (Rotated)"
     Plots["xData"] = x.r_METDelta
     thc2 = TH1F(**Plots)
 
@@ -197,7 +198,7 @@ def EventMETImbalance(x):
     Plots_["Normalize"] = True
     Plots_["yMax"] = 0.02
     Plots_["Filename"] = "Figure_0.3e"
-    tc = CombineTH1F(**Plots_)
+    tc = TH1F(**Plots_)
     tc.SaveFigure()
 
 

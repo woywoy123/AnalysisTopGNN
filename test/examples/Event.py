@@ -28,8 +28,7 @@ class EventEx(EventTemplate):
         # Do some particle truth matching
         for i in self.SomeJets:
             index = self.SomeJets[i].MatchedTops
-            if index[0] == -1:
-                continue
+            if index[0] == -1: continue
             for t in index:
                 self.SomeJets[i].Parent.append(self.Tops[t])
 

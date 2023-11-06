@@ -1,1 +1,1 @@
-from .Model import ModelWrapper
+from .Model import Model

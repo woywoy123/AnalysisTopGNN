@@ -57,8 +57,7 @@ __global__ void _SumK(
 {
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x; 
     if (idx >= length){ return; }
-    for (unsigned int i(1); i < len_j; ++i)
-    {
+    for (unsigned int i(1); i < len_j; ++i){
         sum(pmc[idx][0], pmc[idx][i]);  
     }
 }
@@ -72,8 +71,7 @@ __global__ void _SumK(
     const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x; 
     const unsigned int idy = blockIdx.y; 
     if (idx >= length || idy >= 3){ return; }
-    for (unsigned int i(0); i < len_j; ++i)
-    {
+    for (unsigned int i(0); i < len_j; ++i){
         sum(out[idx][idy], tmp[idx][i][idy]);  
         tmp[idx][i][idy] = 0; 
     }

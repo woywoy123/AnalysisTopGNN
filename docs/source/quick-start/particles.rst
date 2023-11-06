@@ -1,104 +1,86 @@
 Advanced Usage of ParticleTemplate
 **********************************
 
-Introduction
-____________
-
 As was briefly touched on in :ref:`particle-start`, the **ParticleTemplate** class is used to define Python particle objects, which can be used to mimic the particle contents of events within ROOT files.
 Similar to the **EventTemplate** class, the **ParticleTemplate** leverages C++ in the back-end, but uses Cython as an interface to retain the modularity of Python. 
 
-Primitive Attributes/Functions
-______________________________
-
 .. _pdgids: https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf
 
-- ``Type``:
-    A setter and getter function which expects a string and returns a string of the particle Type specified. 
-    This parameter is optional but can be useful when wanting to create a generic particle object. 
-    This will be shown in a later example.
+.. py:class:: ParticleTemplate
 
-- ``index``:
-    A setter and getter function which expects a string, float, or integer. 
-    If a string is assigned to the particle, then during compilation time, the associated ROOT leaf string will be used to assign the respective index.
-    If a float/integer is provided, then default internal integer (``-1``) is overwritten with the assigned value. 
-    If the parameter is not assigned at all, then the index will be assigned based on generation index. 
+    .. py:method:: __getleaves__() -> dict
 
-- ``hash``:
-    A function which has a setter and getter implementation. 
-    Once the setter has been called, an 18 character long string will be internally generated, which cannot be modified.
-    The hash is computed from the particle's four vector, and is used for magic functions.
+        A special function which returns a dictionary of trees/branches/leaves to get from the ROOT file for each object type. 
+        Essentially, this is the output of scanning the event implementation and its constituents. 
 
-- ``px``:
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``phi``. 
+    .. py:method:: __build__(dict variables)
 
-- ``py``: 
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``phi``. 
+        Expects a dictionary as input with keys indicating the attribute to assign to the event. 
+        For example, ``{"met" : 1000}`` will be translated to ``event.met -> 1000``.
 
-- ``pz``:
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``eta``. 
+    .. py:method:: clone() -> ParticleTemplate
 
-- ``e`` (energy):
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt``, ``eta``, ``phi`` or ``px``, ``py``, ``pz``. 
+        A function which creates a duplicate of the particle object. 
+        This **does not** clone the particle attributes, but rather only creates an empty clone of the given particle. 
 
-- ``pt``:
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px`` and ``py``. 
+    .. py:method:: is_self(inpt) -> bool
 
-- ``eta``: 
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px``, ``py`` and ``pz`` or ``pz``, ``pt``. 
+        Returns a boolean value on whether the input is of **ParticleTemplate** type.
 
-- ``phi``:
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px`` and ``py``. 
+    .. py:method:: DeltaR(ParticleTemplate other) -> float
 
-- ``Mass``:
-    A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt``, ``eta``, ``phi``, ``e`` or ``px``, ``py``, ``pz``, ``e``. 
+        Computes the `Delta R` between two particles. Expects a particle to be inherited from from `ParticleTemplate`. 
+        If two particles have a `phi_1 = 2*pi - 0.1*pi` and `0.1*pi`, respectively, then angles are normalized to obtain the lowest relative angle.
 
-- ``pdgid``:
-    A setter and getter function which returns the ``pdgid`` of the particle. This can be manually set for each particle definition, see `pdgids`_.
+    .. py:attribute:: hash -> str
 
-- ``charge``:
-    A setter and getter function used to assign a particle some charge. 
+        A function which has a setter and getter implementation. 
+        Once the setter has been called, an 18 character long string will be internally generated, which cannot be modified.
+        The hash is computed from the particle's four vector, and is used for magic functions.
 
-- ``symbol``:
-    A setter and getter function used to assign a particle a symbolic string representation. 
-    Some symbols are already implemented for associated ``pdgid``. 
-    The complete mapping is as follows; 
+    :ivar int index: Index of the particle as it was created
+    :ivar float px: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``phi``. 
+    :ivar float py: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``phi``. 
+    :ivar float pz: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt`` and ``eta``. 
+    :ivar float pt: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px`` and ``py``. 
+    :ivar float eta: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px``, ``py`` and ``pz`` or ``pz``, ``pt``. 
+    :ivar float phi: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``px`` and ``py``. 
+    :ivar float e: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt``, ``eta``, ``phi`` or ``px``, ``py``, ``pz``. 
+    :ivar float Mass: A setter and getter function which can be manually set by a string, float, or automatically by supply the particle with ``pt``, ``eta``, ``phi``, ``e`` or ``px``, ``py``, ``pz``, ``e``. 
+    :ivar float charge: A setter and getter function used to assign a particle some charge. 
+    :ivar int pdgid: A setter and getter function which returns the ``pdgid`` of the particle. This can be manually set for each particle definition, see `pdgids`_.
+    :ivar str symbol:
 
-    - quarks: 1 : d, 2 : u, 3 : s, 4 : c, 5 : b, 6 : b
-    - leptons: 11 : e, 12 : :math:`\nu_e`, 13 : :math:`\mu`, 14 : :math:`\nu_{\mu}`, 15 : :math:`\tau`, 16 : :math:`\nu_{\tau}`
+        A setter and getter function used to assign a particle a symbolic string representation. 
+        Some symbols are already implemented for associated ``pdgid``. 
+        The complete mapping is as follows; 
 
-- ``lepdef``:
-    A setter and getter function which expects a list of integers representing the **pdgid** considered leptons, by default this list is [11, 13, 15].
+        - quarks: 1 : d, 2 : u, 3 : s, 4 : c, 5 : b, 6 : b
+        - leptons: 11 : e, 12 : nu_e, 13 : mu, 14 : nu_mu, 15 : tau, 16 : nu_tau
 
-- ``nudef``:
-    A setter and getter function which expects a list of integers representing the **pdgid** considered neutrinos, by default this list is [12, 14, 16].
+    :ivar str Type: 
 
-- ``is_lep``:
-    Returns a boolean whether the given particle has a **pdgid** considered to be leptonic.
+        A setter and getter function which expects a string and returns a string of the particle Type specified. 
+        This parameter is optional but can be useful when wanting to create a generic particle object. 
+        This will be shown in a later example.
+    
+    :ivar list[int] lepdef: A setter and getter function which expects a list of integers representing the **pdgid** considered leptons, by default this list is [11, 13, 15].
+    :ivar list[int] nudef: A setter and getter function which expects a list of integers representing the **pdgid** considered neutrinos, by default this list is [12, 14, 16].
+    :ivar bool is_lep: Returns a boolean whether the given particle has a **pdgid** considered to be leptonic.
+    :ivar bool is_nu: Returns a boolean whether the given particle has a **pdgid** considered to be a neutrino.
+    :ivar bool is_b: Returns a boolean whether the given particle has a **pdgid** is a b-quark.
+    :ivar bool is_add: Returns a boolean whether the given particle has a **pdgid** anything other than being a b-quark or leptonic.
+    :ivar bool LeptonicDecay: Returns a boolean whether the given particle has children which have a leptonic **pdgid**.
+    :ivar int index: 
 
-- ``is_nu``:
-    Returns a boolean whether the given particle has a **pdgid** considered to be a neutrino.
+        A setter and getter function which expects a string, float, or integer. 
+        If a string is assigned to the particle, then during compilation time, the associated ROOT leaf string will be used to assign the respective index.
+        If a float/integer is provided, then default internal integer (``-1``) is overwritten with the assigned value. 
+        If the parameter is not assigned at all, then the index will be assigned based on generation index. 
 
-- ``is_b``:
-    Returns a boolean whether the given particle has a **pdgid** is a b-quark.
+    :ivar list[ParticleTemplate] Parent: A list used to manually add a parent particle to this particle. Returns an empty list by default.
+    :ivar list[ParticleTemplate] Children: A list used to manually add a children particles to this particle (decay products). Returns an empty list by default.
 
-- ``is_add``:
-    Returns a boolean whether the given particle has a **pdgid** anything other than being a b-quark or leptonic.
-
-- ``LeptonicDecay``:
-    Returns a boolean whether the given particle has children which have a leptonic **pdgid**.
-
-- ``DeltaR(ParticleTemplate)``:
-    Computes the :math:`\Delta R` between two particles. Expects a particle to be inherited from from `ParticleTemplate`. 
-    If two particles have a :math:`\varphi_1 = 2\pi - 0.1\pi` and :math:`0.1\pi`, respectively, then angles are normalized to obtain the lowest relative angle.
-
-- ``clone``:
-    Return a clone of the particle object type (not its properties).
-
-- ``Parent``:
-    A list used to manually add a parent particle to this particle. Returns an empty list by default.
-
-- ``Children``:
-    A list used to manually add a children particles to this particle (decay products). Returns an empty list by default.
 
 Magic Functions
 _______________
@@ -106,7 +88,7 @@ Magic functions in Python are indicated by functions which have the naming schem
 An example of this would be ``"ab" = "a" + "b"``, where in the back-end, Python has directly invoked the ``__add__(self, val)`` function. 
 Or another example would be ``if "a" in ["a", "b"]``, here again, Python has invoked a combination of ``__hash__`` and ``__eq___`` magic functions. 
 Analysis-G exploits Python's "Syntax" sugar to simplify much of the particle and event syntax as possible. 
-To keep this section as straightforward as possible, any event implementation which inherits the ``EventTemplate`` class has the following Syntax sugar
+To keep this section as straightforward as possible, any event implementation which inherits the ``ParticleTemplate`` class has the following Syntax sugar
 
 .. code-block:: python 
 
@@ -166,3 +148,4 @@ The framework allows the user to generate an abstraction of an abstraction as sh
             GenericParticle.__init__(self)
 
 As can be easily seen, this reduces the amount of redundant code having to be written drastically and allows for recursive abstracting.
+

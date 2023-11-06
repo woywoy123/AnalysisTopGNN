@@ -1,25 +1,32 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "cython==3.0.0", "wheel", "torch>=1.13.1"]
+requires = [
+    "cython",
+    "wheel",
+    "setuptools",
+    "torch<=2.0.1",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "AnalysisG"
-version = "3.3.0"
+version = "4.3.1"
 authors = [{name = "woywoy123"}]
 readme.content-type = "text/markdown"
 readme.file = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    "numpy", 
-    "uproot", 
-    "h5py", 
-    "mplhep", 
-    "networkx", 
-    "scikit-learn", 
-    "torchmetrics", 
-    "torch-geometric", 
-    "pwinput", 
-    "pyAMI-atlas==5.1.0.1"
+    "mplhep==0.3.28",
+    "matplotlib==3.5.3",
+    "pyAMI-atlas==5.1.0.1",
+    "awkward<=2.4.4",
+    "uproot",
+    "numpy",
+    "h5py",
+    "pwinput",
+    "scikit-learn",
+    "torchmetrics",
+    "torch-geometric",
+    "boost_histogram"
 ]
 
 classifiers = [
@@ -39,40 +46,24 @@ Homepage = "https://github.com/woywoy123/AnalysisG"
 
 [tool.setuptools.package-dir]
 "AnalysisG" = "src"
+"AnalysisG.IO"           = "src/IO"
+"AnalysisG.Tools"        = "src/Tools"
+"AnalysisG.Events"       = "src/Events"
+"AnalysisG.Graphs"       = "src/Events/Graphs"
+"AnalysisG.Model"        = "src/Model"
+"AnalysisG._cmodules"    = "src/cmodules"
+"AnalysisG.Templates"    = "src/Templates"
+"AnalysisG.Generators"   = "src/Generators"
 "AnalysisG.Notification" = "src/Notification"
-"AnalysisG.IO" = "src/IO"
-"AnalysisG.Settings" = "src/Settings"
-"AnalysisG.Templates" = "src/Templates"
-"AnalysisG.Events" = "src/Events"
-"AnalysisG.Particles" = "src/Events/Particles"
-"AnalysisG.Graphs" = "src/Events/Graphs"
-"AnalysisG.Tools" = "src/Tools"
-"AnalysisG.Generators" = "src/Generators"
-"AnalysisG.Plotting" = "src/Plotting" 
-"AnalysisG.Submission" = "src/Submission"
-"AnalysisG.Model" = "src/Model"
-"AnalysisG.Evaluation" = "src/Evaluation"
+"AnalysisG.Submission"   = "src/Submission"
 
 [tool.setuptools.package-data]
 "*" = ["*.pyx", "*.pxd", "*.cxx", "*.h"]
 
 [project.scripts]
-CONFIG_PYAMI = "AnalysisG.Settings:CONFIG_PYAMI"
-AUTH_PYAMI = "AnalysisG.Settings:AUTH_PYAMI"
-POST_INSTALL_PYC = "AnalysisG.Settings:POST_INSTALL_PYC"
+config_pyami = "AnalysisG.Settings:CONFIG_PYAMI"
+auth_pyami = "AnalysisG.Settings:AUTH_PYAMI"
+install_pyc = "AnalysisG.Settings:POST_INSTALL_PYC"
 make_analysis="AnalysisG.Settings:make_analysis"
 AnalysisG = "AnalysisG.__main__:main"
-
-[tool.bumpver]
-current_version = "3.3.0"
-version_pattern = "MAJOR.MINOR.PATCH"
-commit_message  = "bump version {old_version} -> {new_version}"
-commit          = true
-tag             = true
-push            = true
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-    'current_version = "{version}"',
-]
 

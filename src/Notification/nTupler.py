@@ -4,10 +4,22 @@ class _nTupler(Notification):
 
     def __init__(self):
         pass
- 
-    def _KeyNotFound(self, var, inpt, others):
-        msg = "Specified key/variable not found (" + var + "::" + inpt + "). "
-        msg += "Keys available are: \n->"
-        msg += "\n->".join(others)
+
+    def _MissingSelectionTreeSample(self, combi):
+        combi = combi.split(".")
+        msg = "Selection Name (" + combi[1] + ") "
+        msg += "with the given Tree (" + combi[0] + ") "
+        msg += "was not found in the loaded samples. "
+        msg += "Skipping this combination"
         self.Warning(msg)
-        self.Warning("Skipping for now...")
+
+    def _MissingSelectionName(self, selection):
+        msg = "Selection name: " + selection + " not found. Use the following syntax:"
+        msg += "\n<var> = nTupler \n <var>.This('SelectionName -> variable', 'tree')"
+        self.Warning(msg)
+        self.Warning("OPTIONS ARE LISTED BELOW:")
+        self.Warning("\n-> ".join([""] + self.ShowSelections))
+
+    def _FoundSelectionName(self, selection):
+        msg = "!!Selection name: " +  selection + " found."
+        self.Success(msg)

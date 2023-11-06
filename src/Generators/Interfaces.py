@@ -18,17 +18,18 @@ class _Interface(Tools):
         Name: Union[str] = None,
         SampleDirectory: Union[str, Dict, List, None] = None,
     ):
-        self.Files = {}
+        self.Files = None
         self.InputSamples(SampleDirectory)
-        if Name == None:
-            Name = ""
-        self.SampleMap[Name] = self.Files
+        if Name is None: Name = ""
+
+        add = {}
+        add[Name] = []
+        for i in self.Files: add[Name] += [i + "/" + j for j in self.Files[i]]
+        self.SampleMap = add
 
     def _StartStop(self, it: Union[int]):
-        if self.EventStart > it and self.EventStart != -1:
-            return False
-        if self.EventStop != None and self.EventStop - 1 < it:
-            return None
+        if self.EventStart > it and self.EventStart != -1: return False
+        if self.EventStop != None and self.EventStop - 1 < it: return None
         return True
 
     def _MakeBar(
@@ -42,52 +43,43 @@ class _Interface(Tools):
         _dct["total"] = inpt
         return (None, tqdm(**_dct))
 
-    def SetAttribute(self, c_name, fx, container):
-        if c_name == "P_" or c_name == "T_":
-            c_name += fx.__name__
-        elif c_name == "":
-            c_name += fx.__name__
-        if c_name not in container:
-            container[c_name] = fx
-        else:
-            self.Warning("Found Duplicate " + c_name + " Attribute")
-
     # Define the observable features
     def AddGraphFeature(self, fx, name=""):
-        self.SetAttribute(name, fx, self.GraphAttribute)
+        if self.SetAttribute(fx, "G_F_" + name): return
+        self.Warning("Found Duplicate Graph " + name + " Attribute")
 
     def AddNodeFeature(self, fx, name=""):
-        self.SetAttribute(name, fx, self.NodeAttribute)
+        if self.SetAttribute(fx, "N_F_" + name): return
+        self.Warning("Found Duplicate Node " + name + " Attribute")
 
     def AddEdgeFeature(self, fx, name=""):
-        self.SetAttribute(name, fx, self.EdgeAttribute)
+        if self.SetAttribute(fx, "E_F_" + name): return
+        self.Warning("Found Duplicate Edge " + name + " Attribute")
 
-    # Define the truth features used for supervised learning
-    def AddGraphTruth(self, fx, name=""):
-        self.SetAttribute("T_" + name, fx, self.GraphAttribute)
+     # Define the truth features used for supervised learning
+    def AddGraphTruthFeature(self, fx, name=""):
+        if self.SetAttribute(fx, "G_T_" + name): return
+        self.Warning("Found Duplicate Graph Truth " + name + " Attribute")
 
-    def AddNodeTruth(self, fx, name=""):
-        self.SetAttribute("T_" + name, fx, self.NodeAttribute)
+    def AddNodeTruthFeature(self, fx, name=""):
+        if self.SetAttribute(fx, "N_T_" + name): return
+        self.Warning("Found Duplicate Node Truth " + name + " Attribute")
 
-    def AddEdgeTruth(self, fx, name=""):
-        self.SetAttribute("T_" + name, fx, self.EdgeAttribute)
+    def AddEdgeTruthFeature(self, fx, name=""):
+        if self.SetAttribute(fx, "E_T_" + name): return
+        self.Warning("Found Duplicate Edge Truth " + name + " Attribute")
 
-    # Define any last minute changes to attributes before adding to graph
-    def AddGraphPreprocessing(self, name, fx):
-        self.SetAttribute("P_" + name, fx, self.GraphAttribute)
+    def AddPreSelection(self, fx, name=""):
+        if self.SetAttribute(fx, "P_F_" + name): return
+        self.Warning("Found Duplicate Pre-Selection " + name + " Function")
 
-    def AddNodePreprocessing(self, name, fx):
-        self.SetAttribute("P_" + name, fx, self.NodeAttribute)
+    def AddTopology(self, fx, name=""):
+        if self.SetAttribute(fx, "T_F_" + name): return
+        self.Warning("Found Duplicate Topology " + name + " Function")
 
-    def AddEdgePreprocessing(self, name, fx):
-        self.SetAttribute("P_" + name, fx, self.EdgeAttribute)
-
-    # Selection generator
-    def AddSelection(self, name: Union[str], function):
-        self.Selections[name] = function
-
-    def MergeSelection(self, name: Union[str]):
-        self.Merge[name] = []
+     # Selection generator
+    def AddSelection(self, function):
+        self.Selections = function
 
     def This(self, path: Union[str], tree: Union[str]):
         if tree not in self._DumpThis: self._DumpThis[tree] = []

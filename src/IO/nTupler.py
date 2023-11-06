@@ -1,199 +1,261 @@
 from AnalysisG.Generators.Interfaces import _Interface
 from AnalysisG.Notification.nTupler import _nTupler
-from AnalysisG.Tracer import SampleTracer
-from AnalysisG.Tools import Hash, Threading
+from AnalysisG._cmodules.SampleTracer import Event
+from AnalysisG.SampleTracer import SampleTracer
+from AnalysisG.Tools import Threading, Code
 from typing import Union
-import numpy as np
+import awkward
+import pickle
 import uproot
 import h5py
 
-class container(SampleTracer):
+def __thmerge__(inpt, _prgbar):
+    lock, bar = _prgbar
+    out = {}
+    for i in range(len(inpt)):
+        key, val, code = inpt[i]
+        evnt = code[key.split(".")[1]].InstantiateObject
+        evnt.__setstate__(val)
+        if key not in out: out[key] = evnt
+        else: out[key] += evnt
+        inpt[i] = None
+        if lock is None:
+            if bar is None: continue
+            bar.update(1)
+            continue
+        with lock: bar.update(1)
+    return [(key, val.__getstate__()) for key, val in out.items()]
+
+
+def _triggers_(inpt):
+    if isinstance(inpt, float): pass
+    elif isinstance(inpt, int): pass
+    elif isinstance(inpt, str): pass
+    elif inpt is None: pass
+    else: return False
+    return True
+
+def _merge_(inpt, key, start):
+    if isinstance(inpt, dict):
+        for x in inpt:
+            if len(key): k = key + "/" + str(x)
+            else: k = x
+            if not _triggers_(inpt[x]):
+                start = _merge_(inpt[x], k, start)
+                continue
+            if k not in start: start[k] = [[inpt[x]]]
+            else: start[k].append([inpt[x]])
+
+    elif isinstance(inpt, list):
+        for i in inpt:
+            if not _triggers_(i):
+                start = _merge_(i, key, start)
+                continue
+            if key not in start: start[key] = [inpt]
+            else: start[key].append(inpt)
+            return start
+    return start
+
+def __throot__(inpt, _prgbar = None):
+    output = {}
+    for i in range(len(inpt)):
+        evnt_key, path, code, evnt = inpt[i]
+        evnt_key = evnt_key.replace(".", "/")
+        if evnt_key not in output: output[evnt_key] = {}
+        code = code[evnt_key.split("/")[1]]
+        ev = code.InstantiateObject
+        ev.__setstate__(evnt)
+        for k in path:
+            spl, x = k.split("->")[1:-1], ev
+            for t in spl:
+                if isinstance(x, dict): x = x[t]
+                else: x = getattr(x, t)
+            k = "/".join(spl).replace("//", "/")
+            try: output[evnt_key][k].append(x)
+            except KeyError: output[evnt_key][k] = [x]
+
+        indx = evnt_key + "/event_index"
+        try: output[indx].append([ev.index])
+        except KeyError: output[indx] = [ev.index]
+        output = _merge_(output, "", {})
+        del evnt
+        ev = None
+    return [output]
+
+class nTupler(_Interface, _nTupler, SampleTracer):
 
     def __init__(self):
-        self.Tree = None
-        self.SelectionName = None
-        self.Variable = None
-        self.FilePath = None
-        self._h5 = None
-        self.Path = None
-
-    def _strip(self, inpt):
-        msg = "Syntax Error! Format is '<selection name> -> <variable> -> <key>' "
-        msg += "If you want to get the entire object, use append the '->' to the tree "
-        msg += "e.g. 'SelectionName ->  for the whole object to be returned'"
-        if "->" not in inpt: return msg
-        inpt = inpt.split("->")
-        self.SelectionName = inpt.pop(0).strip(" ")
-        self.Variable = inpt.pop(0).strip(" ")
-        if len(inpt) == 0: return
-        self.Path = "/".join(inpt)
-        self.Path = self.Path.replace(" ", "")
-
-    def hdf5(self):
-        _h5 = h5py.File(self.FilePath, "r")
-        try: self._h5 = _h5[self.SelectionName].attrs
-        except KeyError: return True
-        code_pth = "/".join(self.FilePath.split("/")[:-1]) + "/code/"
-        self._rebuild_code(code_pth, self._h5["code"])
-
-    def __eq__(self, other):
-        x = self.SelectionName == other.SelectionName
-        x *= self.FilePath == other.FilePath
-        return x
-
-    def __len__(self):
-        return len(self._h5)
-
-    def __iter__(self):
-        self._it = iter(self._h5)
-        return self
-
-    def __next__(self):
-        name = next(self._it)
-        if name == "code": name = next(self._it)
-        return self._h5[name]
-
-    def get(self):
-        return sum([self._decoder(i) for i in self])
-
-class nTupler(_Interface, _nTupler):
-
-    def __init__(self, inpt = None):
-        self.Caller = "nTupler"
-        self.Verbose = 3
-        self.chnk = 1000
-        self.Threads = 6
-        self.Files = []
-        self.__it = None
-        self._it = None
+        SampleTracer.__init__(self)
+        self.Caller = "n-Tupler"
+        _Interface.__init__(self)
+        _nTupler.__init__(self)
         self._DumpThis = {}
-        self._Container = []
-        if inpt is None: return
-        self.InputSelection(inpt)
+        self._iterator = {}
+        self._variables = {}
+        self._events = {}
+        self._clones = {}
+        self._loaded = False
+        self.root = None
 
-    def __make_list__(self, inpt, key = None):
-        if isinstance(inpt, dict): pass
-        elif isinstance(inpt, list): return {key : inpt}
-        else: return {key : [inpt]}
+    def __uproot__(self, inpt, OutDir):
+        if OutDir.endswith("/"): OutDir += "UNTITLED.root"
+        if not OutDir.endswith(".root"): OutDir += ".root"
+        if self.root is None:
+            try: self.root = uproot.create(OutDir)
+            except OSError: self.root = uproot.recreate(OutDir)
 
-        x = {}
-        for i in inpt:
-            k = key + "/" + i if key is not None else i
-            x.update(self.__make_list__(inpt[i], k))
-        return x
+        data_t = {}
+        data_c = {}
+        for tr_n in inpt:
+            spl = tr_n.split("/")
+            tree_name = spl[0] + "_" + spl[1]
+            var_name = "_".join(tr_n.split("/")[2:])
+            if var_name.startswith("CutFlow"):
+                tree_name = tree_name + "_CutFlow"
+                var_name = var_name[len("CutFlow_"):]
 
-    def __uproot__(self, out, sel, tree, filepath, output):
-        _o = out if out is not None else "/".join(filepath.split("/")[:-1])
-        _o = self.AddTrailing(_o, "/") + sel + ".root"
-        output = {i.replace("/", "_") : np.array(output[i]) for i in output}
+            if tree_name not in data_c: data_c[tree_name] = {}
+            if var_name  not in data_c[tree_name]: data_c[tree_name][var_name] = {}
+            arr = awkward.highlevel.Array(inpt[tr_n])
+            data_c[tree_name][var_name] = awkward.fill_none(arr, [])
 
-        try: x = uproot.create(_o)
-        except OSError: x = uproot.update(_o)
+        for tr_n in data_c:
+            if tr_n not in self.root: self.root[tr_n] = data_c[tr_n]
+            else: self.root[tr_n].extend(data_c[tr_n])
 
-        save = {}
-        for i in output:
-            spl = i.split("_")
-            tr = tree + "_" + spl[0]
-            if len(spl) == 1: k = spl[0]
-            else: k = "_".join(spl[1:])
-            l = output[i].size
-            if l not in save: save[l] = {}
-            if tr not in save[l]: save[l][tr] = {}
-            save[l][tr].update({k : [np.float64, output[i]]})
 
-        for l in save:
-            for tr in save[l]:
-                x.mktree(tr, {i : save[l][tr][i][0] for i in save[l][tr]})
-                x[tr].extend({i : save[l][tr][i][1] for i in save[l][tr]})
-        x.close()
-
-    def Write(self, OutDir: Union[str, None] = None):
-        contains = self.merged()
-        self.output = {}
-        for i in self._Container:
-            sel = contains[i.SelectionName]
-            var = i.Variable
-            if sel.Tree != i.Tree: continue
-            dct = self.__make_list__(sel.__dict__[var])
-            sel = i.SelectionName
-            if sel not in self.output:
-                self.output[sel] = [OutDir, sel, i.Tree, i.FilePath, {}]
-
-            if i.Path is not None:
-                if i.Path not in dct:
-                    self._KeyNotFound(var, i.Path, list(dct))
-                    continue
-                self.output[sel][-1].update({var + "/" + i.Path : dct[i.Path]})
-            elif None in dct: self.output[sel][-1].update({var : dct[None]})
-            else: self.output[sel][-1].update({var + "/" + i : dct[i] for i in dct})
-
-        for i in self.output: self.__uproot__(*self.output[i])
-
-    def __scrape__(self, file):
-        for tree in self._DumpThis:
-            for entry in self._DumpThis[tree]:
-                self._Container.append(container())
-                self._Container[-1].Tree = tree
-                self._Container[-1].FilePath = file
-                res = self._Container[-1]._strip(entry)
-                skip = True
-                if res is not None: self.Failure(res)
-                else: skip = self._Container[-1].hdf5()
-                if skip is True: del self._Container[-1]
-
-    def __Dumps__(self):
-        self._Container = []
-        files = self.DictToList(self.Files)
-        for file in files: self.__scrape__(file)
-        if len(self._Container) == 0:
-            self.Failure("No selection was found.")
-            return
-        found = [""]
-        found += [i.SelectionName for i in self._Container]
-        self.Success("Found Selections" + "\n -> ".join(set(found)))
-
-    @staticmethod
-    def function(inpt, _prgbar):
-        lock, bar = _prgbar
-        seed = inpt.pop(0)
-        for i in inpt:
-            seed += i
-            with lock: bar.update(1)
-        return [seed]
+    def MakeROOT(self, OutDir: Union[str, None] = None):
+        if OutDir is None: OutDir = self.WorkingPath
+        else: OutDir = self.abs(OutDir)
+        chnks = self.Threads * self.Chunks * self.Threads
+        commands = [[], __throot__, self.Threads, self.Chunks]
+        for i in self:
+            for t, x in i.items():
+                var = self._variables[t.replace(".", "/")]
+                evnt = x.__getstate__()
+                commands[0].append((t, var, self._clones, evnt))
+            if len(commands[0]) < chnks: continue
+            th = Threading(*commands)
+            th.Start()
+            for k in th._lists:
+                if k is None: continue
+                self.__uproot__(k, OutDir)
+            commands[0] = []
+            del th
+        th = Threading(*commands)
+        th.Start()
+        for k in th._lists:
+            if k is None: continue
+            self.__uproot__(k, OutDir)
+        commands[0] = []
+        del th
+        self.root.close()
 
     def merged(self):
-        o = {}
+        tmp = []
+        chnks = self.Threads * self.Chunks * self.Threads
+        commands = [[], __thmerge__, self.Threads, self.Chunks]
         for i in self:
-            name = i.__class__.__name__
-            if name not in o: o[name] = [i]
-            else: o[name] += [i]
+            for t, v in i.items():
+                evnt = v.__getstate__()
+                commands[0] += [(t, evnt, self._clones)]
+            if len(commands[0]) < chnks: continue
+            th = Threading(*commands)
+            th.Start()
+            tmp += [k for k in th._lists if k is not None]
+            commands[0] = []
+            del th
 
-        for name in o:
-            if self.Threads > 1:
-                th = Threading(o[name], self.function, self.Threads, self.chnk)
-                th.Start()
-                o[name] = sum([i for i in th._lists if i is not None])
-            else: o[name] = sum(o[name])
-        return o
+        tmp += commands[0]
+        while True:
+            commands[0] = []
+            for i in tmp: commands[0] += [(i[0], i[1], self._clones)]
+            th = Threading(*commands)
+            th.Start()
+            output, tmp = {}, []
+            for k in th._lists:
+                if k is None: continue
+                key, val = k
+                tmp.append(k)
+                output[key] = self._clones[key.split(".")[-1]]
+            del th
+            if len(output) != len(tmp): continue
+            for k in tmp:
+                if k is None: continue
+                key, val = k
+                output[key] = output[key].InstantiateObject
+                output[key].__setstate__(val)
+            return output
+
+    def __start__(self):
+        if not self._loaded: self.RestoreTracer()
+        variables = []
+        for i, x in self._DumpThis.items():
+            x = [(i + "/" + j).replace(" ","") for j in x]
+            x = [i if i.endswith("->") else i+"->" for i in x]
+            variables += x
+
+        tree_selection = {}
+        for i in variables:
+            cont = i.split("->")[0]
+            name = cont.split("/")[-1]
+            tree = cont.split("/")[0]
+            var = tree + i.lstrip(cont)
+            if name in self.ShowSelections:
+                if cont in tree_selection: pass
+                else: self._FoundSelectionName(name)
+            else: self._MissingSelectionName(name)
+            try: tree_selection[cont].append(var)
+            except KeyError: tree_selection[cont] = [var]
+        self._variables = tree_selection
+        self._loaded = True
+
+    def preiteration(self):
+        return False
 
     def __iter__(self):
-        self.__Dumps__()
-        g = []
-        for i in self._Container: g += [i] if i not in g else []
-        self._it = iter(g)
+        if not self._loaded: self.__start__()
+        self._clones = {i.class_name : i for i in self.rebuild_code(None)}
+        self.GetAll = True
+        self.GetSelection = True
+        self._events = sum(self.makehashes()["selection"].values(), [])
+        self._events = self.Quantize(list(set(self._events)), self.Chunks)
+        self._events = {k : l for k, l in enumerate(self._events)}
+        self._cache_paths = iter(self._events)
+        self._restored = {}
+        self._tmpl = {}
+        for i in self._variables:
+            i = i.replace("/", ".")
+            self._restored[i] = []
+            self._tmpl[i] = 0
         return self
 
     def __next__(self):
-        try:
-            if self.__it is None: raise StopIteration
-            nxt = next(self.__it)
-        except StopIteration:
-            self._br = None
-            self.__it = next(self._it)
-            msg = "nTupler::" + self.__it.SelectionName + " -> " + self.__it.Variable
-            _, self._br = self._MakeBar(len(self.__it), msg)
-            self.__it = iter(self.__it)
-            nxt = next(self.__it)
+        if sum(self._tmpl.values()):
+            out = {}
+            for i, j in self._tmpl.items():
+                if not j: continue
+                out[i] = self._restored[i].pop(0)
+                self._tmpl[i] -= 1
+            return out
 
-        self._br.update(1)
-        return SampleTracer._decoder(nxt)
+        if self._cache_paths is None: raise StopIteration
+        if not len(self._events):
+            hashes = None
+            self._cache_paths = None
+        else:
+            hashes = self._events[next(self._cache_paths)]
+            self.RestoreSelections(hashes)
+        for i in self._restored:
+            self.Tree, self.SelectionName = i.split(".")
+            if hashes is None: these = self.makelist()
+            elif len(hashes) > 1: these = self[hashes]
+            else: these = [self[hashes]]
+            if these is not False:
+                self._restored[i] = [k.release_selection() for k in these]
+                self._tmpl[i] = len(self._restored[i])
+            else:
+                self._MissingSelectionTreeSample(i)
+                self._restored[i] = []
+                self._tmpl[i] = 0
+        return self.__next__()

@@ -1,103 +1,111 @@
-from AnalysisG.Generators.EventGenerator import EventGenerator
 from AnalysisG.Notification import _GraphGenerator
-from AnalysisG.Tools import Code, Threading
-from AnalysisG.Tracer import SampleTracer
-from AnalysisG.Settings import Settings
+from AnalysisG._cmodules.SampleTracer import Event
+from AnalysisG.SampleTracer import SampleTracer
+from AnalysisG.Templates import GraphTemplate
+from AnalysisG.Tools import Threading
 from .Interfaces import _Interface
 from typing import Union
-from time import sleep
 import pickle
+from time import sleep
 
-
-class GraphGenerator(_GraphGenerator, Settings, SampleTracer, _Interface):
-    def __init__(self, inpt: Union[EventGenerator, None] = None):
-        self.Caller = "GRAPHGENERATOR"
-        Settings.__init__(self)
+class GraphGenerator(_GraphGenerator, SampleTracer, _Interface):
+    def __init__(self, inpt = None):
         SampleTracer.__init__(self)
-        _Interface.__init__(self)
         _GraphGenerator.__init__(self, inpt)
+        self.Caller = "GRAPHGENERATOR"
+        _Interface.__init__(self)
 
     @staticmethod
     def _CompileGraph(inpt, _prgbar):
         lock, bar = _prgbar
+        if not len(inpt): return [None]
         for i in range(len(inpt)):
-            hash_, gr_ = inpt[i]
-            gr_ = pickle.loads(gr_)
-            try:
-                gr_.ConvertToData()
-            except:
-                pass
-            if lock == None:
-                bar.update(1)
+            ev = pickle.loads(inpt[i][0])
+            code, graph = inpt[i][1]
+            code  = pickle.loads(code)
+            graph = pickle.loads(graph)
+            gr = graph(ev)
+            grx = graph()
+            grx.Import(code["__state__"])
+            grx.ImportCode(code)
+            grx.Event = gr.Event
+            grx.Particles = [p.get() for p in gr.Particles]
+            grx.Build()
+            inpt[i] = grx.__getstate__()
+            grx.code_owner = True
+            del gr, graph, grx, code, ev
+            if bar is None: continue
+            elif lock is None: bar.update(1)
             else:
-                with lock:
-                    bar.update(1)
-
-            try:
-                gr_ = gr_.purge()
-                num_nodes = gr_.num_nodes.item()
-                gr_ = pickle.dumps(gr_)
-            except:
-                gr_ = None
-                num_nodes = 0
-            inpt[i] = [hash_, gr_, num_nodes]
-        if lock == None:
-            del bar
+                with lock: bar.update(1)
         return inpt
 
-    def __collect__(self, inpt, key):
-        x = {c_name: Code(inpt[c_name]) for c_name in inpt}
-        if len(x) != 0:
-            self._Code[key] = x
+    def MakeGraphs(self, sample = None):
+        if sample is not None: pass
+        else: sample = self
 
-    def MakeGraphs(self):
-        if not self.CheckGraphImplementation():
-            return False
-        if not self.CheckSettings():
-            return False
+        if not self.CheckGraphImplementation(): return False
+        if not self.CheckSettings(): return False
 
-        self._Code["EventGraph"] = Code(self.EventGraph)
-        self.__collect__(self.GraphAttribute, "GraphAttribute")
-        self.__collect__(self.NodeAttribute, "NodeAttribute")
-        self.__collect__(self.EdgeAttribute, "EdgeAttribute")
-        if self._condor:
-            return self._Code
+        code = pickle.dumps(self.Graph.code)
+        graph = pickle.dumps(self.Graph)
+        self.preiteration(sample)
 
-        inpt = []
-        s = len(self)
-        _, bar = self._MakeBar(s, "PREPARING GRAPH COMPILER")
-        for ev, i in zip(self, range(s)):
-            if self._StartStop(i) == False:
-                continue
-            if self._StartStop(i) == None:
-                break
+        itx = 1
+        chnks = self.Threads * self.Chunks
+        step = chnks
+
+        command = [[], self._CompileGraph, self.Threads, self.Chunks]
+
+        path = sample.Tree + "/" + sample.EventName
+        try: itr = sample.ShowLength[path]
+        except KeyError: itr = 0
+        if not itr: return True
+        _, bar = self._makebar(itr, self.Caller + "::Preparing Graphs")
+        for ev, i in zip(sample, range(itr)):
+            if sample._StartStop(i) == False: continue
+            if sample._StartStop(i) == None: break
             bar.update(1)
-            if ev.Graph:
-                continue
 
-            gr = self._Code["EventGraph"].clone()
-            try:
-                gr = gr(ev)
-            except AttributeError:
-                gr = gr(None)
-            gr.GraphAttr.update(self.GraphAttribute)
-            gr.NodeAttr.update(self.NodeAttribute)
-            gr.EdgeAttr.update(self.EdgeAttribute)
-            gr.index = ev.index
-            gr.SelfLoop = self.SelfLoop
-            gr.FullyConnect = self.FullyConnect
-            inpt.append([ev.hash, pickle.dumps(gr)])
+            if ev.Graph: continue
+            if not ev.Event: continue
 
-        if len(inpt) == 0:
-            return True
-        if self.Threads > 1:
-            th = Threading(inpt, self._CompileGraph, self.Threads, self.chnk)
-            th.Title = self.Caller
+            command[0].append([pickle.dumps(ev.release_event()), (code, graph)])
+            if not i >= step: continue
+            itx += 1
+            step = itx*chnks
+            th = Threading(*command)
             th.Start()
-        out = (
-            th._lists
-            if self.Threads > 1
-            else self._CompileGraph(inpt, self._MakeBar(len(inpt)))
-        )
-        self.AddGraph(out)
+
+            for x in th._lists: sample.AddGraph(x)
+            command[0] = []
+            del th
+
+        if not len(command[0]): return True
+        th = Threading(*command)
+        th.Start()
+        for i in th._lists: sample.AddGraph(i)
+        del th
         return True
+
+    def preiteration(self, inpt = None):
+        if inpt is not None: pass
+        else: inpt = self
+
+        if not len(inpt.ShowLength): return True
+        if not len(inpt.ShowTrees): return True
+
+        if not len(inpt.Tree):
+            try: inpt.Tree = inpt.ShowTrees[0]
+            except IndexError: return True
+
+        if not len(inpt.EventName):
+            try: inpt.EventName = inpt.ShowEvents[0]
+            except IndexError: inpt.EventName = None
+            self.GetEvent = True
+
+        if not len(inpt.GraphName):
+            try: inpt.GraphName = inpt.ShowGraphs[0]
+            except IndexError: inpt.GraphName = None
+            self.GetGraph = True
+        return False

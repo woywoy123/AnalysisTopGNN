@@ -1,81 +1,129 @@
+.. _meta-data:
+
+MetaData Wrapper
+****************
+
+.. py:class:: MetaData
+
+    This is a class which wraps the output of ``PyAmi`` when performing a meta-data search on the input samples.
+    To use this wrapper effectively, you need to authenticate using the ``voms-proxy-init`` command.
+    Luckily, the framework comes with a pre-built script, which does this for you, simply enter ``auth_pyami`` into the terminal and it will ask for the ``userkey/usercert.pem`` directories, followed by a password prompt. 
+    If the user is not authenticated, this step is skipped and the framework will attempt to inspect the sample's available meta-data. 
+   
+    :param str file: The input path of the file.
+    :param bool scan_ami: A switch which enables/disables the meta scanning.
+    :param str sampletype: An option which narrows down the DAOD sample search to a specific group.
+
+    .. py:method:: IndexToSample(int index) -> str
+
+        :param int index: Returns the xAOD or filename of the specified event index.
+
+    .. py:method:: ProcessKeys(dict val) -> None
+
+        :param dict val: The keys to search within the ROOT sample.
+
+
+    :ivar list Trees: Expects a list of strings pointing to the trees to be read.
+    :ivar list Branches: Expects a list of strings pointing to the branches to be read.
+    :ivar list Leaves: Expects a list of strings pointing to any leaves to be read.
+    :ivar str original_input: Returns the original file name, i.e. file.
+    :ivar int dsid: Returns the dsid of the data set matched to this ROOT file.
+    :ivar str amitag: Returns the amitag of the same being used, this can be retrieved within the sample's metadata.
+    :ivar str generators: Returns the generator which produced this sample.
+    :ivar bool isMC: Returns a boolean to indicate whether the sample is Monte Carlo
+    :ivar str derivationFormat:
+    :ivar int eventNumber:
+    :ivar float ecmEnergy:
+    :ivar float genFiltEff:
+    :ivar float completion:
+    :ivar float beam_energy:
+    :ivar float crossSection:
+    :ivar float crossSection_mean:
+    :ivar float totalSize: Returns the total file size (memory)
+    :ivar int nFiles: Returns the number of files within this sample set
+    :ivar int run_number:
+    :ivar int totalEvents:
+    :ivar int datasetNumber:
+    :ivar str identifier:
+    :ivar str prodsysStatus:
+    :ivar str dataType:
+    :ivar str version:
+    :ivar str PDF:
+    :ivar str AtlasRelease:
+    :ivar str principalPhysicsGroup:
+    :ivar str physicsShort:
+    :ivar str generatorName:
+    :ivar str geometryVersion:
+    :ivar str conditionsTag:
+    :ivar str generatorTune:
+    :ivar str amiStatus:
+    :ivar str beamType:
+    :ivar str productionStep:
+    :ivar str projectName:
+    :ivar str statsAlgorithm:
+    :ivar str genFilterNames:
+    :ivar str file_type:
+    :ivar str DatasetName:
+    :ivar int event_index:
+    :ivar str original_name:
+    :ivar str original_path:
+    :ivar str hash:
+    :ivar list keywords:
+    :ivar list weights:
+    :ivar list keyword:
+    :ivar bool found:
+    :ivar dict config:
+    :ivar dict GetLengthTrees:
+    :ivar list MissingTrees:
+    :ivar list MissingBranches:
+    :ivar list MissingLeaves:
+    :ivar list DAODList:
+    :ivar dict Files:
+    :ivar str DAO:
+    :ivar dict fileGUID:
+    :ivar dict events:
+    :ivar dict fileSize:
+    :ivar str sample_name:
+    :ivar str logicalDatasetName:
+
+
 UpROOT wrapper
 **************
-This class is predominantly designed to be interfaced with core modules in the framework. 
-However, it can be used as a completely standalone module with minimal configuration. 
-Part of this module is the so called `MetaData` object. 
-This class contains additional information about the input ROOT samples if ``PyAMI`` is enabled. 
-If ``PyAMI`` is not installed or authenticated to, then it will try to scrape the ROOT files for additional meta data. 
 
-Functions
-_________
+.. py:class:: UpROOT
 
-- ``InputSamples(input: Union[str, Dict, List])``:
-    This function will scan the given input for ROOT files. 
-    If the input is a string containing the `.root` extension, then only that file will be used, otherwise it will assume the input is a directory and scan it for possible ROOT files.
-    For lists, the function will assume these to be `.root` files and never directories. 
-    If the input is a dictionary, then the keys can be interpreted as being directories, with values being either lists of ROOT files to read, or single ROOT file strings.
-
-Attributes
-__________
-
-- ``Trees``: 
-    Expects a list of strings pointing to the trees to be read.
-
-- ``Branches``: 
-    Expects a list of strings pointing to any branches.
-
-- ``Leaves``: 
-    Expects a list of strings pointing to any leaves to be read.
-
-- ``ScanKeys``: 
-    Will check whether the given `Trees/Branches/Leaves` are found within the ROOT samples.
-
-- ``DisablePyAMI``: 
-    Skips ``PyAMI`` meta-data look-ups.
+    This class is predominantly designed to be interfaced with core modules in the framework. 
+    However, it can be used as a completely standalone module with minimal configuration. 
+    Part of this module is the so called `MetaData` object. 
+    This class contains additional information about the input ROOT samples if ``PyAMI`` is enabled. 
+    If ``PyAMI`` is not installed or authenticated to, then it will try to scrape the ROOT files for additional meta data. 
 
 
-MetaData wrapper
-****************
-This is a class which wraps the output of ``PyAmi`` when performing a meta-data search on the input samples.
-To use this wrapper effectively, you need to authenticate using the ``voms-proxy-init`` command.
-Luckily, the framework comes with a pre-built script, which does this for you, simply enter ``AUTH_PYAMI`` into the terminal and it will ask for the ``userkey/usercert.pem`` directories, followed by a password prompt. 
-If the user is not authenticated, this step is skipped and the framework will attempt to inspect the sample's available meta-data. 
+    :param Union[list, dict, str, None] ROOTFiles: Input samples
+    :param Union[None, EventGenerator] EventGenerator: A switch which enables/disables the meta scanning.
 
-Attributes From PyAMI with Authentication
-_________________________________________
+    .. py:method:: GetAmiMeta() -> MetaData
 
-- ``DatasetName``: 
-  Name of the ``DAOD`` from which the sample originated from.
+    .. py:method:: ScanKeys()
 
-- ``nFiles``:
-  Number of ``DAOD`` samples constituting the ``Dataset``.
+        A function which scans the keys within the sample recursively and matches them with the input values.
 
-- ``total_events``:
-  The total number of events in this ``Dataset``.
+    .. py:method:: InputSamples(input)
 
-- ``short``:
-  A shortened version of the ``Dataset`` name.
+        This function will scan the given input for ROOT files. 
+        If the input is a string containing the `.root` extension, then only that file will be used, otherwise it will assume the input is a directory and scan it for possible ROOT files.
+        For lists, the function will assume these to be `.root` files and never directories. 
+        If the input is a dictionary, then the keys can be interpreted as being directories, with values being either lists of ROOT files to read, or single ROOT file strings.
 
-- ``DAOD``:
-  If the event index is matched to the event numbers in the ROOT sample, then the ``DAOD`` of this event will be given.
-  Otherwise it will list all ``DAOD`` samples of the events.
+        :param Union[str, Dict, List] input: The input samples to use.
 
-- ``cross_section``
-  The generated cross section of the sample
+    :ivar int Verbose: Changes the verbosity of the key scannig and sample detection.
+    :ivar int StepSize: Changes the cache step size within **uproot**. 
+    :ivar int Threads: Sets the number of threads to utilize during the scanning process.
+    :ivar list Trees: Trees to retrieve from the ROOT sample.
+    :ivar list Branches: Branches to retrieve and match for the given trees.
+    :ivar list Leaves: Leaves to retrieve and match for the given trees and branches.
+    :ivar dict Files:
+    :ivar bool EnablePyAMI: Enable or disable MetaData.
 
-- ``Files``:
-  The original generation path where the sample was generated in. 
-
-- ``generator_tune``:
-  The generator used to produce the ``Dataset``.
-
-- ``keywords``:
-  Keywords used to find the sample.
-
-- ``isMC``:
-  A Boolean value indicating whether the sample is a Monte Carlo sample
-
-- ``version``:
-  The version of the sample (e.g. p-tag)
-
-This is just a subset of attributes, more can be added by modifying the ``self._vars`` attribute of the ``MetaData`` class under ``src/IO/UpROOT.py`` (this is for more advanced users).
+       

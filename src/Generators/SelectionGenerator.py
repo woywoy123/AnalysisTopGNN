@@ -1,104 +1,111 @@
 from AnalysisG.Notification import _SelectionGenerator
-from AnalysisG.Templates import SelectionTemplate
-from AnalysisG.IO import PickleObject, UnpickleObject
-from AnalysisG.Tools import Code, Threading, Hash
-from .EventGenerator import EventGenerator
-from AnalysisG.Tracer import SampleTracer
-from AnalysisG.Settings import Settings
+from AnalysisG.SampleTracer import SampleTracer
+from AnalysisG.Tools import Threading
 from .Interfaces import _Interface
-from typing import Union
-import h5py
-import sys
+import pickle
 
-class SelectionGenerator(_SelectionGenerator, Settings, SampleTracer, _Interface):
-    def __init__(self, inpt: Union[EventGenerator, None] = None):
-        self.Caller = "SELECTIONGENERATOR"
-        Settings.__init__(self)
+class SelectionGenerator(_SelectionGenerator, SampleTracer, _Interface):
+    def __init__(self, inpt = None):
         SampleTracer.__init__(self)
+        self.Caller = "SELECTION-GENERATOR"
         _Interface.__init__(self)
         _SelectionGenerator.__init__(self, inpt)
 
     @staticmethod
-    def __compile__(inpt, _prgbar):
+    def _CompileSelection(inpt, _prgbar):
         lock, bar = _prgbar
-        output = {}
-        code = {}
-        fname = ""
         for i in range(len(inpt)):
-            name, sel_, event, pth = inpt[i]
-            sel = SampleTracer._decoder(sel_).clone()
-            sel.hash = event.hash
-            sel.ROOTName = event.ROOT
-            sel.index = event.index
-            sel.Tree = event.Tree
-            sel._EventPreprocessing(event)
-            fname = Hash(fname + sel.hash)
-            if name not in output: output[name] = []
-            output[name].append(sel)
-            try: code[name]
-            except KeyError: code[name] = [sel_]
-            if lock is not None: bar.update(1)
+            ev, meta, co, se = inpt[i]
+            ev = pickle.loads(ev)
+            ev.ImportMetaData(meta)
+            sel = pickle.loads(co).InstantiateObject
+            sel.__setstate__(se)
+            sel.__processing__(ev)
+            inpt[i] = sel.__getstate__()
 
-        for name in output:
-            f = h5py.File(pth + name + "/" + fname + ".hdf5", "w")
-            ref = f.create_dataset(name, (1), dtype = h5py.ref_dtype)
-            for sel in output[name]: ref.attrs[sel.hash] = SampleTracer._encoder(sel)
+            del sel, se
+            del co
+            del ev
+            del meta
+            if bar is None: continue
+            elif lock is None: bar.update(1)
+            else:
+                with lock: bar.update(1)
+        return inpt
 
-            try: ref.attrs["code"] = next(iter(code[name]))
-            except KeyError: pass
+    def MakeSelections(self, sample = None):
+        if sample is not None: pass
+        else: sample = self
+        self.preiteration(sample)
+        if self.CheckSettings(sample): return False
 
-            f.close()
-        return []
+        chnks = self.Threads * self.Chunks * self.Threads
+        command = [[], self._CompileSelection, self.Threads, self.Chunks]
 
-    def __collect__(self, inpt, key):
-        x = {c_name: Code(inpt[c_name]) for c_name in inpt}
-        if len(x) != 0: self._Code[key] = x
+        path = sample.Tree + "/" + sample.EventName
+        try: itr = sample.ShowLength[path]
+        except KeyError: itr = 0
+        if not itr: return False
 
-    def __merge__(self):
-        for name in self.Merge:
-            if len(self.Merge[name]) == 0: continue
-            self.mkdir(self.OutputDirectory + "/Selections/Merged/")
-            fo = h5py.File(self.OutputDirectory + "/Selections/Merged/" + name + ".hdf5", "w")
-            ref = fo.create_dataset(name, (1), dtype = h5py.ref_dtype)
-            for h in self.Merge[name]:
-                f = h5py.File(h, "r")
-                f_ = f[name]
-                for key in f_.attrs: ref.attrs[key] = f_.attrs[key]
-                f.close()
-                self.rm(h)
-            fo.close()
-            self.Merge[name] = []
-            self.rm(self.OutputDirectory + "/Selections/" + name)
-
-    def MakeSelection(self):
-        self.__collect__(self.Selections, "Selections")
-        if self._condor: return self._Code
-        if len(self.Merge) != 0: pass
-        elif self.CheckSettings(): return False
-
-        self.pth = self.OutputDirectory + "/Selections/"
-        for name in self.Selections:
-            self.mkdir(self.pth + name)
-            sel = self._encoder(self._Code["Selections"][name])
-            inpt = []
-            for ev, i in zip(self, range(len(self))):
+        selections = self.Selections
+        for i in self.rebuild_code(None):
+            name = i.class_name
+            if name not in selections: continue
+            step, itx = chnks, 1
+            co = pickle.dumps(i)
+            sel = selections[name].__getstate__()
+            title = self.Caller + "::" + name
+            _, bar = self._makebar(itr, self.Caller + "::Preparing...")
+            for ev, i in zip(sample, range(itr)):
                 if self._StartStop(i) == False: continue
                 if self._StartStop(i) == None: break
-                if ev.Graph: continue
-                inpt.append([name, sel, ev, self.pth])
 
-            if len(inpt) == 0: return self.__merge__()
-            if self.Threads > 1:
-                th = Threading(inpt, self.__compile__, self.Threads, self.chnk)
+                meta = ev.meta()
+                ev = ev.release_event()
+                if not ev: continue
+
+                ev = pickle.dumps(ev)
+                command[0] += [(ev, meta, co, sel)]
+                bar.update(1)
+
+                if not i >= step: continue
+                itx += 1
+                step = itx*chnks
+                th = Threading(*command)
                 th.Title = self.Caller + "::" + name
+                th.Verbose = self.Verbose
                 th.Start()
-            else: self.__compile__(inpt, (None, None))
+                for x in th._lists: sample.AddSelections(x)
+                command[0] = []
+                del th
 
-        if len(self.Merge) == 0: return
-        self._Code["Selections"] = {}
-        for name in self.Merge:
-            pths = self.pth + name + "/"
-            self.Merge[name] = [
-                 pths + i for i in self.ls(pths) if i.endswith(".hdf5")
-            ]
-            self.__merge__()
+            if not len(command[0]): continue
+            th = Threading(*command)
+            th.Verbose = self.Verbose
+            th.Start()
+            for i in th._lists: sample.AddSelections(i)
+            command[0] = []
+            del th
+        return True
+
+    def preiteration(self, inpt = None):
+        if inpt is not None: pass
+        else: inpt = self
+
+        if not len(inpt.ShowLength): return True
+        if not len(inpt.ShowTrees): return True
+
+        if not len(inpt.Tree):
+            try: inpt.Tree = inpt.ShowTrees[0]
+            except IndexError: return True
+
+        if not len(inpt.EventName):
+            try: inpt.EventName = inpt.ShowEvents[0]
+            except IndexError: inpt.EventName = None
+            self.GetEvent = True
+
+        if not len(inpt.SelectionName):
+            try: inpt.SelectionName = inpt.ShowSelections[0]
+            except IndexError: inpt.SelectionName = None
+            self.GetSelection = True
+        return False

@@ -1,219 +1,223 @@
-from AnalysisG.Model.Optimizers import OptimizerWrapper
+from AnalysisG.Generators.SampleGenerator import RandomSamplers
+from AnalysisG._cmodules.cWrapping import OptimizerWrapper
+from AnalysisG._cmodules.cOptimizer import cOptimizer
 from AnalysisG.Notification import _Optimizer
-from AnalysisG.Evaluation.Epoch import Epoch
-from .SampleGenerator import RandomSamplers
-from AnalysisG.Tools import Code, Threading
-from AnalysisG.Tracer import SampleTracer
-from AnalysisG.Model import ModelWrapper
-from AnalysisG.Settings import Settings
-from torch_geometric.data import Batch
 from .Interfaces import _Interface
-from multiprocessing import Process
-import torch
+from AnalysisG.Model import Model
 
+class Optimizer(_Optimizer, _Interface, RandomSamplers):
 
-class Optimizer(_Optimizer, _Interface, SampleTracer, RandomSamplers):
-    def __init__(self, inpt):
+    def __init__(self, inpt = None):
+        RandomSamplers.__init__(self)
         self.Caller = "OPTIMIZER"
-        Settings.__init__(self)
-        SampleTracer.__init__(self)
         _Optimizer.__init__(self)
-        if issubclass(type(inpt), SampleTracer):
-            self += inpt
-        if issubclass(type(inpt), Settings):
-            self.ImportSettings(inpt)
-
-    def GetCode(self):
-        if "Model" in self._Code:
-            return self._Code["Model"]
-        self._Code["Model"] = Code(self.Model)
-        return self.GetCode()
-
-    def Launch(self):
-        self.DataCache = True
-        if self._NoModel():
-            return False
-        hashes = self._NoSampleGraph()
-        if isinstance(hashes, bool):
-            return False
-        self._outDir = self.OutputDirectory + "/Training"
-        self.Model = ModelWrapper(self.GetCode().clone())
-        self.Model.OutputDirectory = self._outDir
-        self.Model.RunName = self.RunName
-
-        for smpl in self:
-            break
-        smpl = self.BatchTheseHashes([smpl.hash], "test", self.Device)
-        if not self.Model.SampleCompatibility(smpl):
-            return self._notcompatible()
-
-        self._op = OptimizerWrapper()
-        self._op.ImportSettings(self)
-        self._op._mod = self.Model._Model
-        if self._setoptimizer():
-            return
-        self._setscheduler()
-        self._searchdatasplits()
-        self._op = None
-        self.Model = None
-
+        self._kOps = {}
         self._kModels = {}
-        self._kOp = {}
-        self._DataLoader = {}
-        self._nsamples = {}
-        if self.kFold is None:
-            self.kFold = {"train": {"all": hashes}}
-        for k in self.kFold:
-            self._kModels[k] = ModelWrapper(self._Code["Model"].clone())
-            self._kModels[k].OutputDirectory = self._outDir
+        self._cmod = cOptimizer()
+        self.triggered = False
+        if inpt is None: return
+        if not self.is_self(inpt): return
+        else: self += inpt
+
+    def __searchsplits__(self, sampletracer):
+        sets = self.WorkingPath + "Training/DataSets/"
+        sets += self.TrainingName
+        if not self._cmod.GetHDF5Hashes(sets):
+            sampletracer.GetAll = True
+            self._cmod.UseAllHashes([i.hash for i in sampletracer.makelist()])
+        self._searchdatasplits(sets)
+
+    def __initialize__(self):
+        if self._nomodel(): return False
+        if len(self._cmod.kFolds): pass
+        else: self._cmod.UseTheseFolds([1])
+
+        k = next(iter(self._cmod.kFolds))
+        graphs = next(iter(self._cmod.FetchTraining(k, self.BatchSize)))
+        for k in self._cmod.kFolds:
+            if len(graphs): pass
+            else: return not self._nographs()
+
+            self._kModels[k] = Model(self.Model)
+            self._kModels[k].Path = self.WorkingPath + "machine-learning/"
             self._kModels[k].RunName = self.RunName
-            self._kModels[k].SampleCompatibility(smpl)
+            self._kModels[k].KFold = k
+            self._kModels[k].KinematicMap = self.KinematicMap
+
+            if not len(self.ModelParams): pass
+            else: self._kModels[k].__params__ = self.ModelParams
+
             self._kModels[k].device = self.Device
+            if self._kModels[k].SampleCompatibility(graphs): pass
+            else: return self._notcompatible()
 
-            self._kOp[k] = OptimizerWrapper()
-            self._kOp[k].ImportSettings(self)
-            self._kOp[k].OutputDirectory = self._outDir
-            self._kOp[k]._mod = self._kModels[k]._Model
-            self._kOp[k].SetOptimizer()
-            self._kOp[k].SetScheduler()
-            self._nsamples[k] = {}
-            self._DataLoader[k] = {}
+            self._kOps[k] = OptimizerWrapper()
+            self._kOps[k].Path = self.WorkingPath + "machine-learning/"
+            self._kOps[k].RunName = self.RunName
+            self._kOps[k].KFold = k
 
-        if not self._searchtraining():
-            return
-        self._threads = []
-        self.__train__()
-        self.__dump_plots__()
+            self._kOps[k].Optimizer = self.Optimizer
+            self._kOps[k].OptimizerParams = self.OptimizerParams
 
-    def __train__(self):
-        def ApplyMode(k_):
-            try:
-                mode = next(self._it)
-            except:
-                return False
-            if mode not in self._DataLoader[k_]:
-                self.ForceTheseHashes(self.kFold[k_][mode])
-                self._DataLoader[k_][mode] = self.MakeDataLoader(
-                    self, self.SortByNodes, self.BatchSize
-                )
-                self._nsamples[k_][mode] = len(self._DataLoader[k_][mode])
-            self._dl = self._DataLoader[k_][mode]
-            self._len = self._nsamples[k_][mode]
-            self.mode = mode
-            return True
+            self._kOps[k].Scheduler = self.Scheduler
+            self._kOps[k].SchedulerParams = self.SchedulerParams
+            self._kOps[k].model = self._kModels[k].model
 
-        def Train(_train):
-            self.Model.train = _train
-            self._ep.train = _train
-            self._op.train = _train
+            if self._kOps[k].setoptimizer(): pass
+            else: return self._invalidoptimizer()
 
-        for ep in range(self.Epoch, self.Epochs):
-            for k in self._kModels:
-                _ep = str(ep + 1) + "/" + str(k)
-                if self.ContinueTraining:
-                    mod = self._kModels[k].Epoch
-                    if mod is None:
-                        pass
-                    elif mod == "":
-                        pass
-                    elif mod.endswith(_ep):
-                        continue
-                    elif int(mod.split("/")[0]) > ep + 1:
-                        continue
+            if self._kOps[k].setscheduler(): pass
+            else: return self._invalidscheduler()
+        return True
 
-                self._it = iter(self.kFold[k])
+    def Start(self, sample = None):
+        if sample is None:
+            self.RestoreTracer()
+            sample = self
+        else: self.ImportSettings(sample.ExportSettings())
 
-                self.mkdir(self._outDir + "/" + self.RunName + "/" + _ep)
-                self._op = self._kOp[k]
-                self._op.Epoch = _ep
+        self._cmod.sampletracer = sample
+        self.__searchsplits__(sample)
+        kfolds = self._cmod.kFolds
+        kfolds.sort()
+        if not len(kfolds): kfolds += [1]
+        gr = next(iter(self._cmod.FetchTraining(kfolds[0], self.BatchSize)))
+        self.preiteration(sample)
+        if self.__initialize__(): pass
+        else: return
 
-                self.Model = self._kModels[k]
-                self.Model.Epoch = _ep
-
-                self._ep = Epoch()
-                self._ep.o_model = self.Model.o_mapping
-                self._ep.i_model = self.Model.i_mapping
-                self._ep.RunName = self.RunName
-                self._ep.OutputDirectory = self._outDir
-                self._ep.init()
-                self._ep.Epoch = _ep
-
-                ApplyMode(k)
-                Train(True)
-                self.__this_epoch__()
-
-                if ApplyMode(k):
-                    Train(False)
+        self._findpriortraining()
+        self._cmod.metric_plots = self.PlotLearningMetrics
+        path = self.WorkingPath + "machine-learning/" + self.RunName
+        for ep in range(self.Epochs):
+            ep += 1
+            kfold_map = {}
+            for k in kfolds:
+                base = path + "/Epoch-" + str(ep) + "/kFold-"
+                if self.Epoch is None: pass
+                elif k not in self.Epoch: pass
+                elif self.Epoch[k] < ep: kfold_map[k] = False
                 else:
-                    self._len = 0
-                self.__this_epoch__()
+                    kfold_map[k] = True
+                    self._cmod.RebuildEpochHDF5(ep, base, k)
+                    continue
+                self.mkdir(base + str(k))
+                self._kOps[k].Epoch = ep
+                self._kModels[k].Epoch = ep
 
-                self._op.stepsc()
-                self._op.dump()
-                self.Model.dump()
-                if not self.DebugMode:
-                    self.__dump_plots__(self._ep)
+                self._kOps[k].Train = True
+                self._kModels[k].Train = True
+                self.__train__(k, ep)
 
-    def __this_epoch__(self):
-        if self._len == 0:
-            return
-        kF = self._ep.Epoch.split("/")[1]
-        if not self.DebugMode:
-            title = "(Training) " if self.Model.train else "(Validation) "
-            title += "Epoch " + str(self._ep.Epoch).split("/")[0] + "/"
-            title += str(self.Epochs) + " k-Fold: " + kF
-            _, bar = self._MakeBar(self._len, title, True)
+                self._kOps[k].Train = False
+                self._kModels[k].Train = False
+                self.__validation__(k, ep)
+                self._kOps[k].stepsc()
 
-        kF = "-" + str(kF) + "-" + self.mode
-        for smpl, index in zip(self._dl, range(len(self._dl))):
-            smpl = self.BatchTheseHashes(smpl, str(index) + kF, self.Device)
-            self._op.zero()
-            self._ep.start()
-            pred, loss = self.Model(smpl)
-            self._ep.end()
-            self.Model.backward()
-            self._op.step()
+                self.__evaluation__(k, ep)
+                self._showloss(ep, k)
 
+                self._kOps[k].save()
+                self._kModels[k].save()
+
+                self._cmod.DumpEpochHDF5(ep, base, k)
+            if self.PlotLearningMetrics:
+                self.Success("Plotting: Epoch " + str(ep))
+                self._cmod.BuildPlots(ep, path + "/Plots")
+            self._showloss(ep, -1, True)
+
+    def __train__(self, kfold, epoch):
+        container = []
+        batches = self._cmod.FetchTraining(kfold, self.BatchSize)
+        msg = "Epoch (" + str(epoch) + ") Running k-Fold (training) -> " + str(kfold)
+        if not self.DebugMode: _, bar = self._MakeBar(len(batches), msg)
+        for graph in batches:
+            self._kOps[kfold].zero()
+            res = self._kModels[kfold](graph)
+            self._kModels[kfold].backward()
+            self._kOps[kfold].step()
             if not self.DebugMode:
+                container.append(res)
                 bar.update(1)
+            else:
+                self._cmod.AddkFold(epoch, kfold, res, self._kModels[kfold].out_map)
+                del res
+
+            if not batches.purge: continue
+            self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+            for i in container: del i
+            container = []
+
+        if self.DebugMode: return
+        self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+        for i in container: del i
+
+    def __validation__(self, kfold, epoch):
+        container = []
+        batches = self._cmod.FetchValidation(kfold, self.BatchSize)
+        msg = "Epoch (" + str(epoch) + ") Running k-Fold (validation) -> " + str(kfold)
+        if not self.DebugMode: _, bar = self._MakeBar(len(batches), msg)
+        for graph in batches:
+            res = self._kModels[kfold](graph)
             if not self.DebugMode:
-                self._ep.Collect(smpl, pred, loss)
-            if self.DebugMode:
-                self._showloss()
-            if self.Device != "cpu" and self.GPUMemory > 80:
-                self.FlushBatchCache()
-            if not self.EnableReconstruction:
-                continue
-            self.Model.TruthMode = True
-            truth = self.Model.mass
+                container.append(res)
+                bar.update(1)
+            else:
+                self._cmod.AddkFold(epoch, kfold, res, self._kModels[kfold].out_map)
+                del res
 
-            self.Model.TruthMode = False
-            pred = self.Model.mass
+            if not batches.purge: continue
+            self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+            for i in container: del i
+            container = []
 
-            eff = self.Model.ParticleEfficiency()
-            dc = self._ep._train if self._ep.train else self._ep._val
-            for b in range(len(truth)):
-                for f in truth[b]:
-                    dc[f]["mass_t"] += truth[b][f]
-                for f in pred[b]:
-                    dc[f]["mass"] += pred[b][f]
-                for f in eff[b]:
-                    dc[f]["nrec"] += [eff[b][f]["nrec"]]
-                for f in eff[b]:
-                    dc[f]["ntru"] += [eff[b][f]["ntru"]]
+        if self.DebugMode: return
+        self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+        for i in container: del i
 
-    def __dump_plots__(self, inpt=None):
-        if inpt is None:
-            while len(self._threads) > 0:
-                self._threads = [t for t in self._threads if t.is_alive()]
-            return
+    def __evaluation__(self, kfold, epoch):
+        container = []
+        batches = self._cmod.FetchEvaluation(self.BatchSize)
+        if not self.DebugMode: _, bar = self._MakeBar(len(batches), "Epoch (" + str(epoch) + ") Running leave-out")
+        for graph in batches:
+            res = self._kModels[kfold](graph)
+            if not self.DebugMode:
+                container.append(res)
+                bar.update(1)
+            else:
+                self._cmod.AddkFold(epoch, kfold, res, self._kModels[kfold].out_map)
+                del res
 
-        while len(self._threads) > self.Threads:
-            self._threads = [t for t in self._threads if t.is_alive()]
+            if not batches.purge: continue
+            self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+            for i in container: del i
+            container = []
 
-        def func(inpt):
-            inpt.dump()
+        if self.DebugMode: return
+        self._cmod.FastGraphRecast(epoch, kfold, container, self._kModels[kfold].out_map)
+        for i in container: del i
 
-        th = Process(target=func, args=(inpt,))
-        th.start()
-        self._threads.append(th)
+    def preiteration(self, inpt = None):
+        if inpt is not None: pass
+        else: inpt = self
+
+        if not len(inpt.ShowTrees) and not len(inpt.Tree):
+            self._notree()
+            self.RestoreTracer()
+        if not len(inpt.Tree) and len(inpt.ShowTrees):
+            inpt.Tree = inpt.ShowTrees[0]
+        elif inpt.Tree in inpt.ShowTrees: pass
+        else: self._nofailtree()
+
+        if not len(inpt.ShowGraphs) and not len(inpt.GraphName):
+            self._nographs()
+            self.RestoreTracer()
+        if not len(inpt.GraphName) and len(inpt.ShowGraphs):
+            inpt.GraphName = inpt.ShowGraphs[0]
+        elif inpt.GraphName in inpt.ShowGraphs: pass
+        else: self._nofailgraphs()
+        msg = "Using GraphName: " + inpt.GraphName
+        msg += " with Tree: " + inpt.Tree
+        self.Success(msg)
+        return False
+

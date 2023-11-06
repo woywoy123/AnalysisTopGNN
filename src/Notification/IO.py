@@ -15,9 +15,11 @@ class _IO(Notification):
 
     def FoundFiles(self, Files):
         for i in Files:
-            self.Success(
-                "!!Files Found in Directory: " + i + "\n -> " + "\n -> ".join(Files[i])
-            )
+            l, x = len(Files[i]), Files[i]
+            if l > 5: x, l = Files[i][:5], l - 5
+            mg = "!!Files Found in Directory: " + i + "\n -> " + "\n -> ".join(x)
+            if l > 5: mg += " (... " + str(l) + " other files)"
+            self.Success(mg)
 
     def PickleOutput(self):
         x = self.abs()
