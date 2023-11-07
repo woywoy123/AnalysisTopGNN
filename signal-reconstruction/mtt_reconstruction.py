@@ -7,6 +7,10 @@ from AnalysisG.Particles.Particles import Top, Children, TruthJet, Jet, Neutrino
 import numpy as np
 import torch
 from nu_reco import getNeutrinoSolutions
+import pickle
+from AnalysisG.Templates import SelectionTemplate
+from AnalysisG.Events.Events.Event import Event as Event
+import pyc
 
 t_mass = 172.76
 w_mass = 80.379
@@ -75,8 +79,14 @@ class MatchingBase:
 
 class BMatching(MatchingBase):
     is_jet = True 
-    def __init__(self, lst):
-        super().__init__(lst=lst, tops=[i for i in range(len(lst))], allow_assignment_to_one_top=False)
+    def __init__(self, lst, is_truth=False):
+        if is_truth:
+            tops = [obj.TopIndex for obj in lst]
+            override_tops = {i : lst[i].TopIndex for i in range(len(lst))}
+        else:
+            tops = [i for i in range(len(lst))]
+            override_tops = None
+        super().__init__(lst=lst, tops=tops, allow_assignment_to_one_top=False, override_tops=override_tops)
         self.lst = lst
         self.assignments = [[i for i in range(len(lst))]]
 
@@ -157,15 +167,69 @@ class NuMatching(MatchingBase):
             if None in self.bs or None in self.leps or len(self.bs) != 2 or len(self.leps) != 2:
                 self.assignments = []
             else:
-                met = sum(self.nus).pt
-                met_phi = sum(self.nus).phi
-                print(met, event.met, met_phi, event.met_phi)
+                # print(fake_event.met, event.met, fake_event.met_phi, event.met_phi)
+                # print(self.bs[0].TopIndex, self.bs[1].TopIndex, self.leps[0].TopIndex, self.leps[1].TopIndex)
                 nus_result = None
-                nus_result = getNeutrinoSolutions(self.bs[0], self.bs[1], self.leps[0], self.leps[1], met, met_phi)
-                print(nus_result)
-                # for nu1, nu2 in nus_result:
-                    # print('\n', nu1.px, nu1.py, nu1.pz, nu1.e)
-                    # print(nu2.px, nu2.py, nu2.pz, nu2.e)
+                # nus_result = getNeutrinoSolutions(self.bs[0], self.bs[1], self.leps[0], self.leps[1], event.met, event.met_phi)
+                # print('My wrapper', nus_result)
+                mT = 172.5*1000 #MeV
+                mW = 80.379*1000 # MeV
+                nT = 0
+                nW = 0
+                step_size = 0.5*1000 #MeV
+                masses = sum([[[mW + step_size*iW, mT + step_size*iT, 0] for iW in range(-nW, nW+1)] for iT in range(-nT, nT+1)], start=[])
+                n = len(masses)
+                def make_input(particle):
+                    return [particle.pt, particle.eta, particle.phi, particle.e]
+                
+                masses = [[76771.5755454684, 184739.11601818237, 0], [76998.26167847605, 170747.94900344196, 0]]
+                n = 2
+                
+                print([make_input(self.bs[0])]*n, [make_input(self.bs[1])]*n, [make_input(self.leps[0])]*n, [make_input(self.leps[1])]*n, [[event.met, event.met_phi]]*n, masses)
+                print(self.bs[0].Mass)
+                print(self.bs[1].Mass)
+                print(self.leps[0].Mass)
+                print(self.leps[1].Mass)
+                print(sum([self.leps[0], self.nus[0]]).Mass)
+                print(sum([self.leps[1], self.nus[1]]).Mass)
+                print(sum([self.bs[0], self.leps[0], self.nus[0]]).Mass)
+                print(sum([self.bs[1], self.leps[1], self.nus[1]]).Mass)
+
+                reconstruction_result = pyc.NuSol.Polar.NuNu([make_input(self.bs[0])]*n, [make_input(self.bs[1])]*n, [make_input(self.leps[0])]*n, [make_input(self.leps[1])]*n, [[event.met, event.met_phi]]*n, masses, null=1e10)
+                print(reconstruction_result)
+                exit()
+                result_difference = None 
+                result_i = None
+                for imass, mass in enumerate(masses):
+                    if reconstruction_result[-1][imass]:
+                        difference = (mass[0] - mW)**2 + (mass[1] - mT)**2
+                        if result_difference is None or result_difference > difference:
+                            nus_result = []
+                            nus1, nus2 = reconstruction_result[0][imass], reconstruction_result[1][imass]
+                            if nus1.sum(-1).sum(-1) == 0:
+                                continue
+                            print(torch.cat([nus1, nus2], -1))
+                            result_i = imass
+                            result_difference = difference
+                            # print(reconstruction_result[2][imass])
+                            # print(reconstruction_result[:][imass], '\n')
+                            for k in range(len(nus1)):
+                                nu1 = nus1[k].tolist()
+                                nu2 = nus2[k].tolist()
+                                neutrino1 = Neutrino(nu1[0], nu1[1], nu1[2])
+                                neutrino2 = Neutrino(nu2[0], nu2[1], nu2[2])
+                                p1 = sum([self.bs[0], self.leps[0], neutrino1])
+                                print('nu1', p1)
+                                p2 = sum([self.bs[1], self.leps[1], neutrino2])
+                                print('nu2', p2)
+                                print('p1', p1.e**2 - p1.px**2 - p1.py**2 - p1.pz**2)
+                                print('p2', p2.e**2 - p2.px**2 - p2.py**2 - p2.pz**2)
+                                nus_result.append([neutrino1, neutrino2])
+                                print(self.bs[0].pt, event.met)
+                                print(self.nus[0])
+                                exit()
+                print(masses[result_i], nus_result)
+                
                 if nus_result is None or len(nus_result) == 0:
                     self.assignments = []
                 else:
@@ -293,7 +357,7 @@ class LossCalculator:
 
     @staticmethod
     def get_dR(v1, v2):
-        return((v1.eta - v2.eta)**2 + (v1.phi - v2.phi)**2)**0.5
+        return v1.DeltaR(v2)
 
     def get_loss(self, b, w):
         dR_ww = []
@@ -363,6 +427,12 @@ class MttReconstructor:
                 if i != -1:
                     self.tops[i] += objs[i]
 
+    def copy_tops(self):
+        result = []
+        for top in self.tops:
+            result.append([pickle.loads(pickle.dumps(obj)) for obj in top])
+        return result
+
     def calculate_loss(self):
         loss = 0
         for i in range(4):
@@ -398,7 +468,7 @@ class MttReconstructor:
         key = None
         # self._mtt = 'no nus'
 
-        b_matching = BMatching(self.b)        
+        b_matching = BMatching(self.b, is_truth=True)        
 
         add_matching = Matching(self.add, is_truth=True if self.case_num in [0, 1, 2, 3, 4, 5, 6] else False, compare_to_w=self.compare_add_to_w, tops=[0, 1])
         for self.bs in b_matching:
@@ -407,8 +477,9 @@ class MttReconstructor:
                      is_truth=False,
                      tops=b_matching.tops,
                      allow_assignment_to_one_top=False)
-
+            # print('b', {itop : self.bs[itop][0].TopIndex for itop in self.bs})
             for self.leps in lep_matching:
+                # print('lep', {itop : self.leps[itop][0].TopIndex for itop in self.leps})
                 if len(self.leps) < 2 or len([i for i in self.bs if i in self.leps]) < 2:
                     continue
                 lep_in_b_tops = [i for i in self.leps if i in self.bs]
@@ -421,7 +492,6 @@ class MttReconstructor:
                     # print('lepton leftovers', lep_leftovers)
                     override_tops = {
                         nu.TopIndex : [key for key in self.leps if self.leps[key][0].TopIndex == nu.TopIndex][0] if (len([key for key in self.leps if self.leps[key][0].TopIndex == nu.TopIndex]) != 0) else nu.TopIndex for nu in self.nu } if self.case_num in [4, 7] else None
-
                     nu_matching = \
                         NuMatching(bs={i : self.bs[i] for i in self.lep_for_nu_reco if i in self.bs},
                                 leps={i :self.leps[i] for i in self.lep_for_nu_reco},
@@ -439,6 +509,7 @@ class MttReconstructor:
                         add_matching.update_tops(tops)
                         import numpy as np
                         for self.adds in add_matching:
+                            # print('add', {itop : self.adds[itop][0].TopIndex for itop in self.adds})
                             # print('adds')
                             self.combine_tops()
                             self.select_resonance()
@@ -459,4 +530,4 @@ class MttReconstructor:
                                 key = new_key
                                 # print('Sum', (e**2 - p**2)**0.5, sum(self.res_products).Mass)
                                 # print(e, p, sum(self.res_products).e, sum(self.res_products).pt*np.cosh(sum(self.res_products).eta))
-                                self._grouping = self.tops.copy()
+                                self._grouping = self.copy_tops()

@@ -39,7 +39,7 @@ def getNeutrinoSolutions(b0, b1, lep0, lep1, met, met_phi):
     # print('reconstructing...')
     scale = 1000
     s_ = pyc.NuSol.Polar.NuNu(
-            MakeKinematics(b0), MakeKinematics(b1), MakeKinematics(lep0), MakeKinematics(lep1), [[met*coef, met_phi]], [[mW*coef, mT*coef, mN*coef]])
+            MakeKinematics(b0), MakeKinematics(b1), MakeKinematics(lep0), MakeKinematics(lep1), [[met*coef, met_phi]], [[mW*coef, mT*coef, mN*coef]], null=1e32)
     # except:
     #     print('Singular')
     #     return []

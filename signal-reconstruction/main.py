@@ -1,6 +1,6 @@
 from AnalysisG import Analysis
-from AnalysisG.Events.Events.CommonSM4topEvent import Event
-from AnalysisG.Events.Events.Event import Event as TruthEvent
+from AnalysisG.Events.Events import SSML as Event
+from AnalysisG.Events.Events import Event as TruthEvent
 from Strategy import Common
 from AnalysisG.Submission import Condor
 from AnalysisG.IO import UnpickleObject
@@ -13,6 +13,10 @@ import uproot
 import numpy as np
 import os
 from AnalysisG.IO import nTupler
+from double_leptonic import DiLeptonic
+from selection_class import selection_class
+from AnalysisG.Plotting import TH2F, TH1F
+
 
 def do_test_post_prod():
     root_dir = "/nfs/dust/atlas/user/sitnikov/signal-comparison/common-fw_tag212120/final"
@@ -28,12 +32,13 @@ def do_test_post_prod():
         ana = Analysis()
         ana.Event = Event
         # ana.EventCache = True
-        ana.EventStart = 8
-        ana.EventStop = 8
+        # ana.EventStart = 8
+        # ana.EventStop = 8
         ana.InputSample(mc, this_pth)
         ana.AddSelection("bsm", Common)
         ana.MergeSelection("bsm")
         ana.Launch()
+        exit()
     n = nTupler("UNTITLED/Selections/Merged")
     n.This("bsm -> ", "nominal_Loose")
     for i in n:
@@ -51,35 +56,52 @@ def do_test_truth():
         ana = Analysis()
         ana.Event = TruthEvent
         ana.ProjectName = "AnalysisTruthMeV"
-        ana.EventCache = True
+        # ana.EventCache = True
         # ana.EventStart = 950
         # ana.EventStop = 1
         # ana.EventStart = 7
         # ana.EventStop = 10
         ana.InputSample(file, this_pth)
-        # ana.AddSelection("bsm", CommonTruth)
-        # ana.MergeSelection("bsm")
+        ana.AddSelection("bsm", selection_class)
+        ana.MergeSelection("bsm")
         ana.Launch()
-        for i,event in enumerate(ana):
-            print('\n')
-            if i < 2:
-                continue
-            if i > 2:
-                break
-            cases = [2]#range(10)
-            for icase in cases:
-                mtt_reconstructor = MttReconstructor(event, icase, 'Children')
-                print(icase, mtt_reconstructor.event_type, mtt_reconstructor.mtt)
+        # exit()
+        # import torch
+        # torch.set_printoptions(4, profile="full", linewidth=100000)
+        # sc = selection_class()
+        # # sc(ana['0x118f74ef2bc1f7b0'])
+        # for i,event in enumerate(ana):
+        #     sc(event)
+        #     if i > 3:
+        #         exit()
+        #     # exit()
+        #     continue
+        #     print('\n', i)
+        #     if i < 7:
+        #         continue
+        #     if i > 7:
+        #         break
+        #     print(event.hash)
+        #     cases = [2]#range(10)
+        #     for icase in cases:
+        #         # break
+        #         mtt_reconstructor = MttReconstructor(event, icase, 'Children')
+        #         print(icase, mtt_reconstructor.event_type, mtt_reconstructor.mtt)
+        
 
-    # n = nTupler("AnalysisTruthMeV/Selections/Merged")
-    # n.This("bsm -> ", "nominal")
+        # import json
+        # print(json.dumps(sc.nsolutions, indent=1))
+
+    n = nTupler("AnalysisTruthMeV/Selections/Merged")
+    n.This("bsm -> ", "nominal")
     # cases = [9, 10]
     # counts = {'None' : {'Children' : {i : 0 for i in cases}, 'TruthJet' : {i : 0 for i in cases}, 'Jet' : {i : 0 for i in cases}},
     #           'number' : {'Children' : {i : 0 for i in cases}, 'TruthJet' : {i : 0 for i in cases}, 'Jet' : {i : 0 for i in cases}}}
     # count_by_types = {obj : {} for obj in ['Children', 'TruthJet', 'Jet']}
     # count = 0
     # is_None_found = False
-    # for i in n:
+    for i in n:
+        print(i.mets)
     #     print(count)
     #     count += 1
     #     if is_None_found:
@@ -103,6 +125,38 @@ def do_test_truth():
     # import json
     # print(json.dumps(counts, indent=1))
     # print(json.dumps(count_by_types, indent=1))
+
+def do_test_DiLeptonic():
+    root_dir = "/nfs/dust/atlas/user/sitnikov/ntuples_for_classifier/"
+    files = {
+                "1000" : root_dir + "ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root"
+    }
+    Quant = 1
+    for file in files:
+        this_pth = files[file]
+        ana = Analysis()
+        ana.Event = TruthEvent
+        ana.ProjectName = "AnalysisTruthMeVDiLeptonic"
+        ana.EventCache = True
+        # ana.EventStart = 950
+        # ana.EventStop = 1
+        # ana.EventStart = 7
+        # ana.EventStop = 10
+        ana.InputSample(file, this_pth)
+        ana.AddSelection("dilep", DiLeptonic)
+        ana.MergeSelection("dielp")
+        ana.Launch()
+        for i,event in enumerate(ana):
+            print('\n')
+            print('Hash:', event.hash)
+            if i < 2:
+                continue
+            if i > 2:
+                break
+            cases = [2]#range(10)
+            for icase in cases:
+                mtt_reconstructor = MttReconstructor(event, icase, 'Children')
+                print(icase, mtt_reconstructor.event_type, mtt_reconstructor.mtt)
 
 def submit_jobs():
     # direc = "/home/tnom6927/Downloads/samples/Dilepton/ttH_tttt_m1000"#"/atlasgpfs01/usatlas/data/eleboulicaut/ttH_tttt_m1000/DAOD_TOPQ1.21955717._000001.root"
@@ -379,6 +433,7 @@ def process():
         print(i)
 
 do_test_truth()
+# do_test_post_prod()
 # make_plots()
 # submit_jobs()
 #process()
